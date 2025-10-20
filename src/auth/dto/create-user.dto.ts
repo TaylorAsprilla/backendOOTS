@@ -1,65 +1,59 @@
 import {
-  IsString,
-  IsNotEmpty,
   IsEmail,
-  IsOptional,
+  IsString,
   MinLength,
   MaxLength,
   Matches,
+  IsOptional,
 } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
-  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
   firstName: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   @MinLength(2)
   @MaxLength(50)
   secondName?: string;
 
   @IsString()
-  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
   firstLastName: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   @MinLength(2)
   @MaxLength(50)
   secondLastName?: string;
 
   @IsEmail()
-  @IsNotEmpty()
-  @MaxLength(100)
   email: string;
 
   @IsString()
-  @IsNotEmpty()
   @MinLength(8)
-  @MaxLength(255)
+  @MaxLength(50)
+  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number or special character',
+  })
   password: string;
 
-  @IsString()
   @IsOptional()
-  @Matches(/^[+]?[1-9][\d]{0,15}$/, {
-    message: 'phoneNumber must be a valid phone number',
-  })
+  @IsString()
+  @MaxLength(100)
   phoneNumber?: string;
 
-  @IsString()
   @IsOptional()
-  @MinLength(2)
+  @IsString()
   @MaxLength(100)
   position?: string;
 
-  @IsString()
   @IsOptional()
-  @MinLength(2)
+  @IsString()
   @MaxLength(200)
   organization?: string;
 }

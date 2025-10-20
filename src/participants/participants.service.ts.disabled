@@ -1,0 +1,726 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, SelectQueryBuilder, In } from 'typeorm';
+import {
+  CreateParticipantDto,
+  UpdateParticipantDto,
+  SearchParticipantsDto,
+  CreateFamilyMemberDto,
+  CreateProgressNoteDto,
+  CreateInterventionPlanDto,
+  UpdateFamilyMemberDto,
+  UpdateProgressNoteDto,
+  UpdateInterventionPlanDto,
+} from './dto';
+import {
+  Participant,
+  FamilyMember,
+  IdentifiedSituations,
+  InterventionPlan,
+  ProgressNote,
+  BioPsychosocialHistory,
+  ConsultationReason,
+  Intervention,
+  FollowUpPlan,
+  PhysicalHealthHistory,
+  MentalHealthHistory,
+  Assessment,
+  Referrals,
+  ClosingNote,
+} from './entities';
+import { IdentifiedSituation } from '../common/enums';
+
+@Injectable()
+export class ParticipantsService {
+  constructor(
+    @InjectRepository(Participant)
+    private readonly participantRepository: Repository<Participant>,
+
+    @InjectRepository(FamilyMember)
+    private readonly familyMemberRepository: Repository<FamilyMember>,
+
+    @InjectRepository(IdentifiedSituations)
+    private readonly identifiedSituationsRepository: Repository<IdentifiedSituations>,
+
+    @InjectRepository(InterventionPlan)
+    private readonly interventionPlanRepository: Repository<InterventionPlan>,
+
+    @InjectRepository(ProgressNote)
+    private readonly progressNoteRepository: Repository<ProgressNote>,
+
+    @InjectRepository(BioPsychosocialHistory)
+    private readonly bioPsychosocialHistoryRepository: Repository<BioPsychosocialHistory>,
+
+    @InjectRepository(ConsultationReason)
+    private readonly consultationReasonRepository: Repository<ConsultationReason>,
+
+    @InjectRepository(Intervention)
+    private readonly interventionRepository: Repository<Intervention>,
+
+    @InjectRepository(FollowUpPlan)
+    private readonly followUpPlanRepository: Repository<FollowUpPlan>,
+
+    @InjectRepository(PhysicalHealthHistory)
+    private readonly physicalHealthHistoryRepository: Repository<PhysicalHealthHistory>,
+
+    @InjectRepository(MentalHealthHistory)
+    private readonly mentalHealthHistoryRepository: Repository<MentalHealthHistory>,
+
+    @InjectRepository(Assessment)
+    private readonly assessmentRepository: Repository<Assessment>,
+
+    @InjectRepository(Referrals)
+    private readonly referralsRepository: Repository<Referrals>,
+
+    @InjectRepository(ClosingNote)
+    private readonly closingNoteRepository: Repository<ClosingNote>,
+  ) {}
+
+  async create(
+    createParticipantDto: CreateParticipantDto,
+  ): Promise<Participant> {
+    // Verificar que el documento sea único
+    const existingParticipant = await this.participantRepository.findOne({
+      where: { documentNumber: createParticipantDto.documentNumber },
+    });
+
+    if (existingParticipant) {
+      throw new ConflictException(
+        `Participant with document number ${createParticipantDto.documentNumber} already exists`,
+      );
+    }
+
+    // Validar edad (mayor de 12 años, menor de 100)
+    const birthDate = new Date(createParticipantDto.birthDate);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+
+    if (age < 12 || age > 100) {
+      throw new BadRequestException(
+        'Participant must be between 12 and 100 years old',
+      );
+    }
+
+    // Validar healthInsurance condicional
+    if (
+      createParticipantDto.healthInsuranceId === 'other' &&
+      !createParticipantDto.customHealthInsurance
+    ) {
+      throw new BadRequestException(
+        'customHealthInsurance is required when healthInsuranceId is "other"',
+      );
+    }
+
+    const participant = this.participantRepository.create({
+      firstName: createParticipantDto.firstName,
+      secondName: createParticipantDto.secondName,
+      firstLastName: createParticipantDto.firstLastName,
+      secondLastName: createParticipantDto.secondLastName,
+      phoneNumber: createParticipantDto.phoneNumber,
+      email: createParticipantDto.email,
+      documentTypeId: createParticipantDto.documentTypeId,
+      documentNumber: createParticipantDto.documentNumber,
+      address: createParticipantDto.address,
+      city: createParticipantDto.city,
+      birthDate: new Date(createParticipantDto.birthDate),
+      religiousAffiliation: createParticipantDto.religiousAffiliation,
+      genderId: createParticipantDto.genderId,
+      maritalStatusId: createParticipantDto.maritalStatusId,
+      healthInsuranceId: createParticipantDto.healthInsuranceId,
+      customHealthInsurance: createParticipantDto.customHealthInsurance,
+      referralSource: createParticipantDto.referralSource,
+      emergencyContactName: createParticipantDto.emergencyContactName,
+      emergencyContactPhone: createParticipantDto.emergencyContactPhone,
+      emergencyContactEmail: createParticipantDto.emergencyContactEmail,
+      emergencyContactAddress: createParticipantDto.emergencyContactAddress,
+      emergencyContactCity: createParticipantDto.emergencyContactCity,
+      emergencyContactRelationship:
+        createParticipantDto.emergencyContactRelationship,
+    });
+
+    const savedParticipant = await this.participantRepository.save(participant);
+
+    // Crear secciones relacionadas si se proporcionan
+    if (createParticipantDto.bioPsychosocialHistory) {
+      const bioPsychosocialHistory =
+        this.bioPsychosocialHistoryRepository.create(
+          createParticipantDto.bioPsychosocialHistory,
+        );
+      savedParticipant.bioPsychosocialHistory =
+        await this.bioPsychosocialHistoryRepository.save(
+          bioPsychosocialHistory,
+        );
+    }
+
+    if (createParticipantDto.consultationReason) {
+      const consultationReason = this.consultationReasonRepository.create(
+        createParticipantDto.consultationReason,
+      );
+      savedParticipant.consultationReason =
+        await this.consultationReasonRepository.save(consultationReason);
+    }
+
+    if (createParticipantDto.intervention) {
+      const intervention = this.interventionRepository.create(
+        createParticipantDto.intervention,
+      );
+      savedParticipant.intervention =
+        await this.interventionRepository.save(intervention);
+    }
+
+    if (createParticipantDto.followUpPlan) {
+      const followUpPlan = this.followUpPlanRepository.create(
+        createParticipantDto.followUpPlan,
+      );
+      savedParticipant.followUpPlan =
+        await this.followUpPlanRepository.save(followUpPlan);
+    }
+
+    if (createParticipantDto.physicalHealthHistory) {
+      const physicalHealthHistory = this.physicalHealthHistoryRepository.create(
+        createParticipantDto.physicalHealthHistory,
+      );
+      savedParticipant.physicalHealthHistory =
+        await this.physicalHealthHistoryRepository.save(physicalHealthHistory);
+    }
+
+    if (createParticipantDto.mentalHealthHistory) {
+      const mentalHealthHistory = this.mentalHealthHistoryRepository.create(
+        createParticipantDto.mentalHealthHistory,
+      );
+      savedParticipant.mentalHealthHistory =
+        await this.mentalHealthHistoryRepository.save(mentalHealthHistory);
+    }
+
+    if (createParticipantDto.assessment) {
+      const assessment = this.assessmentRepository.create(
+        createParticipantDto.assessment,
+      );
+      savedParticipant.assessment =
+        await this.assessmentRepository.save(assessment);
+    }
+
+    if (createParticipantDto.referrals) {
+      const referrals = this.referralsRepository.create(
+        createParticipantDto.referrals,
+      );
+      savedParticipant.referrals =
+        await this.referralsRepository.save(referrals);
+    }
+
+    if (createParticipantDto.closingNote) {
+      const closingNote = this.closingNoteRepository.create(
+        createParticipantDto.closingNote,
+      );
+      savedParticipant.closingNote =
+        await this.closingNoteRepository.save(closingNote);
+    }
+
+    // Crear miembros de familia
+    if (createParticipantDto.familyMembers?.length) {
+      for (const familyMemberDto of createParticipantDto.familyMembers) {
+        const familyMember = this.familyMemberRepository.create({
+          ...familyMemberDto,
+          birthDate: familyMemberDto.birthDate
+            ? new Date(familyMemberDto.birthDate)
+            : undefined,
+          participantId: savedParticipant.id,
+        });
+        await this.familyMemberRepository.save(familyMember);
+      }
+    }
+
+    // Crear situaciones identificadas
+    if (createParticipantDto.identifiedSituations?.length) {
+      await this.handleIdentifiedSituations(
+        savedParticipant.id,
+        createParticipantDto.identifiedSituations,
+      );
+    }
+
+    // Crear planes de intervención
+    if (createParticipantDto.interventionPlans?.length) {
+      for (const planDto of createParticipantDto.interventionPlans) {
+        const plan = this.interventionPlanRepository.create({
+          ...planDto,
+          participantId: savedParticipant.id,
+        });
+        await this.interventionPlanRepository.save(plan);
+      }
+    }
+
+    // Crear notas de progreso
+    if (createParticipantDto.progressNotes?.length) {
+      for (const noteDto of createParticipantDto.progressNotes) {
+        const note = this.progressNoteRepository.create({
+          ...noteDto,
+          date: new Date(noteDto.date),
+          participantId: savedParticipant.id,
+        });
+        await this.progressNoteRepository.save(note);
+      }
+    }
+
+    await this.participantRepository.save(savedParticipant);
+
+    return this.findOne(savedParticipant.id);
+  }
+
+  async findAll(searchDto?: SearchParticipantsDto) {
+    const {
+      q,
+      city,
+      gender,
+      maritalStatus,
+      situations,
+      dateFrom,
+      dateTo,
+      page = '1',
+      limit = '10',
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+    } = searchDto || {};
+
+    const queryBuilder = this.participantRepository
+      .createQueryBuilder('participant')
+      .leftJoinAndSelect('participant.familyMembers', 'familyMembers')
+      .leftJoinAndSelect(
+        'participant.identifiedSituations',
+        'identifiedSituations',
+      )
+      .leftJoinAndSelect(
+        'participant.bioPsychosocialHistory',
+        'bioPsychosocialHistory',
+      )
+      .leftJoinAndSelect('participant.consultationReason', 'consultationReason')
+      .leftJoinAndSelect('participant.intervention', 'intervention')
+      .leftJoinAndSelect('participant.followUpPlan', 'followUpPlan')
+      .leftJoinAndSelect(
+        'participant.physicalHealthHistory',
+        'physicalHealthHistory',
+      )
+      .leftJoinAndSelect(
+        'participant.mentalHealthHistory',
+        'mentalHealthHistory',
+      )
+      .leftJoinAndSelect('participant.assessment', 'assessment')
+      .leftJoinAndSelect('participant.interventionPlans', 'interventionPlans')
+      .leftJoinAndSelect('participant.progressNotes', 'progressNotes')
+      .leftJoinAndSelect('participant.referrals', 'referrals')
+      .leftJoinAndSelect('participant.closingNote', 'closingNote');
+
+    // Búsqueda general por texto
+    if (q) {
+      queryBuilder.andWhere(
+        '(participant.firstName LIKE :q OR participant.firstLastName LIKE :q OR participant.documentNumber LIKE :q OR participant.phoneNumber LIKE :q)',
+        { q: `%${q}%` },
+      );
+    }
+
+    // Filtros específicos
+    if (city) {
+      queryBuilder.andWhere('participant.city LIKE :city', {
+        city: `%${city}%`,
+      });
+    }
+
+    if (gender) {
+      queryBuilder.andWhere('participant.genderId = :gender', { gender });
+    }
+
+    if (maritalStatus) {
+      queryBuilder.andWhere('participant.maritalStatusId = :maritalStatus', {
+        maritalStatus,
+      });
+    }
+
+    if (situations?.length) {
+      queryBuilder.andWhere(
+        'identifiedSituations.situation IN (:...situations)',
+        { situations },
+      );
+    }
+
+    if (dateFrom) {
+      queryBuilder.andWhere('participant.createdAt >= :dateFrom', {
+        dateFrom: new Date(dateFrom),
+      });
+    }
+
+    if (dateTo) {
+      queryBuilder.andWhere('participant.createdAt <= :dateTo', {
+        dateTo: new Date(dateTo),
+      });
+    }
+
+    // Ordenamiento
+    queryBuilder.orderBy(`participant.${sortBy}`, sortOrder);
+
+    // Paginación
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    const [participants, total] = await queryBuilder
+      .skip(skip)
+      .take(take)
+      .getManyAndCount();
+
+    return {
+      data: participants,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    };
+  }
+
+  async findOne(id: number): Promise<Participant> {
+    const participant = await this.participantRepository.findOne({
+      where: { id },
+      relations: [
+        'familyMembers',
+        'bioPsychosocialHistory',
+        'consultationReason',
+        'identifiedSituations',
+        'intervention',
+        'followUpPlan',
+        'physicalHealthHistory',
+        'mentalHealthHistory',
+        'assessment',
+        'interventionPlans',
+        'progressNotes',
+        'referrals',
+        'closingNote',
+      ],
+    });
+
+    if (!participant) {
+      throw new NotFoundException(`Participant with ID ${id} not found`);
+    }
+
+    return participant;
+  }
+
+  async update(
+    id: number,
+    updateParticipantDto: UpdateParticipantDto,
+  ): Promise<Participant> {
+    const participant = await this.findOne(id);
+
+    // Validar documento único si se está actualizando
+    if (
+      updateParticipantDto.documentNumber &&
+      updateParticipantDto.documentNumber !== participant.documentNumber
+    ) {
+      const existingParticipant = await this.participantRepository.findOne({
+        where: { documentNumber: updateParticipantDto.documentNumber },
+      });
+
+      if (existingParticipant) {
+        throw new ConflictException(
+          `Participant with document number ${updateParticipantDto.documentNumber} already exists`,
+        );
+      }
+    }
+
+    // Validar edad si se está actualizando la fecha de nacimiento
+    if (updateParticipantDto.birthDate) {
+      const birthDate = new Date(updateParticipantDto.birthDate);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+
+      if (age < 12 || age > 100) {
+        throw new BadRequestException(
+          'Participant must be between 12 and 100 years old',
+        );
+      }
+    }
+
+    // Actualizar datos básicos
+    Object.assign(participant, updateParticipantDto);
+
+    if (updateParticipantDto.birthDate) {
+      participant.birthDate = new Date(updateParticipantDto.birthDate);
+    }
+
+    await this.participantRepository.save(participant);
+
+    // Actualizar situaciones identificadas si se proporcionan
+    if (updateParticipantDto.identifiedSituations) {
+      await this.handleIdentifiedSituations(
+        id,
+        updateParticipantDto.identifiedSituations,
+      );
+    }
+
+    return this.findOne(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    const participant = await this.findOne(id);
+    await this.participantRepository.softDelete(id);
+  }
+
+  // Gestión de miembros de familia
+  async addFamilyMember(
+    participantId: number,
+    createFamilyMemberDto: CreateFamilyMemberDto,
+  ): Promise<FamilyMember> {
+    await this.findOne(participantId); // Verificar que existe el participante
+
+    const familyMember = this.familyMemberRepository.create({
+      ...createFamilyMemberDto,
+      birthDate: createFamilyMemberDto.birthDate
+        ? new Date(createFamilyMemberDto.birthDate)
+        : undefined,
+      participantId,
+    });
+
+    return this.familyMemberRepository.save(familyMember);
+  }
+
+  async updateFamilyMember(
+    participantId: number,
+    memberId: number,
+    updateFamilyMemberDto: UpdateFamilyMemberDto,
+  ): Promise<FamilyMember> {
+    await this.findOne(participantId);
+
+    const familyMember = await this.familyMemberRepository.findOne({
+      where: { id: memberId, participantId },
+    });
+
+    if (!familyMember) {
+      throw new NotFoundException(
+        `Family member with ID ${memberId} not found for participant ${participantId}`,
+      );
+    }
+
+    Object.assign(familyMember, updateFamilyMemberDto);
+
+    if (updateFamilyMemberDto.birthDate) {
+      familyMember.birthDate = new Date(updateFamilyMemberDto.birthDate);
+    }
+
+    return this.familyMemberRepository.save(familyMember);
+  }
+
+  async removeFamilyMember(
+    participantId: number,
+    memberId: number,
+  ): Promise<void> {
+    await this.findOne(participantId);
+
+    const result = await this.familyMemberRepository.delete({
+      id: memberId,
+      participantId,
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `Family member with ID ${memberId} not found for participant ${participantId}`,
+      );
+    }
+  }
+
+  // Gestión de notas de progreso
+  async addProgressNote(
+    participantId: number,
+    createProgressNoteDto: CreateProgressNoteDto,
+  ): Promise<ProgressNote> {
+    await this.findOne(participantId);
+
+    const progressNote = this.progressNoteRepository.create({
+      ...createProgressNoteDto,
+      date: new Date(createProgressNoteDto.date),
+      participantId,
+    });
+
+    return this.progressNoteRepository.save(progressNote);
+  }
+
+  async updateProgressNote(
+    participantId: number,
+    noteId: number,
+    updateProgressNoteDto: UpdateProgressNoteDto,
+  ): Promise<ProgressNote> {
+    await this.findOne(participantId);
+
+    const progressNote = await this.progressNoteRepository.findOne({
+      where: { id: noteId, participantId },
+    });
+
+    if (!progressNote) {
+      throw new NotFoundException(
+        `Progress note with ID ${noteId} not found for participant ${participantId}`,
+      );
+    }
+
+    Object.assign(progressNote, updateProgressNoteDto);
+
+    if (updateProgressNoteDto.date) {
+      progressNote.date = new Date(updateProgressNoteDto.date);
+    }
+
+    return this.progressNoteRepository.save(progressNote);
+  }
+
+  async removeProgressNote(
+    participantId: number,
+    noteId: number,
+  ): Promise<void> {
+    await this.findOne(participantId);
+
+    const result = await this.progressNoteRepository.delete({
+      id: noteId,
+      participantId,
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `Progress note with ID ${noteId} not found for participant ${participantId}`,
+      );
+    }
+  }
+
+  // Gestión de planes de intervención
+  async addInterventionPlan(
+    participantId: number,
+    createInterventionPlanDto: CreateInterventionPlanDto,
+  ): Promise<InterventionPlan> {
+    await this.findOne(participantId);
+
+    const interventionPlan = this.interventionPlanRepository.create({
+      ...createInterventionPlanDto,
+      participantId,
+    });
+
+    return this.interventionPlanRepository.save(interventionPlan);
+  }
+
+  async updateInterventionPlan(
+    participantId: number,
+    planId: number,
+    updateInterventionPlanDto: UpdateInterventionPlanDto,
+  ): Promise<InterventionPlan> {
+    await this.findOne(participantId);
+
+    const interventionPlan = await this.interventionPlanRepository.findOne({
+      where: { id: planId, participantId },
+    });
+
+    if (!interventionPlan) {
+      throw new NotFoundException(
+        `Intervention plan with ID ${planId} not found for participant ${participantId}`,
+      );
+    }
+
+    Object.assign(interventionPlan, updateInterventionPlanDto);
+
+    return this.interventionPlanRepository.save(interventionPlan);
+  }
+
+  async removeInterventionPlan(
+    participantId: number,
+    planId: number,
+  ): Promise<void> {
+    await this.findOne(participantId);
+
+    const result = await this.interventionPlanRepository.delete({
+      id: planId,
+      participantId,
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(
+        `Intervention plan with ID ${planId} not found for participant ${participantId}`,
+      );
+    }
+  }
+
+  // Estadísticas demográficas
+  async getDemographicStats() {
+    const genderStats = await this.participantRepository
+      .createQueryBuilder('participant')
+      .select('participant.genderId', 'gender')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('participant.genderId')
+      .getRawMany();
+
+    const cityStats = await this.participantRepository
+      .createQueryBuilder('participant')
+      .select('participant.city', 'city')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('participant.city')
+      .orderBy('count', 'DESC')
+      .limit(10)
+      .getRawMany();
+
+    const ageRangeStats = await this.participantRepository
+      .createQueryBuilder('participant')
+      .select(
+        `
+        CASE 
+          WHEN YEAR(CURDATE()) - YEAR(participant.birthDate) < 18 THEN 'Under 18'
+          WHEN YEAR(CURDATE()) - YEAR(participant.birthDate) BETWEEN 18 AND 30 THEN '18-30'
+          WHEN YEAR(CURDATE()) - YEAR(participant.birthDate) BETWEEN 31 AND 50 THEN '31-50'
+          WHEN YEAR(CURDATE()) - YEAR(participant.birthDate) BETWEEN 51 AND 70 THEN '51-70'
+          ELSE 'Over 70'
+        END
+      `,
+        'ageRange',
+      )
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('ageRange')
+      .getRawMany();
+
+    return {
+      genderStats,
+      cityStats,
+      ageRangeStats,
+      totalParticipants: await this.participantRepository.count(),
+    };
+  }
+
+  // Método privado para manejar situaciones identificadas
+  private async handleIdentifiedSituations(
+    participantId: number,
+    situations: IdentifiedSituation[],
+  ): Promise<void> {
+    // Obtener o crear las situaciones en la tabla de catálogo
+    const situationEntities: IdentifiedSituations[] = [];
+
+    for (const situation of situations) {
+      let situationEntity = await this.identifiedSituationsRepository.findOne({
+        where: { situation },
+      });
+
+      if (!situationEntity) {
+        situationEntity = this.identifiedSituationsRepository.create({
+          situation,
+        });
+        await this.identifiedSituationsRepository.save(situationEntity);
+      }
+
+      situationEntities.push(situationEntity);
+    }
+
+    // Actualizar las relaciones many-to-many
+    const participant = await this.participantRepository.findOne({
+      where: { id: participantId },
+      relations: ['identifiedSituations'],
+    });
+
+    if (participant) {
+      participant.identifiedSituations = situationEntities;
+      await this.participantRepository.save(participant);
+    }
+  }
+}

@@ -1,98 +1,226 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🏥 OOTS Colombia - Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+> **API REST completa para gestión de participantes en programas sociales y de salud mental desarrollada con NestJS, TypeORM y MySQL.**
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 📋 Descripción General
 
-## Description
+OOTS Colombia Backend es una API robusta diseñada para gestionar participantes en programas de atención psicosocial y salud mental. El sistema proporciona funcionalidades completas de autenticación, gestión de usuarios, catálogos de datos y registro detallado de participantes con sus historiales médicos y planes de intervención.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🚀 Tecnologías Principales
 
-## Project setup
+- **Framework**: [NestJS](https://nestjs.com/) v11.0.1
+- **Base de Datos**: MySQL 8.0 con [TypeORM](https://typeorm.io/) v0.3.27
+- **Autenticación**: JWT con [Passport](http://www.passportjs.org/)
+- **Validación**: [class-validator](https://github.com/typestack/class-validator) & [class-transformer](https://github.com/typestack/class-transformer)
+- **Documentación**: [Swagger/OpenAPI](https://swagger.io/)
+- **Contenedores**: [Docker](https://www.docker.com/) & Docker Compose
 
-```bash
-$ npm install
+## 🏗️ Arquitectura del Sistema
+
+```
+backend-oots/
+├── src/
+│   ├── auth/                 # 🔐 Módulo de Autenticación
+│   │   ├── dto/             # DTOs de autenticación
+│   │   ├── guards/          # Guards de JWT
+│   │   ├── strategies/      # Estrategias de Passport
+│   │   └── ...
+│   ├── users/               # 👥 Módulo de Usuarios
+│   │   ├── entities/        # Entidad User
+│   │   ├── dto/            # DTOs de usuarios
+│   │   └── ...
+│   ├── common/              # 📚 Módulo de Catálogos
+│   │   ├── entities/        # Entidades de catálogos
+│   │   ├── services/        # Servicios compartidos
+│   │   └── ...
+│   ├── participants/        # 🏥 Módulo de Participantes (En desarrollo)
+│   └── main.ts             # Punto de entrada
+├── docs/                    # 📖 Documentación detallada
+├── docker-compose.yml       # Configuración de Docker
+└── package.json
 ```
 
-## Compile and run the project
+## ⚡ Inicio Rápido
+
+### 📋 Prerrequisitos
+
+- [Node.js](https://nodejs.org/) >= 18.x
+- [Docker](https://www.docker.com/) & Docker Compose
+- [Git](https://git-scm.com/)
+
+### 🔧 Instalación
+
+1. **Clonar el repositorio:**
+
+   ```bash
+   git clone https://github.com/TaylorAsprilla/backendOOTS.git
+   cd backend-oots
+   ```
+
+2. **Instalar dependencias:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Configurar variables de entorno:**
+
+   ```bash
+   cp .env.example .env
+   # Editar .env con tus configuraciones
+   ```
+
+4. **Iniciar la base de datos con Docker:**
+
+   ```bash
+   docker-compose up -d
+   ```
+
+5. **Ejecutar el servidor en desarrollo:**
+   ```bash
+   npm run start:dev
+   ```
+
+La API estará disponible en: `http://localhost:3000`
+
+### 🐳 Configuración con Docker
 
 ```bash
-# development
-$ npm run start
+# Iniciar todos los servicios
+docker-compose up -d
 
-# watch mode
-$ npm run start:dev
+# Ver logs del contenedor
+docker-compose logs -f
 
-# production mode
-$ npm run start:prod
+# Detener servicios
+docker-compose down
 ```
 
-## Run tests
+## 📊 Módulos Principales
+
+### 🔐 Autenticación (Auth)
+
+- Registro de usuarios con validaciones robustas
+- Login con JWT tokens
+- Protección de rutas con Guards
+- Gestión de sesiones y tokens de acceso
+
+### 👥 Gestión de Usuarios (Users)
+
+- CRUD completo de usuarios
+- Soft delete con restauración
+- Validaciones de unicidad (email, teléfono)
+- Perfiles de usuario con información detallada
+
+### 📚 Catálogos (Common)
+
+- 15+ catálogos de datos maestros
+- Tipos de documento, géneros, estados civiles
+- Seguros de salud, niveles educativos
+- Tipos de vivienda, fuentes de ingresos
+
+### 🏥 Participantes (En desarrollo)
+
+- Registro completo de participantes
+- Historiales médicos y psicológicos
+- Planes de intervención y seguimiento
+- Notas de progreso y evaluaciones
+
+## 🛡️ Seguridad
+
+- **Autenticación JWT**: Tokens seguros con expiración configurable
+- **Encriptación de contraseñas**: bcrypt con salt rounds configurables
+- **Validación de entrada**: DTOs con class-validator
+- **Variables de entorno**: Configuraciones sensibles protegidas
+- **CORS**: Configuración para requests cross-origin
+
+## 📖 Documentación Detallada
+
+Para información completa sobre endpoints, ejemplos y guías de uso, consulta la carpeta [`docs/`](./docs/):
+
+- [🔐 Autenticación](./docs/authentication.md) - Endpoints de auth, login y registro
+- [👥 Usuarios](./docs/users.md) - Gestión completa de usuarios
+- [📚 Catálogos](./docs/catalogs.md) - Datos maestros y configuraciones
+- [🗄️ Base de Datos](./docs/database.md) - Esquemas y relaciones
+- [📝 Ejemplos](./docs/examples/) - Peticiones y respuestas completas
+
+## 🔧 Scripts Disponibles
 
 ```bash
-# unit tests
-$ npm run test
+# Desarrollo
+npm run start:dev          # Servidor en modo desarrollo con hot-reload
+npm run start:debug        # Servidor en modo debug
 
-# e2e tests
-$ npm run test:e2e
+# Producción
+npm run build              # Compilar proyecto
+npm run start:prod         # Ejecutar versión compilada
 
-# test coverage
-$ npm run test:cov
+# Testing
+npm run test               # Ejecutar tests unitarios
+npm run test:watch         # Tests en modo watch
+npm run test:e2e           # Tests end-to-end
+npm run test:cov           # Coverage de tests
+
+# Calidad de código
+npm run lint               # ESLint con auto-fix
+npm run format             # Prettier formatting
 ```
 
-## Deployment
+## 🌐 Endpoints Principales
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Método | Endpoint                  | Descripción          | Autenticación |
+| ------ | ------------------------- | -------------------- | ------------- |
+| `POST` | `/api/v1/auth/register`   | Registro de usuarios | ❌            |
+| `POST` | `/api/v1/auth/login`      | Login de usuarios    | ❌            |
+| `GET`  | `/api/v1/auth/profile`    | Perfil del usuario   | ✅            |
+| `GET`  | `/users`                  | Lista de usuarios    | ❌            |
+| `POST` | `/users`                  | Crear usuario        | ❌            |
+| `GET`  | `/api/v1/catalogs/all`    | Todos los catálogos  | ❌            |
+| `GET`  | `/api/v1/catalogs/{type}` | Catálogo específico  | ❌            |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 📈 Estado del Proyecto
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+- ✅ **Autenticación JWT**: Completado y funcional
+- ✅ **Gestión de Usuarios**: CRUD completo implementado
+- ✅ **Catálogos de Datos**: 15 catálogos implementados
+- ✅ **Base de Datos**: MySQL con Docker configurado
+- 🚧 **Módulo de Participantes**: En desarrollo
+- 🚧 **Documentación Swagger**: En progreso
+- ⏳ **Tests Unitarios**: Pendiente
+- ⏳ **Tests E2E**: Pendiente
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 🤝 Contribución
 
-## Resources
+1. Fork del proyecto
+2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir un Pull Request
 
-Check out a few resources that may come in handy when working with NestJS:
+## 📄 Licencia
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Este proyecto es privado y propietario. Todos los derechos reservados.
 
-## Support
+## 🆘 Soporte
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Para soporte técnico o consultas:
 
-## Stay in touch
+- **Desarrollador**: Taylor Asprilla
+- **Email**: [taylor.asprilla@example.com]
+- **Issues**: [GitHub Issues](https://github.com/TaylorAsprilla/backendOOTS/issues)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
-## License
+## 🔗 Enlaces Útiles
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- [Documentación de NestJS](https://docs.nestjs.com/)
+- [TypeORM Docs](https://typeorm.io/)
+- [JWT.io](https://jwt.io/)
+- [Docker Documentation](https://docs.docker.com/)
+
+---
+
+<div align="center">
+  <p><strong>Desarrollado con ❤️ por Taylor Asprilla</strong></p>
+  <p><em>Sistema OOTS Colombia - Gestión Integral de Participantes</em></p>
+</div>

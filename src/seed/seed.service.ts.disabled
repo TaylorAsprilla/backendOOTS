@@ -1,0 +1,49 @@
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { IdentifiedSituations } from '../participants/entities';
+import { IdentifiedSituation } from '../common/enums';
+
+@Injectable()
+export class SeedService implements OnModuleInit {
+  private readonly logger = new Logger(SeedService.name);
+
+  constructor(
+    @InjectRepository(IdentifiedSituations)
+    private readonly identifiedSituationsRepository: Repository<IdentifiedSituations>,
+  ) {}
+
+  async onModuleInit() {
+    await this.seedIdentifiedSituations();
+  }
+
+  private async seedIdentifiedSituations() {
+    try {
+      const existingSituations =
+        await this.identifiedSituationsRepository.count();
+
+      if (existingSituations === 0) {
+        this.logger.log('Seeding identified situations...');
+
+        const situations = Object.values(IdentifiedSituation);
+
+        for (const situation of situations) {
+          const situationEntity = this.identifiedSituationsRepository.create({
+            situation,
+          });
+          await this.identifiedSituationsRepository.save(situationEntity);
+        }
+
+        this.logger.log(
+          `Successfully seeded ${situations.length} identified situations`,
+        );
+      } else {
+        this.logger.log(
+          `Identified situations already exist (${existingSituations} records)`,
+        );
+      }
+    } catch (error) {
+      this.logger.error('Error seeding identified situations:', error);
+    }
+  }
+}

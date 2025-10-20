@@ -1,0 +1,369 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Put,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ParticipantsService } from './participants.service';
+import {
+  CreateParticipantDto,
+  UpdateParticipantDto,
+  SearchParticipantsDto,
+  CreateFamilyMemberDto,
+  CreateProgressNoteDto,
+  CreateInterventionPlanDto,
+  UpdateFamilyMemberDto,
+  UpdateProgressNoteDto,
+  UpdateInterventionPlanDto,
+} from './dto';
+import {
+  Participant,
+  FamilyMember,
+  ProgressNote,
+  InterventionPlan,
+} from './entities';
+
+@ApiTags('participants')
+@Controller('participants')
+export class ParticipantsController {
+  constructor(private readonly participantsService: ParticipantsService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create new participant' })
+  @ApiResponse({
+    status: 201,
+    description: 'The participant has been successfully created.',
+    type: Participant,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Document number already exists.',
+  })
+  create(
+    @Body() createParticipantDto: CreateParticipantDto,
+  ): Promise<Participant> {
+    return this.participantsService.create(createParticipantDto);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get all participants with optional filters and pagination',
+  })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description: 'Search by name, document, or phone',
+  })
+  @ApiQuery({ name: 'city', required: false, description: 'Filter by city' })
+  @ApiQuery({
+    name: 'gender',
+    required: false,
+    description: 'Filter by gender',
+  })
+  @ApiQuery({
+    name: 'maritalStatus',
+    required: false,
+    description: 'Filter by marital status',
+  })
+  @ApiQuery({
+    name: 'situations',
+    required: false,
+    description: 'Filter by identified situations',
+  })
+  @ApiQuery({
+    name: 'dateFrom',
+    required: false,
+    description: 'Filter from date',
+  })
+  @ApiQuery({ name: 'dateTo', required: false, description: 'Filter to date' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Sort field (default: createdAt)',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Sort order (ASC|DESC, default: DESC)',
+  })
+  findAll(@Query() searchDto: SearchParticipantsDto) {
+    return this.participantsService.findAll(searchDto);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Advanced search for participants' })
+  search(@Query() searchDto: SearchParticipantsDto) {
+    return this.participantsService.findAll(searchDto);
+  }
+
+  @Get('stats/demographics')
+  @ApiOperation({ summary: 'Get demographic statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Demographic statistics retrieved successfully.',
+  })
+  getDemographicStats() {
+    return this.participantsService.getDemographicStats();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get participant by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'The participant has been successfully retrieved.',
+    type: Participant,
+  })
+  @ApiResponse({ status: 404, description: 'Participant not found.' })
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<Participant> {
+    return this.participantsService.findOne(id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update participant completely' })
+  @ApiResponse({
+    status: 200,
+    description: 'The participant has been successfully updated.',
+    type: Participant,
+  })
+  @ApiResponse({ status: 404, description: 'Participant not found.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Document number already exists.',
+  })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateParticipantDto: UpdateParticipantDto,
+  ): Promise<Participant> {
+    return this.participantsService.update(id, updateParticipantDto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update participant partially' })
+  @ApiResponse({
+    status: 200,
+    description: 'The participant has been successfully updated.',
+    type: Participant,
+  })
+  @ApiResponse({ status: 404, description: 'Participant not found.' })
+  patch(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateParticipantDto: UpdateParticipantDto,
+  ): Promise<Participant> {
+    return this.participantsService.update(id, updateParticipantDto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete participant (soft delete)' })
+  @ApiResponse({
+    status: 204,
+    description: 'The participant has been successfully deleted.',
+  })
+  @ApiResponse({ status: 404, description: 'Participant not found.' })
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.participantsService.remove(id);
+  }
+
+  // GESTIÓN DE MIEMBROS DE FAMILIA
+  @Post(':id/family-members')
+  @ApiOperation({ summary: 'Add family member to participant' })
+  @ApiResponse({
+    status: 201,
+    description: 'Family member has been successfully added.',
+    type: FamilyMember,
+  })
+  @ApiResponse({ status: 404, description: 'Participant not found.' })
+  addFamilyMember(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Body() createFamilyMemberDto: CreateFamilyMemberDto,
+  ): Promise<FamilyMember> {
+    return this.participantsService.addFamilyMember(
+      participantId,
+      createFamilyMemberDto,
+    );
+  }
+
+  @Put(':id/family-members/:memberId')
+  @ApiOperation({ summary: 'Update family member' })
+  @ApiResponse({
+    status: 200,
+    description: 'Family member has been successfully updated.',
+    type: FamilyMember,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant or family member not found.',
+  })
+  updateFamilyMember(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Param('memberId', ParseIntPipe) memberId: number,
+    @Body() updateFamilyMemberDto: UpdateFamilyMemberDto,
+  ): Promise<FamilyMember> {
+    return this.participantsService.updateFamilyMember(
+      participantId,
+      memberId,
+      updateFamilyMemberDto,
+    );
+  }
+
+  @Delete(':id/family-members/:memberId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove family member' })
+  @ApiResponse({
+    status: 204,
+    description: 'Family member has been successfully removed.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant or family member not found.',
+  })
+  removeFamilyMember(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Param('memberId', ParseIntPipe) memberId: number,
+  ): Promise<void> {
+    return this.participantsService.removeFamilyMember(participantId, memberId);
+  }
+
+  // GESTIÓN DE NOTAS DE PROGRESO
+  @Post(':id/progress-notes')
+  @ApiOperation({ summary: 'Add progress note to participant' })
+  @ApiResponse({
+    status: 201,
+    description: 'Progress note has been successfully added.',
+    type: ProgressNote,
+  })
+  @ApiResponse({ status: 404, description: 'Participant not found.' })
+  addProgressNote(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Body() createProgressNoteDto: CreateProgressNoteDto,
+  ): Promise<ProgressNote> {
+    return this.participantsService.addProgressNote(
+      participantId,
+      createProgressNoteDto,
+    );
+  }
+
+  @Put(':id/progress-notes/:noteId')
+  @ApiOperation({ summary: 'Update progress note' })
+  @ApiResponse({
+    status: 200,
+    description: 'Progress note has been successfully updated.',
+    type: ProgressNote,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant or progress note not found.',
+  })
+  updateProgressNote(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Param('noteId', ParseIntPipe) noteId: number,
+    @Body() updateProgressNoteDto: UpdateProgressNoteDto,
+  ): Promise<ProgressNote> {
+    return this.participantsService.updateProgressNote(
+      participantId,
+      noteId,
+      updateProgressNoteDto,
+    );
+  }
+
+  @Delete(':id/progress-notes/:noteId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove progress note' })
+  @ApiResponse({
+    status: 204,
+    description: 'Progress note has been successfully removed.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant or progress note not found.',
+  })
+  removeProgressNote(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Param('noteId', ParseIntPipe) noteId: number,
+  ): Promise<void> {
+    return this.participantsService.removeProgressNote(participantId, noteId);
+  }
+
+  // GESTIÓN DE PLANES DE INTERVENCIÓN
+  @Post(':id/intervention-plans')
+  @ApiOperation({ summary: 'Add intervention plan to participant' })
+  @ApiResponse({
+    status: 201,
+    description: 'Intervention plan has been successfully added.',
+    type: InterventionPlan,
+  })
+  @ApiResponse({ status: 404, description: 'Participant not found.' })
+  addInterventionPlan(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Body() createInterventionPlanDto: CreateInterventionPlanDto,
+  ): Promise<InterventionPlan> {
+    return this.participantsService.addInterventionPlan(
+      participantId,
+      createInterventionPlanDto,
+    );
+  }
+
+  @Put(':id/intervention-plans/:planId')
+  @ApiOperation({ summary: 'Update intervention plan' })
+  @ApiResponse({
+    status: 200,
+    description: 'Intervention plan has been successfully updated.',
+    type: InterventionPlan,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant or intervention plan not found.',
+  })
+  updateInterventionPlan(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Param('planId', ParseIntPipe) planId: number,
+    @Body() updateInterventionPlanDto: UpdateInterventionPlanDto,
+  ): Promise<InterventionPlan> {
+    return this.participantsService.updateInterventionPlan(
+      participantId,
+      planId,
+      updateInterventionPlanDto,
+    );
+  }
+
+  @Delete(':id/intervention-plans/:planId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove intervention plan' })
+  @ApiResponse({
+    status: 204,
+    description: 'Intervention plan has been successfully removed.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Participant or intervention plan not found.',
+  })
+  removeInterventionPlan(
+    @Param('id', ParseIntPipe) participantId: number,
+    @Param('planId', ParseIntPipe) planId: number,
+  ): Promise<void> {
+    return this.participantsService.removeInterventionPlan(
+      participantId,
+      planId,
+    );
+  }
+}
