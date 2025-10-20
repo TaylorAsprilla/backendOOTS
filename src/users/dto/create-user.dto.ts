@@ -3,7 +3,6 @@ import {
   IsNotEmpty,
   IsEmail,
   IsOptional,
-  IsDateString,
   MinLength,
   MaxLength,
   Matches,
@@ -34,43 +33,33 @@ export class CreateUserDto {
   @MaxLength(50)
   secondLastName?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^[+]?[1-9][\d]{0,15}$/, {
-    message: 'phoneNumber must be a valid phone number',
-  })
-  phoneNumber: string;
-
   @IsEmail()
   @IsNotEmpty()
   @MaxLength(100)
   email: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MinLength(8)
   @MaxLength(255)
-  password?: string;
+  password: string;
 
   @IsString()
-  @IsNotEmpty()
-  @MinLength(5)
-  @MaxLength(20)
-  documentNumber: string;
+  @IsOptional()
+  @Matches(/^[+]?[1-9][\d]{0,15}$/, {
+    message: 'phoneNumber must be a valid phone number',
+  })
+  phoneNumber?: string;
 
   @IsString()
-  @IsNotEmpty()
-  @MinLength(10)
-  @MaxLength(200)
-  address: string;
-
-  @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(2)
   @MaxLength(100)
-  city: string;
+  position?: string;
 
-  @IsDateString()
-  @IsNotEmpty()
-  birthDate: string;
+  @IsString()
+  @IsOptional()
+  @MinLength(2)
+  @MaxLength(200)
+  organization?: string;
 }

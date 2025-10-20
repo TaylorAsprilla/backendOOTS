@@ -39,4 +39,14 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
   }
+
+  @Get('all/with-deleted')
+  findAllWithDeleted() {
+    return this.usersService.findAllWithDeleted();
+  }
+
+  @Patch(':id/restore')
+  restore(@Param('id') id: string) {
+    return this.usersService.restore(+id);
+  }
 }
