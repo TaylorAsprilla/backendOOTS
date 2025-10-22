@@ -6,6 +6,9 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  IsDateString,
+  IsNumber,
+  IsPositive,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -17,8 +20,6 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(2)
-  @MaxLength(50)
   secondName?: string;
 
   @IsString()
@@ -29,8 +30,6 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(2)
-  @MaxLength(50)
   secondLastName?: string;
 
   @IsEmail()
@@ -62,4 +61,31 @@ export class CreateUserDto {
   @MinLength(2)
   @MaxLength(200)
   organization?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(5)
+  @MaxLength(20)
+  documentNumber: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(5)
+  @MaxLength(200)
+  address: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(100)
+  city: string;
+
+  @IsDateString()
+  @IsNotEmpty()
+  birthDate: string;
+
+  @IsNumber()
+  @IsPositive()
+  @IsNotEmpty()
+  documentTypeId: number;
 }

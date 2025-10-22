@@ -4,15 +4,15 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
+  OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { TreatmentStatus } from '../../common/entities';
+import { Case } from './case.entity';
 
 @Entity('physical_health_history')
 export class PhysicalHealthHistory {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({
     name: 'physical_conditions',
@@ -21,9 +21,22 @@ export class PhysicalHealthHistory {
   })
   physicalConditions?: string;
 
-  @ManyToOne(() => TreatmentStatus, { eager: true, nullable: true })
-  @JoinColumn({ name: 'receiving_treatment_id' })
-  receivingTreatment?: TreatmentStatus;
+  @Column({ type: 'text', nullable: true })
+  allergies?: string;
+
+  @Column({ type: 'text', nullable: true })
+  surgicalHistory?: string;
+
+  @Column({ type: 'text', nullable: true })
+  hospitalizations?: string;
+
+  @Column({
+    name: 'receiving_treatment',
+    type: 'boolean',
+    nullable: true,
+    default: false,
+  })
+  receivingTreatment?: boolean;
 
   @Column({
     name: 'treatment_details',
@@ -53,9 +66,16 @@ export class PhysicalHealthHistory {
   })
   physicalHealthObservations?: string;
 
+  @Column({ name: 'case_id' })
+  caseId: number;
+
+  @OneToOne(() => Case, (caseEntity) => caseEntity.physicalHealthHistory)
+  @JoinColumn({ name: 'case_id' })
+  case: Case;
+
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

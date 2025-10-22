@@ -4,15 +4,15 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
+  OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { TreatmentStatus } from '../../common/entities';
+import { Case } from './case.entity';
 
 @Entity('mental_health_history')
 export class MentalHealthHistory {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({
     name: 'mental_conditions',
@@ -21,9 +21,13 @@ export class MentalHealthHistory {
   })
   mentalConditions?: string;
 
-  @ManyToOne(() => TreatmentStatus, { eager: true, nullable: true })
-  @JoinColumn({ name: 'receiving_mental_treatment_id' })
-  receivingMentalTreatment?: TreatmentStatus;
+  @Column({
+    name: 'receiving_mental_treatment',
+    type: 'boolean',
+    nullable: true,
+    default: false,
+  })
+  receivingMentalTreatment?: boolean;
 
   @Column({
     name: 'mental_treatment_details',
@@ -53,9 +57,16 @@ export class MentalHealthHistory {
   })
   mentalHealthObservations?: string;
 
+  @Column({ name: 'case_id' })
+  caseId: number;
+
+  @OneToOne(() => Case, (caseEntity) => caseEntity.mentalHealthHistory)
+  @JoinColumn({ name: 'case_id' })
+  case: Case;
+
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

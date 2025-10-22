@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     try {
       const user = await this.authService.validateUser(payload);
       return user;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
   }

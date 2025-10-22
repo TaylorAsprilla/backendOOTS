@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { CreateUserDto, LoginDto } from './dto';
+import { UserStatus } from '../common/enums';
 
 export interface JwtPayload {
   sub: number;
@@ -69,7 +70,7 @@ export class AuthService {
         access_token,
         user: savedUser.toResponseObject(),
       };
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Failed to create user');
     }
   }
@@ -77,9 +78,9 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     const { email, password } = loginDto;
 
-    // Buscar usuario por email
+    // Buscar usuario por email (solo usuarios activos)
     const user = await this.userRepository.findOne({
-      where: { email },
+      where: { email, status: UserStatus.ACTIVE },
       select: [
         'id',
         'email',
@@ -91,6 +92,7 @@ export class AuthService {
         'phoneNumber',
         'position',
         'organization',
+        'status',
       ],
     });
 

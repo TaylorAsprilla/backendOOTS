@@ -7,16 +7,15 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { ApproachType, ProcessType } from '../../common/entities';
-import { Participant } from './participant.entity';
+import { Case } from './case.entity';
 
 @Entity('progress_notes')
 export class ProgressNote {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'date', type: 'date' })
-  date: Date;
+  date!: Date;
 
   @Column({
     name: 'time',
@@ -26,17 +25,8 @@ export class ProgressNote {
   })
   time?: string;
 
-  @Column({ name: 'approach_type_id', type: 'int' })
-  approachTypeId: number;
-
-  @Column({
-    name: 'process_type_id',
-    type: 'int',
-  })
-  processTypeId: number;
-
   @Column({ name: 'summary', type: 'text' })
-  summary: string;
+  summary!: string;
 
   @Column({
     name: 'observations',
@@ -52,25 +42,23 @@ export class ProgressNote {
   })
   agreements?: string;
 
-  @Column({ name: 'participant_id', type: 'int' })
-  participantId: number;
+  @Column({ name: 'case_id', type: 'int' })
+  caseId!: number;
+
+  @Column({ name: 'approach_type_id', type: 'int' })
+  approachTypeId!: number;
+
+  @Column({ name: 'process_type_id', type: 'int' })
+  processTypeId!: number;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
-  // RELACIONES
-  @ManyToOne(() => Participant, (participant) => participant.progressNotes)
-  @JoinColumn({ name: 'participant_id' })
-  participant: Participant;
-
-  @ManyToOne(() => ApproachType, { eager: true })
-  @JoinColumn({ name: 'approach_type_id' })
-  approachType: ApproachType;
-
-  @ManyToOne(() => ProcessType, { eager: true })
-  @JoinColumn({ name: 'process_type_id' })
-  processType: ProcessType;
+  // Relations
+  @ManyToOne(() => Case, (caseEntity) => caseEntity.progressNotes)
+  @JoinColumn({ name: 'case_id' })
+  case!: Case;
 }

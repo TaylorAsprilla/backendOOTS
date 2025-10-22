@@ -4,17 +4,25 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import helmet from 'helmet';
+import compression from 'compression';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Configurar middleware de seguridad
+  app.use(helmet());
+  app.use(compression());
+
   // Configurar CORS para permitir peticiones desde Angular
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
+    'http://localhost:4200',
+    'http://127.0.0.1:4200',
+  ];
+
   app.enableCors({
-    origin: [
-      'http://localhost:4200', // Angular development server
-      'http://localhost:3000', // Si necesitas permitir desde el mismo puerto
-      'http://127.0.0.1:4200', // Alternativa de localhost
-    ],
+    origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
@@ -33,7 +41,10 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Configurar interceptores globales
-  app.useGlobalInterceptors(new LoggingInterceptor());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TransformInterceptor(),
+  );
 
   // Configurar validación global
   app.useGlobalPipes(

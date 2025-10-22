@@ -9,23 +9,23 @@ import {
 @Entity('process_types')
 export class ProcessType {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })
-  name: string;
+  name!: string;
 
   @Column({ name: 'code', type: 'varchar', length: 10, unique: true })
-  code: string;
+  code!: string;
 
   @Column({ name: 'description', type: 'text', nullable: true })
   description?: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

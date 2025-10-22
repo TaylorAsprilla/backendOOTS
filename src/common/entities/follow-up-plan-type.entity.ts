@@ -9,26 +9,26 @@ import {
 @Entity('follow_up_plan_types')
 export class FollowUpPlanType {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 200, unique: true })
-  name: string;
+  name!: string;
 
   @Column({ name: 'code', type: 'varchar', length: 50, unique: true })
-  code: string;
+  code!: string;
 
   @Column({ name: 'requires_details', type: 'boolean', default: false })
-  requiresDetails: boolean;
+  requiresDetails!: boolean;
 
   @Column({ name: 'description', type: 'text', nullable: true })
   description?: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

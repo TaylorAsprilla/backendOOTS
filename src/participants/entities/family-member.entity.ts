@@ -2,53 +2,52 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { FamilyRelationship, AcademicLevel } from '../../common/entities';
 import { Participant } from './participant.entity';
+import { FamilyRelationship, AcademicLevel } from '../../common/entities';
 
 @Entity('family_members')
 export class FamilyMember {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100 })
-  name: string;
+  name!: string;
 
-  @Column({ name: 'birth_date', type: 'date', nullable: true })
-  birthDate?: Date;
+  @Column({ name: 'birth_date', type: 'date' })
+  birthDate!: Date;
 
-  @Column({
-    name: 'occupation',
-    type: 'varchar',
-    length: 100,
-    nullable: true,
-  })
-  occupation?: string;
-
-  // RELACIONES CON CATÁLOGOS
-  @ManyToOne(() => FamilyRelationship, { eager: true })
-  @JoinColumn({ name: 'relationship_id' })
-  relationship: FamilyRelationship;
-
-  @ManyToOne(() => AcademicLevel, { eager: true, nullable: true })
-  @JoinColumn({ name: 'academic_level_id' })
-  academicLevel?: AcademicLevel;
+  @Column({ name: 'occupation', type: 'varchar', length: 200 })
+  occupation!: string;
 
   @Column({ name: 'participant_id', type: 'int' })
-  participantId: number;
+  participantId!: number;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  @Column({ name: 'family_relationship_id', type: 'int' })
+  familyRelationshipId!: number;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  @Column({ name: 'academic_level_id', type: 'int' })
+  academicLevelId!: number;
 
-  // RELACIONES
   @ManyToOne(() => Participant, (participant) => participant.familyMembers)
   @JoinColumn({ name: 'participant_id' })
-  participant: Participant;
+  participant!: Participant;
+
+  @ManyToOne(() => FamilyRelationship, { eager: true })
+  @JoinColumn({ name: 'family_relationship_id' })
+  familyRelationship!: FamilyRelationship;
+
+  @ManyToOne(() => AcademicLevel, { eager: true })
+  @JoinColumn({ name: 'academic_level_id' })
+  academicLevel!: AcademicLevel;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 }

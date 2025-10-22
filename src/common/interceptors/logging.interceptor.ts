@@ -13,10 +13,11 @@ import { Request, Response } from 'express';
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
-    const { method, url, ip, body } = request;
+    const { method, url, ip } = request;
+    const body = request.body as Record<string, unknown>;
     const userAgent = request.get('user-agent') || '';
     const start = Date.now();
 
@@ -41,7 +42,9 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 
-  private sanitizeRequestBody(body: any): any {
+  private sanitizeRequestBody(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (!body || typeof body !== 'object') {
       return body;
     }

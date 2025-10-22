@@ -129,10 +129,15 @@ docker-compose down
 ## 🛡️ Seguridad
 
 - **Autenticación JWT**: Tokens seguros con expiración configurable
-- **Encriptación de contraseñas**: bcrypt con salt rounds configurables
-- **Validación de entrada**: DTOs con class-validator
+- **Encriptación de contraseñas**: bcrypt con salt rounds configurables (12 rounds)
+- **Rate Limiting**: Protección contra ataques de fuerza bruta con @nestjs/throttler
+- **Middleware de Seguridad**: Helmet para headers de seguridad HTTP
+- **Compresión**: Middleware de compresión para optimización de respuestas
+- **Validación de entrada**: DTOs con class-validator y sanitización automática
 - **Variables de entorno**: Configuraciones sensibles protegidas
-- **CORS**: Configuración para requests cross-origin
+- **CORS**: Configuración estricta para requests cross-origin
+- **Logging**: Sistema de logs detallado con interceptores personalizados
+- **Filtros de Excepción**: Manejo centralizado de errores con información sanitizada
 
 ## 📖 Documentación Detallada
 
@@ -181,11 +186,16 @@ npm run format             # Prettier formatting
 ## 📈 Estado del Proyecto
 
 - ✅ **Autenticación JWT**: Completado y funcional
-- ✅ **Gestión de Usuarios**: CRUD completo implementado
+- ✅ **Gestión de Usuarios**: CRUD completo implementado con validación de estado
 - ✅ **Catálogos de Datos**: 15 catálogos implementados
-- ✅ **Base de Datos**: MySQL con Docker configurado
-- 🚧 **Módulo de Participantes**: En desarrollo
-- 🚧 **Documentación Swagger**: En progreso
+- ✅ **Base de Datos**: MySQL con Docker configurado y optimizado
+- ✅ **Seguridad**: Rate limiting, helmet, compresión implementados
+- ✅ **Logging y Monitoreo**: Interceptores personalizados funcionando
+- ✅ **Configuración Centralizada**: ConfigService con variables de entorno
+- ✅ **Manejo de Errores**: Filtros globales de excepciones
+- ✅ **Validación TypeScript**: Sin errores de compilación o linting
+- ❌ **Módulo de Participantes**: Temporalmente deshabilitado por conflictos de tipo
+- 🚧 **Documentación Swagger**: Configurado básicamente
 - ⏳ **Tests Unitarios**: Pendiente
 - ⏳ **Tests E2E**: Pendiente
 

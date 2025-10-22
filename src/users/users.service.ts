@@ -40,8 +40,13 @@ export class UsersService {
       }
     }
 
-    // Crear el nuevo usuario
-    const newUser = this.userRepository.create(createUserDto);
+    // Crear el nuevo usuario con conversión de fecha
+    const newUser = this.userRepository.create({
+      ...createUserDto,
+      birthDate: createUserDto.birthDate
+        ? new Date(createUserDto.birthDate)
+        : undefined,
+    });
 
     // Guardar el usuario en la base de datos
     const savedUser = await this.userRepository.save(newUser);
@@ -145,8 +150,12 @@ export class UsersService {
       }
     }
 
-    // Preparar datos para actualizar
-    const updateData: Partial<User> = { ...updateUserDto };
+    // Preparar datos para actualizar con conversión de fecha
+    const { birthDate, ...restData } = updateUserDto;
+    const updateData: Partial<User> = {
+      ...restData,
+      ...(birthDate && { birthDate: new Date(birthDate) }),
+    };
 
     // Actualizar el usuario
     await this.userRepository.update(id, updateData);

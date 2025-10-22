@@ -3,7 +3,6 @@ export { Gender } from './gender.entity';
 export { MaritalStatus } from './marital-status.entity';
 export { HealthInsurance } from './health-insurance.entity';
 export { HousingType } from './housing-type.entity';
-export { EmergencyContactRelationship } from './emergency-contact-relationship.entity';
 export { FamilyRelationship } from './family-relationship.entity';
 export { AcademicLevel } from './academic-level.entity';
 export { EducationLevel } from './education-level.entity';

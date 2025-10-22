@@ -2,62 +2,46 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { Participant } from './participant.entity';
+import { Case } from './case.entity';
 
 @Entity('intervention_plans')
 export class InterventionPlan {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
-  @Column({ name: 'goal', type: 'varchar', length: 500 })
-  goal: string;
+  @Column({ name: 'goal', type: 'text' })
+  goal!: string;
 
-  @Column({ name: 'objectives', type: 'varchar', length: 500 })
-  objectives: string;
+  @Column({ name: 'objectives', type: 'text' })
+  objectives!: string;
 
   @Column({ name: 'activities', type: 'text' })
-  activities: string;
+  activities!: string;
 
-  @Column({
-    name: 'timeframe',
-    type: 'varchar',
-    length: 100,
-    nullable: true,
-  })
-  timeframe?: string;
+  @Column({ name: 'timeframe', type: 'varchar', length: 100 })
+  timeframe!: string;
 
-  @Column({
-    name: 'responsible_person',
-    type: 'varchar',
-    length: 100,
-    nullable: true,
-  })
-  responsiblePerson?: string;
+  @Column({ name: 'responsible_person', type: 'varchar', length: 200 })
+  responsiblePerson!: string;
 
-  @Column({
-    name: 'evaluation_criteria',
-    type: 'varchar',
-    length: 500,
-    nullable: true,
-  })
-  evaluationCriteria?: string;
+  @Column({ name: 'evaluation_criteria', type: 'text' })
+  evaluationCriteria!: string;
 
-  @Column({ name: 'participant_id', type: 'int' })
-  participantId: number;
+  @Column({ name: 'case_id', type: 'int' })
+  caseId!: number;
+
+  @ManyToOne(() => Case, (caseEntity) => caseEntity.interventionPlans)
+  @JoinColumn({ name: 'case_id' })
+  case!: Case;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
-
-  // RELACIONES
-  @ManyToOne(() => Participant, (participant) => participant.interventionPlans)
-  @JoinColumn({ name: 'participant_id' })
-  participant: Participant;
+  updatedAt!: Date;
 }
