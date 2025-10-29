@@ -15,47 +15,39 @@ export class MentalHealthHistory {
   id!: number;
 
   @Column({
-    name: 'mental_conditions',
+    name: 'current_conditions',
     type: 'text',
     nullable: true,
   })
-  mentalConditions?: string;
+  currentConditions?: string;
 
   @Column({
-    name: 'receiving_mental_treatment',
-    type: 'boolean',
-    nullable: true,
-    default: false,
-  })
-  receivingMentalTreatment?: boolean;
-
-  @Column({
-    name: 'mental_treatment_details',
+    name: 'medications',
     type: 'text',
     nullable: true,
   })
-  mentalTreatmentDetails?: string;
+  medications?: string;
 
   @Column({
-    name: 'paternal_mental_history',
+    name: 'family_history_father',
     type: 'text',
     nullable: true,
   })
-  paternalMentalHistory?: string;
+  familyHistoryFather?: string;
 
   @Column({
-    name: 'maternal_mental_history',
+    name: 'family_history_mother',
     type: 'text',
     nullable: true,
   })
-  maternalMentalHistory?: string;
+  familyHistoryMother?: string;
 
   @Column({
-    name: 'mental_health_observations',
+    name: 'observations',
     type: 'text',
     nullable: true,
   })
-  mentalHealthObservations?: string;
+  observations?: string;
 
   @Column({ name: 'case_id' })
   caseId: number;

@@ -1,4 +1,5 @@
 export { Participant } from './participant.entity';
+export { Case } from './case.entity';
 export { ProgressNote } from './progress-note.entity';
 export { MentalHealthHistory } from './mental-health-history.entity';
 export { PhysicalHealthHistory } from './physical-health-history.entity';
@@ -7,8 +8,8 @@ export { FamilyMember } from './family-member.entity';
 export { BioPsychosocialHistory } from './bio-psychosocial-history.entity';
 export { ConsultationReason } from './consultation-reason.entity';
 export { Intervention } from './intervention.entity';
-export { FollowUpPlan } from './follow-up-plan.entity';
-export { Assessment } from './assessment.entity';
+export { CaseFollowUpPlan } from './case-follow-up-plan.entity';
 export { InterventionPlan } from './intervention-plan.entity';
 export { ClosingNote } from './closing-note.entity';
 export { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
+export { Ponderacion } from './ponderacion.entity';

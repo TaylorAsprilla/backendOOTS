@@ -15,56 +15,39 @@ export class PhysicalHealthHistory {
   id!: number;
 
   @Column({
-    name: 'physical_conditions',
+    name: 'current_conditions',
     type: 'text',
     nullable: true,
   })
-  physicalConditions?: string;
-
-  @Column({ type: 'text', nullable: true })
-  allergies?: string;
-
-  @Column({ type: 'text', nullable: true })
-  surgicalHistory?: string;
-
-  @Column({ type: 'text', nullable: true })
-  hospitalizations?: string;
+  currentConditions?: string;
 
   @Column({
-    name: 'receiving_treatment',
-    type: 'boolean',
-    nullable: true,
-    default: false,
-  })
-  receivingTreatment?: boolean;
-
-  @Column({
-    name: 'treatment_details',
+    name: 'medications',
     type: 'text',
     nullable: true,
   })
-  treatmentDetails?: string;
+  medications?: string;
 
   @Column({
-    name: 'paternal_family_history',
+    name: 'family_history_father',
     type: 'text',
     nullable: true,
   })
-  paternalFamilyHistory?: string;
+  familyHistoryFather?: string;
 
   @Column({
-    name: 'maternal_family_history',
+    name: 'family_history_mother',
     type: 'text',
     nullable: true,
   })
-  maternalFamilyHistory?: string;
+  familyHistoryMother?: string;
 
   @Column({
-    name: 'physical_health_observations',
+    name: 'observations',
     type: 'text',
     nullable: true,
   })
-  physicalHealthObservations?: string;
+  observations?: string;
 
   @Column({ name: 'case_id' })
   caseId: number;

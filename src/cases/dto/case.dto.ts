@@ -1,8 +1,6 @@
 import {
   IsString,
   IsNotEmpty,
-  MinLength,
-  MaxLength,
   IsEnum,
   IsOptional,
   IsObject,
@@ -17,222 +15,269 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CaseStatus } from '../../common/enums';
 
 // DTOs para las entidades médicas relacionadas con Case
-export class CreateBioPsychosocialHistoryDto {
-  @IsOptional()
-  @IsString()
-  completedGrade?: string;
-
-  @IsOptional()
-  @IsString()
-  institution?: string;
-
-  @IsOptional()
-  @IsString()
-  profession?: string;
-
-  @IsOptional()
-  @IsString()
-  occupationalHistory?: string;
-
-  @IsOptional()
-  @IsNumber()
-  housingTypeId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  educationLevelId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  incomeSourceId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  incomeLevelId?: number;
-
-  @IsOptional()
-  @IsString()
-  housing?: string;
-}
-
-export class CreateConsultationReasonDto {
-  @IsString()
-  @IsNotEmpty()
-  reason!: string;
-}
-
-export class CreateInterventionDto {
-  @IsString()
-  @IsNotEmpty()
-  intervention!: string;
-}
-
-export class CreateFollowUpPlanDto {
-  @IsString()
-  @IsNotEmpty()
-  plan!: string;
-}
-
 export class CreatePhysicalHealthHistoryDto {
+  @ApiProperty({
+    description: 'Condiciones médicas actuales que presenta el participante',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  physicalConditions?: string;
+  currentConditions?: string;
 
-  @IsOptional()
-  @IsBoolean()
-  receivingTreatment?: boolean;
-
-  @IsOptional()
-  @IsString()
-  treatmentDetails?: string;
-
+  @ApiProperty({
+    description: 'Medicamentos que toma actualmente',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  paternalFamilyHistory?: string;
+  medications?: string;
 
+  @ApiProperty({
+    description: 'Antecedentes familiares del padre',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  maternalFamilyHistory?: string;
+  familyHistoryFather?: string;
 
+  @ApiProperty({
+    description: 'Antecedentes familiares de la madre',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  physicalHealthObservations?: string;
+  familyHistoryMother?: string;
+
+  @ApiProperty({
+    description: 'Observaciones sobre salud física',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  observations?: string;
 }
 
 export class CreateMentalHealthHistoryDto {
+  @ApiProperty({
+    description: 'Condiciones mentales actuales que presenta el participante',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  mentalConditions?: string;
+  currentConditions?: string;
 
-  @IsOptional()
-  @IsBoolean()
-  receivingMentalTreatment?: boolean;
-
-  @IsOptional()
-  @IsString()
-  mentalTreatmentDetails?: string;
-
+  @ApiProperty({
+    description: 'Medicamentos que toma actualmente',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  paternalMentalHistory?: string;
+  medications?: string;
 
+  @ApiProperty({
+    description: 'Antecedentes familiares del padre',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  maternalMentalHistory?: string;
+  familyHistoryFather?: string;
 
+  @ApiProperty({
+    description: 'Antecedentes familiares de la madre',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  mentalHealthObservations?: string;
-}
+  familyHistoryMother?: string;
 
-export class CreateAssessmentDto {
+  @ApiProperty({
+    description: 'Observaciones sobre salud mental',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  consultationReason?: string;
-
-  @IsOptional()
-  @IsString()
-  weighting?: string;
-
-  @IsOptional()
-  @IsString()
-  concurrentFactors?: string;
-
-  @IsOptional()
-  @IsString()
-  criticalFactors?: string;
-
-  @IsOptional()
-  @IsString()
-  problemAnalysis?: string;
+  observations?: string;
 }
 
 export class CreateInterventionPlanDto {
+  @ApiProperty({
+    description: 'Meta del plan de intervención',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   goal?: string;
 
+  @ApiProperty({
+    description: 'Objetivos específicos a lograr con este plan',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   objectives?: string;
 
+  @ApiProperty({
+    description: 'Actividades concretas a realizar',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   activities?: string;
 
+  @ApiProperty({
+    description: 'Tiempo estimado para completar este plan',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  timeframe?: string;
+  timeline?: string;
 
+  @ApiProperty({
+    description: 'Profesional responsable de ejecutar el plan',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  responsiblePerson?: string;
+  responsible?: string;
 
+  @ApiProperty({
+    description: 'Criterios de evaluación',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   evaluationCriteria?: string;
 }
 
 export class CreateProgressNoteDto {
+  @ApiProperty({
+    description: 'Fecha en que se realizó la sesión',
+    example: '2024-03-01',
+  })
   @IsDateString()
-  date!: string;
+  sessionDate!: string;
 
+  @ApiProperty({
+    description: 'Tipo de sesión: INDIVIDUAL, GRUPAL, FAMILIAR, EVALUACION',
+    required: false,
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  time!: string;
+  sessionType?: string;
 
+  @ApiProperty({
+    description: 'Resumen de la sesión',
+    required: false,
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  approachType!: string;
+  summary?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  process!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  summary!: string;
-
+  @ApiProperty({
+    description: 'Observaciones adicionales relevantes',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   observations?: string;
 
+  @ApiProperty({
+    description: 'Acuerdos tomados',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   agreements?: string;
 }
 
-export class CreateReferralsDto {
+export class CreatePonderacionDto {
+  @ApiProperty({
+    description:
+      'Análisis del motivo de consulta desde perspectiva profesional',
+    required: false,
+  })
   @IsOptional()
   @IsString()
-  description?: string;
+  consultationMotiveAnalysis?: string;
+
+  @ApiProperty({
+    description: 'Análisis de las situaciones problemáticas identificadas',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  identifiedSituationAnalysis?: string;
+
+  @ApiProperty({
+    description: 'Condiciones que favorecen el proceso terapéutico',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  favorableConditions?: string;
+
+  @ApiProperty({
+    description: 'Condiciones que pueden dificultar el proceso terapéutico',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  unfavorableConditions?: string;
+
+  @ApiProperty({
+    description: 'Enfoque teórico o modelo terapéutico a aplicar',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  theoreticalApproach?: string;
+}
+
+export class CreateClosingNoteDto {
+  @ApiProperty({
+    description: 'Fecha en que se cierra el caso',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  closingDate?: string;
+
+  @ApiProperty({
+    description:
+      'Razón del cierre: TREATMENT_COMPLETED, PARTICIPANT_WITHDRAWAL, TRANSFER, NO_SHOW, OTHER',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+
+  @ApiProperty({
+    description: 'Logros alcanzados durante el tratamiento',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  achievements?: string;
+
+  @ApiProperty({
+    description: 'Recomendaciones para el participante post-cierre',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  recommendations?: string;
+
+  @ApiProperty({
+    description: 'Observaciones finales sobre el caso',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  observations?: string;
 }
 
 export class CreateCaseDto {
-  // INFORMACIÓN BÁSICA DEL CASO
-  @ApiProperty({
-    description: 'Título breve del caso',
-    example: 'Consulta por ansiedad post-separación',
-    minLength: 5,
-    maxLength: 200,
-  })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(5)
-  @MaxLength(200)
-  title!: string;
-
-  @ApiProperty({
-    description: 'Descripción detallada del caso',
-    example:
-      'Paciente presenta síntomas de ansiedad y dificultades para conciliar el sueño tras separación matrimonial reciente. Requiere acompañamiento psicológico y orientación espiritual.',
-    minLength: 10,
-  })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(10)
-  description!: string;
-
+  // 1. INFORMACIÓN BÁSICA DEL CASO (id, caseNumber, status, participantId, createdAt/updatedAt se manejan automáticamente)
   @ApiProperty({
     description: 'ID del participante para quien se crea el caso',
     example: 1,
@@ -241,47 +286,53 @@ export class CreateCaseDto {
   @IsNotEmpty()
   participantId!: number;
 
-  // INFORMACIÓN MÉDICA/CLÍNICA DEL CASO
-  @ApiProperty({
-    description: 'Historia biopsicosocial del caso',
-    required: false,
-  })
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreateBioPsychosocialHistoryDto)
-  bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
-
+  // 2. MOTIVO DE LA CONSULTA - ahora es string simple
   @ApiProperty({
     description: 'Motivo de consulta del caso',
     required: false,
+    example:
+      'El participante presenta síntomas de ansiedad y estrés post-separación matrimonial',
   })
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreateConsultationReasonDto)
-  consultationReason?: CreateConsultationReasonDto;
+  @IsString()
+  consultationReason?: string;
 
+  // 3. SITUACIONES IDENTIFICADAS
+  @ApiProperty({
+    description: 'IDs de situaciones identificadas del catálogo',
+    required: false,
+    type: [Number],
+    example: [1, 3, 5, 8],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  identifiedSituations?: number[];
+
+  // 4. INTERVENCIÓN INICIAL - ahora es string simple
   @ApiProperty({
     description: 'Intervención inicial del caso',
     required: false,
+    example:
+      'Se evidencia sintomatología ansiosa moderada con afectación del sueño y concentración',
   })
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreateInterventionDto)
-  intervention?: CreateInterventionDto;
+  @IsString()
+  intervention?: string;
 
+  // 5. PLAN DE SEGUIMIENTO - ahora es array de IDs
   @ApiProperty({
-    description: 'Plan de seguimiento del caso',
+    description: 'IDs de planes de seguimiento del catálogo',
     required: false,
+    type: [Number],
+    example: [1, 2, 3],
   })
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreateFollowUpPlanDto)
-  followUpPlan?: CreateFollowUpPlanDto;
+  @IsArray()
+  @IsNumber({}, { each: true })
+  followUpPlan?: number[];
 
+  // 6. HISTORIA DE SALUD FÍSICA
   @ApiProperty({
     description: 'Historia de salud física del caso',
     required: false,
@@ -292,6 +343,7 @@ export class CreateCaseDto {
   @Type(() => CreatePhysicalHealthHistoryDto)
   physicalHealthHistory?: CreatePhysicalHealthHistoryDto;
 
+  // 7. HISTORIA DE SALUD MENTAL
   @ApiProperty({
     description: 'Historia de salud mental del caso',
     required: false,
@@ -302,16 +354,18 @@ export class CreateCaseDto {
   @Type(() => CreateMentalHealthHistoryDto)
   mentalHealthHistory?: CreateMentalHealthHistoryDto;
 
+  // 8. PONDERACIÓN
   @ApiProperty({
-    description: 'Evaluación del caso',
+    description: 'Ponderación del caso (análisis profesional integral)',
     required: false,
   })
   @IsOptional()
   @IsObject()
   @ValidateNested()
-  @Type(() => CreateAssessmentDto)
-  assessment?: CreateAssessmentDto;
+  @Type(() => CreatePonderacionDto)
+  ponderacion?: CreatePonderacionDto;
 
+  // 9. PLANES DE INTERVENCIÓN DETALLADOS
   @ApiProperty({
     description: 'Planes de intervención del caso',
     required: false,
@@ -323,6 +377,7 @@ export class CreateCaseDto {
   @Type(() => CreateInterventionPlanDto)
   interventionPlans?: CreateInterventionPlanDto[];
 
+  // 10. NOTAS DE PROGRESO
   @ApiProperty({
     description: 'Notas de progreso del caso',
     required: false,
@@ -334,15 +389,27 @@ export class CreateCaseDto {
   @Type(() => CreateProgressNoteDto)
   progressNotes?: CreateProgressNoteDto[];
 
+  // 11. REFERIDOS - ahora es string simple
   @ApiProperty({
-    description: 'Referencias del caso',
+    description: 'Referidos del caso con justificación',
+    required: false,
+    example:
+      'Considerar evaluación si persiste alteración del sueño después de 4 semanas de terapia',
+  })
+  @IsOptional()
+  @IsString()
+  referrals?: string;
+
+  // 12. NOTA DE CIERRE
+  @ApiProperty({
+    description: 'Nota de cierre del caso',
     required: false,
   })
   @IsOptional()
   @IsObject()
   @ValidateNested()
-  @Type(() => CreateReferralsDto)
-  referrals?: CreateReferralsDto;
+  @Type(() => CreateClosingNoteDto)
+  closingNote?: CreateClosingNoteDto;
 }
 
 export class UpdateCaseStatusDto {

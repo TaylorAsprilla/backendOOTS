@@ -14,27 +14,12 @@ export class Referrals {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: 'text', nullable: true })
-  externalReferrals?: string;
-
-  @Column({ type: 'text', nullable: true })
-  internalReferrals?: string;
-
   @Column({
-    name: 'description',
+    name: 'referrals',
     type: 'text',
     nullable: true,
   })
-  description?: string;
-
-  @Column({ type: 'text', nullable: true })
-  reasonForReferral?: string;
-
-  @Column({ type: 'text', nullable: true })
-  urgencyLevel?: string;
-
-  @Column({ type: 'text', nullable: true })
-  followUpRequired?: string;
+  referrals?: string;
 
   @Column({ name: 'case_id' })
   caseId: number;

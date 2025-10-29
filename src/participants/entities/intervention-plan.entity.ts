@@ -14,23 +14,23 @@ export class InterventionPlan {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ name: 'goal', type: 'text' })
-  goal!: string;
+  @Column({ name: 'goal', type: 'text', nullable: true })
+  goal?: string;
 
-  @Column({ name: 'objectives', type: 'text' })
-  objectives!: string;
+  @Column({ name: 'objectives', type: 'text', nullable: true })
+  objectives?: string;
 
-  @Column({ name: 'activities', type: 'text' })
-  activities!: string;
+  @Column({ name: 'activities', type: 'text', nullable: true })
+  activities?: string;
 
-  @Column({ name: 'timeframe', type: 'varchar', length: 100 })
-  timeframe!: string;
+  @Column({ name: 'timeline', type: 'varchar', length: 100, nullable: true })
+  timeline?: string;
 
-  @Column({ name: 'responsible_person', type: 'varchar', length: 200 })
-  responsiblePerson!: string;
+  @Column({ name: 'responsible', type: 'varchar', length: 200, nullable: true })
+  responsible?: string;
 
-  @Column({ name: 'evaluation_criteria', type: 'text' })
-  evaluationCriteria!: string;
+  @Column({ name: 'evaluation_criteria', type: 'text', nullable: true })
+  evaluationCriteria?: string;
 
   @Column({ name: 'case_id', type: 'int' })
   caseId!: number;

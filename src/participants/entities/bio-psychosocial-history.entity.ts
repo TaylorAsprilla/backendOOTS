@@ -8,7 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Case } from './case.entity';
+import { Participant } from './participant.entity';
 import {
   EducationLevel,
   IncomeSource,
@@ -41,8 +41,8 @@ export class BioPsychosocialHistory {
   @Column({ name: 'housing', type: 'text', nullable: true })
   housing?: string;
 
-  @Column({ name: 'case_id', type: 'int', unique: true })
-  caseId!: number;
+  @Column({ name: 'participant_id', type: 'int', unique: true })
+  participantId!: number;
 
   @Column({ name: 'education_level_id', type: 'int', nullable: true })
   educationLevelId?: number;
@@ -56,9 +56,12 @@ export class BioPsychosocialHistory {
   @Column({ name: 'housing_type_id', type: 'int', nullable: true })
   housingTypeId?: number;
 
-  @OneToOne(() => Case, (caseEntity) => caseEntity.bioPsychosocialHistory)
-  @JoinColumn({ name: 'case_id' })
-  case!: Case;
+  @OneToOne(
+    () => Participant,
+    (participant) => participant.bioPsychosocialHistory,
+  )
+  @JoinColumn({ name: 'participant_id' })
+  participant!: Participant;
 
   @ManyToOne(() => EducationLevel, { eager: true, nullable: true })
   @JoinColumn({ name: 'education_level_id' })

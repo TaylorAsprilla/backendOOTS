@@ -11,16 +11,17 @@ import {
 } from 'typeorm';
 import { CaseStatus } from '../../common/enums';
 import { Participant } from './participant.entity';
-import { BioPsychosocialHistory } from './bio-psychosocial-history.entity';
 import { PhysicalHealthHistory } from './physical-health-history.entity';
 import { MentalHealthHistory } from './mental-health-history.entity';
 import { ConsultationReason } from './consultation-reason.entity';
-import { Assessment } from './assessment.entity';
 import { Intervention } from './intervention.entity';
-import { FollowUpPlan } from './follow-up-plan.entity';
 import { InterventionPlan } from './intervention-plan.entity';
 import { ProgressNote } from './progress-note.entity';
 import { Referrals } from './referrals.entity';
+import { ClosingNote } from './closing-note.entity';
+import { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
+import { Ponderacion } from './ponderacion.entity';
+import { CaseFollowUpPlan } from './case-follow-up-plan.entity';
 
 @Entity('cases')
 export class Case {
@@ -29,12 +30,6 @@ export class Case {
 
   @Column({ name: 'case_number', type: 'varchar', length: 20, unique: true })
   caseNumber!: string;
-
-  @Column({ name: 'title', type: 'varchar', length: 200 })
-  title!: string;
-
-  @Column({ name: 'description', type: 'text' })
-  description!: string;
 
   @Column({
     name: 'status',
@@ -51,56 +46,70 @@ export class Case {
   @JoinColumn({ name: 'participant_id' })
   participant!: Participant;
 
-  // RELACIONES CLÍNICAS (antes estaban en Participant)
-  @OneToOne(() => BioPsychosocialHistory, (history) => history.case, {
-    cascade: true,
-  })
-  bioPsychosocialHistory!: BioPsychosocialHistory;
-
-  @OneToOne(() => PhysicalHealthHistory, (history) => history.case, {
-    cascade: true,
-  })
-  physicalHealthHistory!: PhysicalHealthHistory;
-
-  @OneToOne(() => MentalHealthHistory, (history) => history.case, {
-    cascade: true,
-  })
-  mentalHealthHistory!: MentalHealthHistory;
-
+  // 2. MOTIVO DE LA CONSULTA
   @OneToOne(() => ConsultationReason, (reason) => reason.case, {
     cascade: true,
   })
   consultationReason!: ConsultationReason;
 
-  @OneToOne(() => Assessment, (assessment) => assessment.case, {
-    cascade: true,
-  })
-  assessment!: Assessment;
-
+  // 4. INTERVENCIÓN INICIAL
   @OneToOne(() => Intervention, (intervention) => intervention.case, {
     cascade: true,
   })
   intervention!: Intervention;
 
-  @OneToOne(() => FollowUpPlan, (plan) => plan.case, {
+  // 5. PLAN DE SEGUIMIENTO - ahora es many-to-many con IDs
+  @OneToMany(() => CaseFollowUpPlan, (cfp) => cfp.case, {
     cascade: true,
   })
-  followUpPlan!: FollowUpPlan;
+  caseFollowUpPlans!: CaseFollowUpPlan[];
 
+  // 6. HISTORIA DE SALUD FÍSICA
+  @OneToOne(() => PhysicalHealthHistory, (history) => history.case, {
+    cascade: true,
+  })
+  physicalHealthHistory!: PhysicalHealthHistory;
+
+  // 7. HISTORIA DE SALUD MENTAL
+  @OneToOne(() => MentalHealthHistory, (history) => history.case, {
+    cascade: true,
+  })
+  mentalHealthHistory!: MentalHealthHistory;
+
+  // 8. PONDERACIÓN
+  @OneToOne(() => Ponderacion, (ponderacion) => ponderacion.case, {
+    cascade: true,
+  })
+  ponderacion!: Ponderacion;
+
+  // 9. PLANES DE INTERVENCIÓN DETALLADOS
   @OneToMany(() => InterventionPlan, (plan) => plan.case, {
     cascade: true,
   })
   interventionPlans!: InterventionPlan[];
 
+  // 10. NOTAS DE PROGRESO
   @OneToMany(() => ProgressNote, (note) => note.case, {
     cascade: true,
   })
   progressNotes!: ProgressNote[];
 
+  // 11. REFERIDOS (MENCIONAR Y JUSTIFICAR)
   @OneToOne(() => Referrals, (referrals) => referrals.case, {
     cascade: true,
   })
   referrals!: Referrals;
+
+  // 12. NOTA DE CIERRE
+  @OneToOne(() => ClosingNote, { cascade: true })
+  @JoinColumn()
+  closingNote!: ClosingNote;
+
+  // 3. SITUACIONES IDENTIFICADAS
+  @OneToMany(() => ParticipantIdentifiedSituation, (pis) => pis.caseId, {
+    cascade: true,
+  })
+  participantIdentifiedSituations!: ParticipantIdentifiedSituation[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

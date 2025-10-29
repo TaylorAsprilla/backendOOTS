@@ -7,16 +7,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Case } from '../participants/entities/case.entity';
 import { Participant } from '../participants/entities/participant.entity';
-import { BioPsychosocialHistory } from '../participants/entities/bio-psychosocial-history.entity';
 import { ConsultationReason } from '../participants/entities/consultation-reason.entity';
 import { Intervention } from '../participants/entities/intervention.entity';
-import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
+import { CaseFollowUpPlan } from '../participants/entities/case-follow-up-plan.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
 import { MentalHealthHistory } from '../participants/entities/mental-health-history.entity';
-import { Assessment } from '../participants/entities/assessment.entity';
+import { Ponderacion } from '../participants/entities/ponderacion.entity';
 import { InterventionPlan } from '../participants/entities/intervention-plan.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { Referrals } from '../participants/entities/referrals.entity';
+import { ClosingNote } from '../participants/entities/closing-note.entity';
+import { ParticipantIdentifiedSituation } from '../participants/entities/participant-identified-situation.entity';
+import { IdentifiedSituation } from '../common/entities';
+import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
 import { CreateCaseDto, UpdateCaseStatusDto } from './dto/case.dto';
 import { CaseStatus } from '../common/enums';
 
@@ -27,26 +30,32 @@ export class CasesService {
     private readonly caseRepository: Repository<Case>,
     @InjectRepository(Participant)
     private readonly participantRepository: Repository<Participant>,
-    @InjectRepository(BioPsychosocialHistory)
-    private readonly bioPsychosocialHistoryRepository: Repository<BioPsychosocialHistory>,
     @InjectRepository(ConsultationReason)
     private readonly consultationReasonRepository: Repository<ConsultationReason>,
     @InjectRepository(Intervention)
     private readonly interventionRepository: Repository<Intervention>,
-    @InjectRepository(FollowUpPlan)
-    private readonly followUpPlanRepository: Repository<FollowUpPlan>,
+    @InjectRepository(CaseFollowUpPlan)
+    private readonly caseFollowUpPlanRepository: Repository<CaseFollowUpPlan>,
     @InjectRepository(PhysicalHealthHistory)
     private readonly physicalHealthHistoryRepository: Repository<PhysicalHealthHistory>,
     @InjectRepository(MentalHealthHistory)
     private readonly mentalHealthHistoryRepository: Repository<MentalHealthHistory>,
-    @InjectRepository(Assessment)
-    private readonly assessmentRepository: Repository<Assessment>,
+    @InjectRepository(Ponderacion)
+    private readonly ponderacionRepository: Repository<Ponderacion>,
     @InjectRepository(InterventionPlan)
     private readonly interventionPlanRepository: Repository<InterventionPlan>,
     @InjectRepository(ProgressNote)
     private readonly progressNoteRepository: Repository<ProgressNote>,
     @InjectRepository(Referrals)
     private readonly referralsRepository: Repository<Referrals>,
+    @InjectRepository(ClosingNote)
+    private readonly closingNoteRepository: Repository<ClosingNote>,
+    @InjectRepository(ParticipantIdentifiedSituation)
+    private readonly participantIdentifiedSituationRepository: Repository<ParticipantIdentifiedSituation>,
+    @InjectRepository(IdentifiedSituation)
+    private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
+    @InjectRepository(FollowUpPlanCatalog)
+    private readonly followUpPlanCatalogRepository: Repository<FollowUpPlanCatalog>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -67,10 +76,8 @@ export class CasesService {
       // Generar número de caso único
       const caseNumber = await this.generateCaseNumber();
 
-      // Crear el caso
+      // Crear el caso (sin title y description separados)
       const newCase = manager.create(Case, {
-        title: createCaseDto.title,
-        description: createCaseDto.description,
         caseNumber,
         participantId: createCaseDto.participantId,
         status: CaseStatus.OPEN,
@@ -78,40 +85,43 @@ export class CasesService {
 
       const savedCase = await manager.save(newCase);
 
-      // Crear BioPsychosocialHistory si se proporciona
-      if (createCaseDto.bioPsychosocialHistory) {
-        const bioPsychosocialHistory = manager.create(BioPsychosocialHistory, {
-          ...createCaseDto.bioPsychosocialHistory,
-          caseId: savedCase.id,
-        });
-        await manager.save(bioPsychosocialHistory);
-      }
-
-      // Crear ConsultationReason si se proporciona
+      // 2. Crear ConsultationReason si se proporciona (ahora es string simple)
       if (createCaseDto.consultationReason) {
         const consultationReason = manager.create(ConsultationReason, {
-          ...createCaseDto.consultationReason,
+          reason: createCaseDto.consultationReason,
           caseId: savedCase.id,
         });
         await manager.save(consultationReason);
       }
 
-      // Crear Intervention si se proporciona
+      // 4. Crear Intervention si se proporciona (ahora es string simple)
       if (createCaseDto.intervention) {
         const intervention = manager.create(Intervention, {
-          ...createCaseDto.intervention,
+          intervention: createCaseDto.intervention,
           caseId: savedCase.id,
         });
         await manager.save(intervention);
       }
 
-      // Crear FollowUpPlan si se proporciona
-      if (createCaseDto.followUpPlan) {
-        const followUpPlan = manager.create(FollowUpPlan, {
-          ...createCaseDto.followUpPlan,
-          caseId: savedCase.id,
-        });
-        await manager.save(followUpPlan);
+      // 5. Crear relaciones con FollowUpPlan si se proporcionan (ahora es array de IDs)
+      if (createCaseDto.followUpPlan && createCaseDto.followUpPlan.length > 0) {
+        for (const followUpPlanId of createCaseDto.followUpPlan) {
+          // Verificar que el plan existe
+          const followUpPlanExists = await manager.findOne(
+            FollowUpPlanCatalog,
+            {
+              where: { id: followUpPlanId, isActive: true },
+            },
+          );
+
+          if (followUpPlanExists) {
+            const caseFollowUpPlan = manager.create(CaseFollowUpPlan, {
+              caseId: savedCase.id,
+              followUpPlanId: followUpPlanId,
+            });
+            await manager.save(caseFollowUpPlan);
+          }
+        }
       }
 
       // Crear PhysicalHealthHistory si se proporciona
@@ -132,16 +142,16 @@ export class CasesService {
         await manager.save(mentalHealthHistory);
       }
 
-      // Crear Assessment si se proporciona
-      if (createCaseDto.assessment) {
-        const assessment = manager.create(Assessment, {
-          ...createCaseDto.assessment,
+      // 8. Crear Ponderacion si se proporciona
+      if (createCaseDto.ponderacion) {
+        const ponderacion = manager.create(Ponderacion, {
+          ...createCaseDto.ponderacion,
           caseId: savedCase.id,
         });
-        await manager.save(assessment);
+        await manager.save(ponderacion);
       }
 
-      // Crear InterventionPlans si se proporcionan
+      // 9. Crear InterventionPlans si se proporcionan
       if (
         createCaseDto.interventionPlans &&
         createCaseDto.interventionPlans.length > 0
@@ -155,30 +165,110 @@ export class CasesService {
         }
       }
 
-      // Crear ProgressNotes si se proporcionan
+      // 10. Crear ProgressNotes si se proporcionan
       if (
         createCaseDto.progressNotes &&
         createCaseDto.progressNotes.length > 0
       ) {
         for (const noteData of createCaseDto.progressNotes) {
           const progressNote = manager.create(ProgressNote, {
-            ...noteData,
+            sessionDate: new Date(noteData.sessionDate),
+            sessionType: noteData.sessionType,
+            summary: noteData.summary,
+            observations: noteData.observations,
+            agreements: noteData.agreements,
             caseId: savedCase.id,
           });
           await manager.save(progressNote);
         }
       }
 
-      // Crear Referrals si se proporciona
+      // 11. Crear Referrals si se proporciona (ahora es string simple)
       if (createCaseDto.referrals) {
         const referrals = manager.create(Referrals, {
-          ...createCaseDto.referrals,
+          referrals: createCaseDto.referrals,
           caseId: savedCase.id,
         });
         await manager.save(referrals);
       }
 
-      return savedCase;
+      // 3. Crear situaciones identificadas si se proporcionan
+      if (
+        createCaseDto.identifiedSituations &&
+        createCaseDto.identifiedSituations.length > 0
+      ) {
+        // Buscar las situaciones identificadas por ID
+        const situationPromises = createCaseDto.identifiedSituations.map(
+          async (situationId) => {
+            const identifiedSituation = await manager.findOne(
+              IdentifiedSituation,
+              {
+                where: { id: situationId, isActive: true },
+              },
+            );
+
+            if (identifiedSituation) {
+              return manager.create(ParticipantIdentifiedSituation, {
+                caseId: savedCase.id,
+                identifiedSituationId: identifiedSituation.id,
+              });
+            }
+            return null;
+          },
+        );
+
+        const resolvedSituations = await Promise.all(situationPromises);
+        const validSituations = resolvedSituations.filter(
+          (situation): situation is ParticipantIdentifiedSituation =>
+            situation !== null,
+        );
+
+        if (validSituations.length > 0) {
+          await manager.save(validSituations);
+        }
+      }
+
+      // 12. Crear nota de cierre si se proporciona
+      if (createCaseDto.closingNote) {
+        const closingNote = manager.create(ClosingNote, {
+          closingDate: createCaseDto.closingNote.closingDate
+            ? new Date(createCaseDto.closingNote.closingDate)
+            : undefined,
+          reason: createCaseDto.closingNote.reason,
+          achievements: createCaseDto.closingNote.achievements,
+          recommendations: createCaseDto.closingNote.recommendations,
+          observations: createCaseDto.closingNote.observations,
+          caseId: savedCase.id,
+        });
+        await manager.save(closingNote);
+      }
+
+      // Retornar el caso completo con todas las relaciones
+      const completeCase = await manager.findOne(Case, {
+        where: { id: savedCase.id },
+        relations: [
+          'participant',
+          'consultationReason',
+          'intervention',
+          'caseFollowUpPlans',
+          'caseFollowUpPlans.followUpPlan',
+          'physicalHealthHistory',
+          'mentalHealthHistory',
+          'ponderacion',
+          'interventionPlans',
+          'progressNotes',
+          'referrals',
+          'closingNote',
+          'participantIdentifiedSituations',
+          'participantIdentifiedSituations.identifiedSituation',
+        ],
+      });
+
+      if (!completeCase) {
+        throw new NotFoundException('Error al recuperar el caso creado');
+      }
+
+      return completeCase;
     });
   }
 

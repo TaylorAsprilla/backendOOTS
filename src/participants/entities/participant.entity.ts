@@ -18,12 +18,9 @@ import {
   FamilyRelationship,
 } from '../../common/entities';
 import { FamilyMember } from './family-member.entity';
-
-import { ClosingNote } from './closing-note.entity';
-import { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
-
 import { Case } from './case.entity';
 import { User } from '../../users/entities/user.entity';
+import { BioPsychosocialHistory } from './bio-psychosocial-history.entity';
 
 @Entity('participants')
 export class Participant {
@@ -157,16 +154,11 @@ export class Participant {
   })
   familyMembers!: FamilyMember[];
 
-  // ENTIDADES PENDIENTES DE EVALUAR (temporalmente en Participant)
-  @OneToOne(() => ClosingNote, (note) => note.participant, {
+  // HISTORIAL BIOPSICOSOCIAL (información personal del participante)
+  @OneToOne(() => BioPsychosocialHistory, (history) => history.participant, {
     cascade: true,
   })
-  closingNote!: ClosingNote;
-
-  @OneToMany(() => ParticipantIdentifiedSituation, (pis) => pis.participant, {
-    cascade: true,
-  })
-  participantIdentifiedSituations!: ParticipantIdentifiedSituation[];
+  bioPsychosocialHistory!: BioPsychosocialHistory;
 
   @OneToMany(() => Case, (caseEntity) => caseEntity.participant, {
     cascade: true,

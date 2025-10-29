@@ -8,6 +8,7 @@ import { CommonModule } from './common';
 import { AuthModule } from './auth/auth.module';
 import { ParticipantsModule } from './participants/participants.module';
 import { CasesModule } from './cases/cases.module';
+import { CatalogsModule } from './catalogs/catalogs.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -58,6 +59,7 @@ import configuration from './config/configuration';
     AuthModule,
     ParticipantsModule,
     CasesModule,
+    CatalogsModule,
   ],
   controllers: [],
   providers: [

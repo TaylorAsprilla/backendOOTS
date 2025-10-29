@@ -14,19 +14,19 @@ export class ProgressNote {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ name: 'date', type: 'date' })
-  date!: Date;
+  @Column({ name: 'session_date', type: 'date' })
+  sessionDate!: Date;
 
   @Column({
-    name: 'time',
+    name: 'session_type',
     type: 'varchar',
-    length: 5,
+    length: 50,
     nullable: true,
   })
-  time?: string;
+  sessionType?: string;
 
-  @Column({ name: 'summary', type: 'text' })
-  summary!: string;
+  @Column({ name: 'summary', type: 'text', nullable: true })
+  summary?: string;
 
   @Column({
     name: 'observations',
@@ -44,12 +44,6 @@ export class ProgressNote {
 
   @Column({ name: 'case_id', type: 'int' })
   caseId!: number;
-
-  @Column({ name: 'approach_type_id', type: 'int' })
-  approachTypeId!: number;
-
-  @Column({ name: 'process_type_id', type: 'int' })
-  processTypeId!: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

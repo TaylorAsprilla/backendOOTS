@@ -8,8 +8,8 @@ import {
   Matches,
   IsArray,
   ValidateNested,
-  IsObject,
   IsNumber,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -32,24 +32,42 @@ export class CreateFamilyMemberDto {
   academicLevelId: number;
 }
 
-// Los DTOs médicos ahora están en src/cases/dto/case.dto.ts
-
-export class CreateClosingNoteDto {
+export class CreateBioPsychosocialHistoryDto {
   @IsOptional()
   @IsString()
-  closureReason?: string;
+  completedGrade?: string;
 
   @IsOptional()
   @IsString()
-  achievements?: string;
+  institution?: string;
 
   @IsOptional()
   @IsString()
-  recommendations?: string;
+  profession?: string;
 
   @IsOptional()
   @IsString()
-  observations?: string;
+  occupationalHistory?: string;
+
+  @IsOptional()
+  @IsNumber()
+  housingTypeId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  educationLevelId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  incomeSourceId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  incomeLevelId?: number;
+
+  @IsOptional()
+  @IsString()
+  housing?: string;
 }
 
 // DTO principal (definido al final)
@@ -179,15 +197,14 @@ export class CreateParticipantDto {
   @Type(() => CreateFamilyMemberDto)
   familyMembers?: CreateFamilyMemberDto[];
 
-  // ENTIDADES PENDIENTES DE EVALUACIÓN (temporalmente en Participant)
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  identifiedSituations?: string[];
-
+  // HISTORIAL BIOPSICOSOCIAL (información personal del participante)
+  @ApiProperty({
+    description: 'Historia biopsicosocial del participante',
+    required: false,
+  })
   @IsOptional()
   @IsObject()
   @ValidateNested()
-  @Type(() => CreateClosingNoteDto)
-  closingNote?: CreateClosingNoteDto;
+  @Type(() => CreateBioPsychosocialHistoryDto)
+  bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
 }

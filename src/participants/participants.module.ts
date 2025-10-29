@@ -4,9 +4,7 @@ import { ParticipantsController } from './participants.controller';
 import { ParticipantsService } from './participants.service';
 import { Participant } from './entities/participant.entity';
 import { FamilyMember } from './entities/family-member.entity';
-import { ClosingNote } from './entities/closing-note.entity';
-import { ParticipantIdentifiedSituation } from './entities/participant-identified-situation.entity';
-import { IdentifiedSituation } from '../common/entities';
+import { BioPsychosocialHistory } from './entities/bio-psychosocial-history.entity';
 import { User } from '../users/entities/user.entity';
 
 @Module({
@@ -14,9 +12,7 @@ import { User } from '../users/entities/user.entity';
     TypeOrmModule.forFeature([
       Participant,
       FamilyMember,
-      ClosingNote,
-      ParticipantIdentifiedSituation,
-      IdentifiedSituation,
+      BioPsychosocialHistory,
       User,
     ]),
   ],

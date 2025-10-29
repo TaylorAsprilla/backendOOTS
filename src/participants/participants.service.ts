@@ -6,9 +6,7 @@ import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { SearchParticipantsDto } from './dto/search-participants.dto';
 import { Participant } from './entities/participant.entity';
 import { FamilyMember } from './entities/family-member.entity';
-import { ClosingNote } from './entities/closing-note.entity';
-import { ParticipantIdentifiedSituation } from './entities/participant-identified-situation.entity';
-import { IdentifiedSituation } from '../common/entities';
+import { BioPsychosocialHistory } from './entities/bio-psychosocial-history.entity';
 
 @Injectable()
 export class ParticipantsService {
@@ -17,12 +15,8 @@ export class ParticipantsService {
     private readonly participantRepository: Repository<Participant>,
     @InjectRepository(FamilyMember)
     private readonly familyMemberRepository: Repository<FamilyMember>,
-    @InjectRepository(ClosingNote)
-    private readonly closingNoteRepository: Repository<ClosingNote>,
-    @InjectRepository(ParticipantIdentifiedSituation)
-    private readonly participantIdentifiedSituationRepository: Repository<ParticipantIdentifiedSituation>,
-    @InjectRepository(IdentifiedSituation)
-    private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
+    @InjectRepository(BioPsychosocialHistory)
+    private readonly bioPsychosocialHistoryRepository: Repository<BioPsychosocialHistory>,
   ) {}
 
   async create(
@@ -31,12 +25,8 @@ export class ParticipantsService {
     return await this.participantRepository.manager.transaction(
       async (transactionalEntityManager) => {
         // Extraer las relaciones anidadas del DTO principal
-        const {
-          familyMembers,
-          identifiedSituations,
-          closingNote,
-          ...participantData
-        } = createParticipantDto;
+        const { familyMembers, bioPsychosocialHistory, ...participantData } =
+          createParticipantDto;
 
         // Crear el participante principal primero (dentro de la transacción)
         const participant = transactionalEntityManager.create(
@@ -46,7 +36,7 @@ export class ParticipantsService {
         const savedParticipant =
           await transactionalEntityManager.save(participant);
 
-        // Crear relaciones OneToOne y OneToMany
+        // Crear relaciones OneToMany y OneToOne
         const relationPromises: Promise<any>[] = [];
 
         // 1. Crear miembros de familia (OneToMany)
@@ -62,55 +52,17 @@ export class ParticipantsService {
           );
         }
 
-        // 2. Crear situaciones identificadas (OneToMany)
-        if (identifiedSituations && identifiedSituations.length > 0) {
-          // Buscar las situaciones identificadas por nombre
-          const situationPromises = identifiedSituations.map(
-            async (situationName) => {
-              const identifiedSituation =
-                await transactionalEntityManager.findOne(IdentifiedSituation, {
-                  where: { name: situationName },
-                });
-
-              if (identifiedSituation) {
-                return transactionalEntityManager.create(
-                  ParticipantIdentifiedSituation,
-                  {
-                    participant: savedParticipant,
-                    identifiedSituation,
-                    participantId: savedParticipant.id,
-                    identifiedSituationId: identifiedSituation.id,
-                  },
-                );
-              }
-              return null;
-            },
-          );
-
-          const resolvedSituations = await Promise.all(situationPromises);
-          const validSituations = resolvedSituations.filter(
-            (situation): situation is ParticipantIdentifiedSituation =>
-              situation !== null,
-          );
-
-          if (validSituations.length > 0) {
-            relationPromises.push(
-              transactionalEntityManager.save(validSituations),
-            );
-          }
-        }
-
-        // 3. Crear nota de cierre (OneToOne)
-        if (closingNote) {
-          const closingNoteEntity = transactionalEntityManager.create(
-            ClosingNote,
+        // 2. Crear historial biopsicosocial (OneToOne)
+        if (bioPsychosocialHistory) {
+          const bioPsychosocialEntity = transactionalEntityManager.create(
+            BioPsychosocialHistory,
             {
-              ...closingNote,
-              participant: savedParticipant,
+              ...bioPsychosocialHistory,
+              participantId: savedParticipant.id,
             },
           );
           relationPromises.push(
-            transactionalEntityManager.save(closingNoteEntity),
+            transactionalEntityManager.save(bioPsychosocialEntity),
           );
         }
 
@@ -122,12 +74,7 @@ export class ParticipantsService {
         // Retornar el participante con todas las relaciones cargadas
         const result = await transactionalEntityManager.findOne(Participant, {
           where: { id: savedParticipant.id },
-          relations: [
-            'familyMembers',
-            'closingNote',
-            'participantIdentifiedSituations',
-            'cases',
-          ],
+          relations: ['familyMembers', 'bioPsychosocialHistory', 'cases'],
         });
 
         if (!result) {
@@ -176,8 +123,11 @@ export class ParticipantsService {
       where: { id },
       relations: [
         'familyMembers',
-        'closingNote',
-        'participantIdentifiedSituations',
+        'bioPsychosocialHistory',
+        'bioPsychosocialHistory.educationLevel',
+        'bioPsychosocialHistory.incomeSource',
+        'bioPsychosocialHistory.incomeLevel',
+        'bioPsychosocialHistory.housingType',
         'cases',
         'documentType',
         'gender',
