@@ -8,7 +8,9 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
-import { CreateUserDto, LoginDto } from './dto';
+import { UsersService } from '../users/users.service';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { UserStatus } from '../common/enums';
 
 export interface JwtPayload {
   sub: number;
@@ -38,24 +40,58 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
   ) {}
 
-  async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
-    // Verificar si el email ya existe
-    const existingUser = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
-
+  async register(registerDto: RegisterDto): Promise<any> {
     try {
-      // Crear el usuario (el password se hashea automáticamente con @BeforeInsert)
-      const user = this.userRepository.create(createUserDto);
-      const savedUser = await this.userRepository.save(user);
+      // Verificar si ya existe un usuario con el mismo email
+      const existingUserByEmail = await this.userRepository.findOne({
+        where: { email: registerDto.email },
+      });
 
-      // Generar JWT
+      if (existingUserByEmail) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      // Verificar si ya existe un usuario con el mismo número de teléfono
+      if (registerDto.phoneNumber) {
+        const existingUserByPhone = await this.userRepository.findOne({
+          where: { phoneNumber: registerDto.phoneNumber },
+        });
+
+        if (existingUserByPhone) {
+          throw new ConflictException(
+            'User with this phone number already exists',
+          );
+        }
+      }
+
+      // Crear el nuevo usuario directamente
+      const newUser = this.userRepository.create({
+        firstName: registerDto.firstName,
+        secondName: registerDto.secondName,
+        firstLastName: registerDto.firstLastName,
+        secondLastName: registerDto.secondLastName,
+        email: registerDto.email,
+        password: registerDto.password,
+        phoneNumber: registerDto.phoneNumber,
+        position: registerDto.position,
+        organization: registerDto.organization,
+        documentNumber: registerDto.documentNumber,
+        address: registerDto.address,
+        city: registerDto.city,
+        birthDate: registerDto.birthDate
+          ? new Date(registerDto.birthDate)
+          : undefined,
+        documentTypeId: registerDto.documentTypeId,
+        status: UserStatus.ACTIVE,
+      });
+
+      // Guardar el usuario en la base de datos
+      const savedUser = await this.userRepository.save(newUser);
+
+      // Generar JWT para el usuario recién creado
       const payload: JwtPayload = {
         sub: savedUser.id,
         email: savedUser.email,
@@ -67,19 +103,25 @@ export class AuthService {
 
       return {
         access_token,
+        token_type: 'Bearer',
+        expires_in: 3600,
         user: savedUser.toResponseObject(),
       };
     } catch (error) {
-      throw new BadRequestException('Failed to create user');
+      // Si es un error de conflicto, lo re-lanzamos
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al crear el usuario');
     }
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
+  async login(loginDto: LoginDto): Promise<any> {
     const { email, password } = loginDto;
 
-    // Buscar usuario por email
+    // Buscar usuario por email (solo usuarios activos)
     const user = await this.userRepository.findOne({
-      where: { email },
+      where: { email, status: UserStatus.ACTIVE },
       select: [
         'id',
         'email',
@@ -91,17 +133,20 @@ export class AuthService {
         'phoneNumber',
         'position',
         'organization',
+        'status',
+        'createdAt',
+        'updatedAt',
       ],
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     // Validar password
     const isValidPassword = await user.validatePassword(password);
     if (!isValidPassword) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     // Generar JWT
@@ -116,6 +161,8 @@ export class AuthService {
 
     return {
       access_token,
+      token_type: 'Bearer',
+      expires_in: 3600,
       user: user.toResponseObject(),
     };
   }
@@ -123,11 +170,51 @@ export class AuthService {
   async validateUser(payload: JwtPayload): Promise<User> {
     const { sub } = payload;
     const user = await this.userRepository.findOne({
-      where: { id: sub },
+      where: { id: sub, status: UserStatus.ACTIVE },
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    return user;
+  }
+
+  async findUserById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { id, status: UserStatus.ACTIVE },
+    });
+  }
+
+  async validateUserCredentials(
+    email: string,
+    password: string,
+  ): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { email, status: UserStatus.ACTIVE },
+      select: ['id', 'email', 'password', 'firstName', 'firstLastName'],
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const isValidPassword = await user.validatePassword(password);
+    if (!isValidPassword) {
+      return null;
+    }
+
+    return user;
+  }
+
+  async getProfile(userId: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['documentType'],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
     }
 
     return user;

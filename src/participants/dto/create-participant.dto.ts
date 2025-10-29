@@ -1,8 +1,6 @@
-import { Type } from 'class-transformer';
 import {
   IsString,
   IsEmail,
-  IsEnum,
   IsDateString,
   IsOptional,
   MinLength,
@@ -10,297 +8,69 @@ import {
   Matches,
   IsArray,
   ValidateNested,
-  ArrayMinSize,
   IsNumber,
-  IsPositive,
+  IsObject,
 } from 'class-validator';
-import {
-  DocumentType,
-  Gender,
-  MaritalStatus,
-  HealthInsurance,
-  EmergencyContactRelationship,
-  FamilyRelationship,
-  AcademicLevel,
-  EducationLevel,
-  IncomeSource,
-  IncomeLevel,
-  HousingType,
-  IdentifiedSituation,
-  FollowUpPlanType,
-  TreatmentStatus,
-  ApproachType,
-  ProcessType,
-} from '../../common/enums';
+import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
-// DTO para miembros de la familia
+// DTOs para las relaciones anidadas (definidas primero)
 export class CreateFamilyMemberDto {
   @IsString()
-  @MinLength(2)
-  @MaxLength(100)
   name: string;
 
-  @IsOptional()
   @IsDateString()
-  birthDate?: string;
+  birthDate: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(100)
-  occupation?: string;
+  occupation: string;
 
-  @IsEnum(FamilyRelationship)
-  relationshipId: FamilyRelationship;
+  @IsNumber()
+  familyRelationshipId: number;
 
-  @IsOptional()
-  @IsEnum(AcademicLevel)
-  academicLevelId?: AcademicLevel;
+  @IsNumber()
+  academicLevelId: number;
 }
 
-// DTO para historial bio-psicosocial
 export class CreateBioPsychosocialHistoryDto {
   @IsOptional()
-  @IsEnum(EducationLevel)
-  schooling?: EducationLevel;
-
-  @IsOptional()
   @IsString()
-  @MaxLength(50)
   completedGrade?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
   institution?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
   profession?: string;
 
   @IsOptional()
-  @IsEnum(IncomeSource)
-  incomeSource?: IncomeSource;
-
-  @IsOptional()
-  @IsEnum(IncomeLevel)
-  incomeLevel?: IncomeLevel;
-
-  @IsOptional()
   @IsString()
-  @MaxLength(500)
   occupationalHistory?: string;
 
-  @IsEnum(HousingType)
-  housingTypeId: HousingType;
+  @IsOptional()
+  @IsNumber()
+  housingTypeId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  educationLevelId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  incomeSourceId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  incomeLevelId?: number;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
   housing?: string;
 }
 
-// DTO para motivo de consulta
-export class CreateConsultationReasonDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  reason?: string;
-}
-
-// DTO para intervención
-export class CreateInterventionDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  intervention?: string;
-}
-
-// DTO para plan de seguimiento
-export class CreateFollowUpPlanDto {
-  @IsEnum(FollowUpPlanType)
-  plan: FollowUpPlanType;
-}
-
-// DTO para historial de salud física
-export class CreatePhysicalHealthHistoryDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  physicalConditions?: string;
-
-  @IsOptional()
-  @IsEnum(TreatmentStatus)
-  receivingTreatment?: TreatmentStatus;
-
-  @IsOptional()
-  @IsString()
-  treatmentDetails?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  paternalFamilyHistory?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  maternalFamilyHistory?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  physicalHealthObservations?: string;
-}
-
-// DTO para historial de salud mental
-export class CreateMentalHealthHistoryDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  mentalConditions?: string;
-
-  @IsOptional()
-  @IsEnum(TreatmentStatus)
-  receivingMentalTreatment?: TreatmentStatus;
-
-  @IsOptional()
-  @IsString()
-  mentalTreatmentDetails?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  paternalMentalHistory?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  maternalMentalHistory?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  mentalHealthObservations?: string;
-}
-
-// DTO para ponderación
-export class CreateAssessmentDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  consultationReason?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  weighting?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  concurrentFactors?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  criticalFactors?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(3000)
-  problemAnalysis?: string;
-}
-
-// DTO para plan de intervención
-export class CreateInterventionPlanDto {
-  @IsString()
-  @MaxLength(500)
-  goal: string;
-
-  @IsString()
-  @MaxLength(500)
-  objectives: string;
-
-  @IsString()
-  @MaxLength(1000)
-  activities: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  timeframe?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  responsiblePerson?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  evaluationCriteria?: string;
-}
-
-// DTO para notas de progreso
-export class CreateProgressNoteDto {
-  @IsDateString()
-  date: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-  time?: string;
-
-  @IsEnum(ApproachType)
-  approachType: ApproachType;
-
-  @IsEnum(ProcessType)
-  process: ProcessType;
-
-  @IsString()
-  @MaxLength(2000)
-  summary: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  observations?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  agreements?: string;
-}
-
-// DTO para referidos
-export class CreateReferralsDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  description?: string;
-}
-
-// DTO para nota de cierre
-export class CreateClosingNoteDto {
-  @IsString()
-  @MaxLength(2000)
-  closureReason: string;
-
-  @IsString()
-  @MaxLength(2000)
-  achievements: string;
-
-  @IsString()
-  @MaxLength(2000)
-  recommendations: string;
-
-  @IsString()
-  @MaxLength(2000)
-  observations: string;
-}
-
-// DTO principal para crear participante
+// DTO principal (definido al final)
 export class CreateParticipantDto {
   // DATOS PERSONALES
   @IsString()
@@ -335,8 +105,8 @@ export class CreateParticipantDto {
   @IsEmail()
   email?: string;
 
-  @IsEnum(DocumentType)
-  documentTypeId: DocumentType;
+  @IsNumber()
+  documentTypeId: number;
 
   @IsString()
   documentNumber: string;
@@ -359,14 +129,14 @@ export class CreateParticipantDto {
   @MaxLength(100)
   religiousAffiliation: string;
 
-  @IsEnum(Gender)
-  genderId: Gender;
+  @IsNumber()
+  genderId: number;
 
-  @IsEnum(MaritalStatus)
-  maritalStatusId: MaritalStatus;
+  @IsNumber()
+  maritalStatusId: number;
 
-  @IsEnum(HealthInsurance)
-  healthInsuranceId: HealthInsurance;
+  @IsNumber()
+  healthInsuranceId: number;
 
   @IsOptional()
   @IsString()
@@ -403,183 +173,38 @@ export class CreateParticipantDto {
   @MaxLength(50)
   emergencyContactCity: string;
 
-  @IsEnum(EmergencyContactRelationship)
-  emergencyContactRelationship: EmergencyContactRelationship;
+  @IsNumber()
+  emergencyContactRelationshipId: number;
 
-  // SECCIONES OPCIONALES
+  // USUARIO QUE REGISTRA AL PARTICIPANTE
+  @ApiProperty({
+    description: 'ID del usuario que registra al participante en el sistema',
+    example: 1,
+    minimum: 1,
+  })
+  @IsNumber(
+    { allowInfinity: false, allowNaN: false },
+    {
+      message: 'registeredById must be a valid user ID number',
+    },
+  )
+  registeredById: number;
+
+  // RELACIONES FAMILIARES (permanecen en Participant)
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateFamilyMemberDto)
-  @ArrayMinSize(1, { message: 'At least one family member is required' })
   familyMembers?: CreateFamilyMemberDto[];
 
+  // HISTORIAL BIOPSICOSOCIAL (información personal del participante)
+  @ApiProperty({
+    description: 'Historia biopsicosocial del participante',
+    required: false,
+  })
   @IsOptional()
+  @IsObject()
   @ValidateNested()
   @Type(() => CreateBioPsychosocialHistoryDto)
   bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateConsultationReasonDto)
-  consultationReason?: CreateConsultationReasonDto;
-
-  @IsOptional()
-  @IsArray()
-  @IsEnum(IdentifiedSituation, { each: true })
-  identifiedSituations?: IdentifiedSituation[];
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateInterventionDto)
-  intervention?: CreateInterventionDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateFollowUpPlanDto)
-  followUpPlan?: CreateFollowUpPlanDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreatePhysicalHealthHistoryDto)
-  physicalHealthHistory?: CreatePhysicalHealthHistoryDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateMentalHealthHistoryDto)
-  mentalHealthHistory?: CreateMentalHealthHistoryDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateAssessmentDto)
-  assessment?: CreateAssessmentDto;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateInterventionPlanDto)
-  interventionPlans?: CreateInterventionPlanDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateProgressNoteDto)
-  progressNotes?: CreateProgressNoteDto[];
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateReferralsDto)
-  referrals?: CreateReferralsDto;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateClosingNoteDto)
-  closingNote?: CreateClosingNoteDto;
-}
-
-// DTOs para actualizaciones por sección
-export class UpdateFamilyMemberDto {
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  id?: number;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(2)
-  @MaxLength(100)
-  name?: string;
-
-  @IsOptional()
-  @IsDateString()
-  birthDate?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  occupation?: string;
-
-  @IsOptional()
-  @IsEnum(FamilyRelationship)
-  relationshipId?: FamilyRelationship;
-
-  @IsOptional()
-  @IsEnum(AcademicLevel)
-  academicLevelId?: AcademicLevel;
-}
-
-export class UpdateProgressNoteDto {
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  id?: number;
-
-  @IsOptional()
-  @IsDateString()
-  date?: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-  time?: string;
-
-  @IsOptional()
-  @IsEnum(ApproachType)
-  approachType?: ApproachType;
-
-  @IsOptional()
-  @IsEnum(ProcessType)
-  process?: ProcessType;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  summary?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  observations?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  agreements?: string;
-}
-
-export class UpdateInterventionPlanDto {
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  id?: number;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  goal?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  objectives?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  activities?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  timeframe?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  responsiblePerson?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  evaluationCriteria?: string;
 }

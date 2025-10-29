@@ -6,7 +6,6 @@ import {
   Gender,
   MaritalStatus,
   HealthInsurance,
-  EmergencyContactRelationship,
   FamilyRelationship,
   AcademicLevel,
   EducationLevel,
@@ -30,8 +29,6 @@ export class CatalogController {
     private readonly maritalStatusRepository: Repository<MaritalStatus>,
     @InjectRepository(HealthInsurance)
     private readonly healthInsuranceRepository: Repository<HealthInsurance>,
-    @InjectRepository(EmergencyContactRelationship)
-    private readonly emergencyContactRelationshipRepository: Repository<EmergencyContactRelationship>,
     @InjectRepository(FamilyRelationship)
     private readonly familyRelationshipRepository: Repository<FamilyRelationship>,
     @InjectRepository(AcademicLevel)
@@ -72,13 +69,6 @@ export class CatalogController {
   @Get('health-insurances')
   async getHealthInsurances() {
     return this.healthInsuranceRepository.find({ order: { name: 'ASC' } });
-  }
-
-  @Get('emergency-contact-relationships')
-  async getEmergencyContactRelationships() {
-    return this.emergencyContactRelationshipRepository.find({
-      order: { name: 'ASC' },
-    });
   }
 
   @Get('family-relationships')
@@ -138,7 +128,6 @@ export class CatalogController {
       genders,
       maritalStatuses,
       healthInsurances,
-      emergencyContactRelationships,
       familyRelationships,
       academicLevels,
       educationLevels,
@@ -154,9 +143,6 @@ export class CatalogController {
       this.genderRepository.find({ order: { name: 'ASC' } }),
       this.maritalStatusRepository.find({ order: { name: 'ASC' } }),
       this.healthInsuranceRepository.find({ order: { name: 'ASC' } }),
-      this.emergencyContactRelationshipRepository.find({
-        order: { name: 'ASC' },
-      }),
       this.familyRelationshipRepository.find({ order: { name: 'ASC' } }),
       this.academicLevelRepository.find({ order: { name: 'ASC' } }),
       this.educationLevelRepository.find({ order: { name: 'ASC' } }),
@@ -174,7 +160,6 @@ export class CatalogController {
       genders,
       maritalStatuses,
       healthInsurances,
-      emergencyContactRelationships,
       familyRelationships,
       academicLevels,
       educationLevels,

@@ -7,7 +7,6 @@ import {
   MaritalStatus,
   HealthInsurance,
   HousingType,
-  EmergencyContactRelationship,
   FamilyRelationship,
   AcademicLevel,
   EducationLevel,
@@ -37,9 +36,6 @@ export class CatalogSeedService implements OnModuleInit {
 
     @InjectRepository(HousingType)
     private readonly housingTypeRepository: Repository<HousingType>,
-
-    @InjectRepository(EmergencyContactRelationship)
-    private readonly emergencyContactRelationshipRepository: Repository<EmergencyContactRelationship>,
 
     @InjectRepository(FamilyRelationship)
     private readonly familyRelationshipRepository: Repository<FamilyRelationship>,
@@ -84,7 +80,6 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedMaritalStatuses();
     await this.seedHealthInsurances();
     await this.seedHousingTypes();
-    await this.seedEmergencyContactRelationships();
     await this.seedFamilyRelationships();
     await this.seedAcademicLevels();
     await this.seedEducationLevels();
@@ -206,27 +201,6 @@ export class CatalogSeedService implements OnModuleInit {
 
     await this.housingTypeRepository.save(housingTypes);
     console.log('🏠 Housing types seeded');
-  }
-
-  private async seedEmergencyContactRelationships() {
-    const count = await this.emergencyContactRelationshipRepository.count();
-    if (count > 0) return;
-
-    const relationships = [
-      { name: 'Padre', code: 'PAD' },
-      { name: 'Madre', code: 'MAD' },
-      { name: 'Hermano/a', code: 'HER' },
-      { name: 'Hijo/a', code: 'HIJ' },
-      { name: 'Esposo/a', code: 'ESP' },
-      { name: 'Tío/a', code: 'TIO' },
-      { name: 'Abuelo/a', code: 'ABU' },
-      { name: 'Primo/a', code: 'PRI' },
-      { name: 'Amigo/a', code: 'AMI' },
-      { name: 'Otro', code: 'OTR' },
-    ];
-
-    await this.emergencyContactRelationshipRepository.save(relationships);
-    console.log('🚨 Emergency contact relationships seeded');
   }
 
   private async seedFamilyRelationships() {

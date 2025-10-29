@@ -32,25 +32,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
         typeof exceptionResponse === 'object' &&
         exceptionResponse !== null
       ) {
-        const responseObj = exceptionResponse as any;
-        message = responseObj.message || exception.message;
-        error = responseObj.error || error;
+        const responseObj = exceptionResponse as Record<string, unknown>;
+        message = (responseObj.message as string) || exception.message;
+        error = (responseObj.error as string) || error;
       }
     } else if (exception instanceof QueryFailedError) {
       status = HttpStatus.BAD_REQUEST;
 
       // Handle specific MySQL errors
-      const sqlError = exception as any;
+      const sqlError = exception as QueryFailedError & {
+        code?: string;
+        sqlMessage?: string;
+      };
 
       if (sqlError.code === 'ER_DUP_ENTRY') {
         status = HttpStatus.CONFLICT;
         message = 'Duplicate entry error';
 
-        if (sqlError.sqlMessage.includes('document_number')) {
+        if (sqlError.sqlMessage?.includes('document_number')) {
           message = 'A participant with this document number already exists';
-        } else if (sqlError.sqlMessage.includes('phone_number')) {
+        } else if (sqlError.sqlMessage?.includes('phone_number')) {
           message = 'A participant with this phone number already exists';
-        } else if (sqlError.sqlMessage.includes('email')) {
+        } else if (sqlError.sqlMessage?.includes('email')) {
           message = 'A participant with this email already exists';
         }
       } else if (sqlError.code === 'ER_NO_REFERENCED_ROW_2') {

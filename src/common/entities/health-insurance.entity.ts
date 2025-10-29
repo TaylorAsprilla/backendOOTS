@@ -9,23 +9,23 @@ import {
 @Entity('health_insurances')
 export class HealthInsurance {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })
-  name: string;
+  name!: string;
 
   @Column({ name: 'code', type: 'varchar', length: 30, unique: true })
-  code: string;
+  code!: string;
 
   @Column({ name: 'allows_custom', type: 'boolean', default: false })
-  allowsCustom: boolean;
+  allowsCustom!: boolean;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
