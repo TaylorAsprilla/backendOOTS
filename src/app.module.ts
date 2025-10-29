@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ParticipantsModule } from './participants/participants.module';
 import { CasesModule } from './cases/cases.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
@@ -66,6 +67,10 @@ import configuration from './config/configuration';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
   ],
 })

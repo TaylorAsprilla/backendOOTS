@@ -1,11 +1,13 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { CatalogsService } from './catalogs.service';
 import { IdentifiedSituation } from '../common/entities';
 import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
 
 @ApiTags('Catálogos')
 @Controller('catalogs')
+@Public()
 export class CatalogsController {
   constructor(private readonly catalogsService: CatalogsService) {}
 
