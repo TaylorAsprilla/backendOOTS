@@ -38,7 +38,7 @@ auth/
 
 #### POST /api/v1/auth/register
 
-Registra un nuevo usuario en el sistema utilizando el UsersService existente.
+Registra un nuevo usuario en el sistema creándolo directamente en la base de datos mediante el AuthService.
 
 **Request:**
 
@@ -150,7 +150,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Responsabilidades:**
 
-- Registrar nuevos usuarios (integrado con UsersService)
+- Registrar nuevos usuarios directamente en la base de datos
 - Validar credenciales de login
 - Generar y validar tokens JWT
 - Gestionar el perfil del usuario
@@ -161,29 +161,56 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ```typescript
 async register(registerDto: RegisterDto): Promise<any> {
-  // Convierte RegisterDto a CreateUserDto
-  const createUserDto: CreateUserDto = {
-    // ... mapeo de campos
-  };
+  // Verifica si el email ya existe
+  const existingUser = await this.userRepository.findOne({
+    where: { email: registerDto.email },
+  });
 
-  // Usa UsersService.create() para crear el usuario
-  const user = await this.usersService.create(createUserDto);
+  if (existingUser) {
+    throw new ConflictException('El email ya está registrado');
+  }
+
+  // Encripta la contraseña
+  const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+  // Crea el usuario directamente en la base de datos
+  const user = this.userRepository.create({
+    firstName: registerDto.firstName,
+    secondName: registerDto.secondName,
+    firstLastName: registerDto.firstLastName,
+    secondLastName: registerDto.secondLastName,
+    email: registerDto.email,
+    phoneNumber: registerDto.phoneNumber,
+    profession: registerDto.profession,
+    license: registerDto.license,
+    specialization: registerDto.specialization,
+    institution: registerDto.institution,
+    role: UserRole.PROFESSIONAL,
+    password: hashedPassword,
+    status: UserStatus.ACTIVE,
+    preferences: registerDto.preferences || {},
+  });
+
+  const savedUser = await this.userRepository.save(user);
 
   // Genera JWT token
   const payload: JwtPayload = {
-    sub: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    firstLastName: user.firstLastName,
+    sub: savedUser.id,
+    email: savedUser.email,
+    firstName: savedUser.firstName,
+    firstLastName: savedUser.firstLastName,
   };
 
   const access_token = this.jwtService.sign(payload);
+
+  // Elimina la contraseña de la respuesta
+  const { password, ...userWithoutPassword } = savedUser;
 
   return {
     access_token,
     token_type: 'Bearer',
     expires_in: 3600,
-    user,
+    user: userWithoutPassword,
   };
 }
 ```
@@ -444,8 +471,8 @@ JwtModule.registerAsync({
 
 ### 3. Validaciones de Entrada
 
-- **Email único**: Validado en UsersService
-- **Teléfono único**: Validado en UsersService (si se proporciona)
+- **Email único**: Validado en AuthService mediante consulta directa
+- **Teléfono único**: Validado en AuthService (si se proporciona)
 - **Formato de email**: Validado con @IsEmail()
 - **Longitud de contraseña**: Mínimo 8 caracteres
 - **Campos requeridos**: Validados con @IsNotEmpty()
@@ -511,18 +538,20 @@ sequenceDiagram
     participant Cliente
     participant AuthController
     participant AuthService
-    participant UsersService
+    participant UserRepository
     participant Database
     participant JwtService
 
     Cliente->>AuthController: POST /auth/register
     AuthController->>AuthService: register(dto)
-    AuthService->>UsersService: create(createUserDto)
-    UsersService->>Database: Verificar email único
-    Database-->>UsersService: Email disponible
-    UsersService->>Database: Crear usuario (hash password)
-    Database-->>UsersService: Usuario creado
-    UsersService-->>AuthService: Usuario sin password
+    AuthService->>UserRepository: findOne(email)
+    UserRepository->>Database: Verificar email único
+    Database-->>UserRepository: Email disponible
+    AuthService->>AuthService: bcrypt.hash(password)
+    AuthService->>UserRepository: create & save(user)
+    UserRepository->>Database: Crear usuario directamente
+    Database-->>UserRepository: Usuario creado
+    UserRepository-->>AuthService: Usuario guardado
     AuthService->>JwtService: sign(payload)
     JwtService-->>AuthService: JWT token
     AuthService-->>AuthController: {token, user}

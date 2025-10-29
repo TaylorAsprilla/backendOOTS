@@ -2,7 +2,9 @@
 
 ## 📋 Descripción General
 
-El módulo de usuarios gestiona los **profesionales y administradores** que utilizan el sistema OOTS Colombia. Este módulo maneja la creación, autenticación, autorización y administración de cuentas de usuario, proporcionando la base para el control de acceso y la trazabilidad de acciones en el sistema.
+El módulo de usuarios gestiona los **profesionales y administradores** que utilizan el sistema OOTS Colombia. Este módulo maneja la administración, autorización y gestión de cuentas de usuario existentes, proporcionando la base para el control de acceso y la trazabilidad de acciones en el sistema.
+
+> **📝 Nota Importante**: La **creación de nuevos usuarios** se realiza exclusivamente a través del módulo de autenticación (`/auth/register`). Este módulo se enfoca en operaciones administrativas de usuarios ya registrados.
 
 ## 🏗️ Arquitectura
 
@@ -12,7 +14,7 @@ users/
 ├── users.service.ts         # Lógica de negocio de usuarios
 ├── users.module.ts          # Configuración del módulo
 ├── dto/
-│   ├── create-user.dto.ts   # DTO para creación de usuarios
+│   ├── create-user.dto.ts   # DTO base (usado por auth/register)
 │   └── update-user.dto.ts   # DTO para actualización de usuarios
 └── entities/
     └── user.entity.ts       # Entidad principal del usuario
@@ -180,12 +182,14 @@ interface UserPreferences {
 
 ### 1. Gestión de Usuarios
 
-#### Creación de Usuarios
+#### Administración de Usuarios
 
-- **Validación de email único**: No permitir emails duplicados
-- **Generación de password temporal**: Password inicial que debe cambiar
-- **Asignación de rol**: Según el tipo de usuario
-- **Validación de datos profesionales**: Verificar licencias y especializaciones
+- **Consulta de usuarios**: Listado con filtros y paginación
+- **Actualización de perfiles**: Modificación de datos profesionales y personales
+- **Gestión de estados**: Activación, desactivación y bloqueo de cuentas
+- **Reseteo de contraseñas**: Generación de nuevas contraseñas temporales
+
+> **Nota**: La creación de nuevos usuarios se realiza únicamente a través del endpoint `/auth/register`. Este módulo se enfoca en la administración de usuarios existentes.
 
 #### Perfiles de Usuario
 
@@ -265,70 +269,9 @@ interface UserPreferences {
 
 ## 🛠️ API Endpoints
 
+> **Importante**: La creación de nuevos usuarios se realiza exclusivamente a través del endpoint `/auth/register` en el módulo de autenticación. Los siguientes endpoints están destinados a la administración de usuarios existentes.
+
 ### Gestión de Usuarios
-
-#### POST /api/v1/users
-
-**Crear nuevo usuario**
-
-**Request Body:**
-
-```json
-{
-  "firstName": "María",
-  "secondName": "Elena",
-  "firstLastName": "González",
-  "secondLastName": "Rodríguez",
-  "email": "maria.gonzalez@oots.gov.co",
-  "phoneNumber": "+57 300 123 4567",
-  "profession": "Psicóloga",
-  "license": "PSI-12345-2024",
-  "specialization": "Psicología Clínica",
-  "institution": "Hospital San Juan de Dios",
-  "role": "PROFESSIONAL",
-  "preferences": {
-    "language": "es",
-    "timezone": "America/Bogota",
-    "theme": "light",
-    "emailNotifications": true,
-    "recordsPerPage": 25,
-    "defaultView": "table"
-  }
-}
-```
-
-**Response (201):**
-
-```json
-{
-  "id": 15,
-  "firstName": "María",
-  "secondName": "Elena",
-  "firstLastName": "González",
-  "secondLastName": "Rodríguez",
-  "fullName": "María Elena González Rodríguez",
-  "email": "maria.gonzalez@oots.gov.co",
-  "phoneNumber": "+57 300 123 4567",
-  "profession": "Psicóloga",
-  "license": "PSI-12345-2024",
-  "specialization": "Psicología Clínica",
-  "institution": "Hospital San Juan de Dios",
-  "role": "PROFESSIONAL",
-  "status": "PENDING",
-  "mustChangePassword": true,
-  "preferences": {
-    "language": "es",
-    "timezone": "America/Bogota",
-    "theme": "light",
-    "emailNotifications": true,
-    "recordsPerPage": 25,
-    "defaultView": "table"
-  },
-  "createdAt": "2024-01-15T10:30:00.000Z",
-  "updatedAt": "2024-01-15T10:30:00.000Z",
-  "temporaryPassword": "TempPass2024!"
-}
-```
 
 #### GET /api/v1/users
 
@@ -849,24 +792,19 @@ describe('UsersService', () => {
 
 ```typescript
 describe('UsersController (e2e)', () => {
-  it('/users (POST) - should create user', () => {
-    const createDto = {
-      firstName: 'María',
-      firstLastName: 'González',
-      email: 'maria.test@oots.gov.co',
-      profession: 'Psicóloga',
-      role: 'PROFESSIONAL',
-    };
+  // Nota: La creación de usuarios se realiza a través de /auth/register
+  // Este módulo solo maneja operaciones administrativas
 
+  it('/users (GET) - should return paginated users list', () => {
     return request(app.getHttpServer())
-      .post('/users')
+      .get('/users?page=1&limit=10')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send(createDto)
-      .expect(201)
+      .expect(200)
       .expect((res) => {
-        expect(res.body.email).toBe(createDto.email);
-        expect(res.body.status).toBe('PENDING');
-        expect(res.body.temporaryPassword).toBeDefined();
+        expect(res.body.users).toBeDefined();
+        expect(res.body.total).toBeDefined();
+        expect(res.body.page).toBe(1);
+        expect(res.body.limit).toBe(10);
       });
   });
 

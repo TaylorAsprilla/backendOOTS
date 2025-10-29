@@ -9,8 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
-import { CreateUserDto } from '../users/dto/create-user.dto';
-import { LoginDto, RegisterDto, AuthResponseDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { UserStatus } from '../common/enums';
 
 export interface JwtPayload {
@@ -46,8 +45,30 @@ export class AuthService {
 
   async register(registerDto: RegisterDto): Promise<any> {
     try {
-      // Convertir RegisterDto a CreateUserDto
-      const createUserDto: CreateUserDto = {
+      // Verificar si ya existe un usuario con el mismo email
+      const existingUserByEmail = await this.userRepository.findOne({
+        where: { email: registerDto.email },
+      });
+
+      if (existingUserByEmail) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      // Verificar si ya existe un usuario con el mismo número de teléfono
+      if (registerDto.phoneNumber) {
+        const existingUserByPhone = await this.userRepository.findOne({
+          where: { phoneNumber: registerDto.phoneNumber },
+        });
+
+        if (existingUserByPhone) {
+          throw new ConflictException(
+            'User with this phone number already exists',
+          );
+        }
+      }
+
+      // Crear el nuevo usuario directamente
+      const newUser = this.userRepository.create({
         firstName: registerDto.firstName,
         secondName: registerDto.secondName,
         firstLastName: registerDto.firstLastName,
@@ -60,19 +81,22 @@ export class AuthService {
         documentNumber: registerDto.documentNumber,
         address: registerDto.address,
         city: registerDto.city,
-        birthDate: registerDto.birthDate,
+        birthDate: registerDto.birthDate
+          ? new Date(registerDto.birthDate)
+          : undefined,
         documentTypeId: registerDto.documentTypeId,
-      };
+        status: UserStatus.ACTIVE,
+      });
 
-      // Usar el servicio de usuarios existente para crear el usuario
-      const user = await this.usersService.create(createUserDto);
+      // Guardar el usuario en la base de datos
+      const savedUser = await this.userRepository.save(newUser);
 
       // Generar JWT para el usuario recién creado
       const payload: JwtPayload = {
-        sub: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        firstLastName: user.firstLastName,
+        sub: savedUser.id,
+        email: savedUser.email,
+        firstName: savedUser.firstName,
+        firstLastName: savedUser.firstLastName,
       };
 
       const access_token = this.jwtService.sign(payload);
@@ -81,10 +105,10 @@ export class AuthService {
         access_token,
         token_type: 'Bearer',
         expires_in: 3600,
-        user,
+        user: savedUser.toResponseObject(),
       };
     } catch (error) {
-      // Si es un error de conflicto del UsersService, lo re-lanzamos
+      // Si es un error de conflicto, lo re-lanzamos
       if (error instanceof ConflictException) {
         throw error;
       }
