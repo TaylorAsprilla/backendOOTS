@@ -3,10 +3,12 @@ import {
   IsNotEmpty,
   IsEmail,
   IsOptional,
-  IsDateString,
   MinLength,
   MaxLength,
   Matches,
+  IsDateString,
+  IsNumber,
+  IsPositive,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -18,8 +20,6 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(2)
-  @MaxLength(50)
   secondName?: string;
 
   @IsString()
@@ -30,16 +30,7 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(2)
-  @MaxLength(50)
   secondLastName?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^[+]?[1-9][\d]{0,15}$/, {
-    message: 'phoneNumber must be a valid phone number',
-  })
-  phoneNumber: string;
 
   @IsEmail()
   @IsNotEmpty()
@@ -47,10 +38,29 @@ export class CreateUserDto {
   email: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MinLength(8)
   @MaxLength(255)
-  password?: string;
+  password: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^[+]?[1-9][\d]{0,15}$/, {
+    message: 'phoneNumber must be a valid phone number',
+  })
+  phoneNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  @MinLength(2)
+  @MaxLength(100)
+  position?: string;
+
+  @IsString()
+  @IsOptional()
+  @MinLength(2)
+  @MaxLength(200)
+  organization?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -60,7 +70,7 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(10)
+  @MinLength(5)
   @MaxLength(200)
   address: string;
 
@@ -73,4 +83,9 @@ export class CreateUserDto {
   @IsDateString()
   @IsNotEmpty()
   birthDate: string;
+
+  @IsNumber()
+  @IsPositive()
+  @IsNotEmpty()
+  documentTypeId: number;
 }

@@ -4,8 +4,17 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  BeforeInsert,
+  BeforeUpdate,
+  ManyToOne,
+  JoinColumn,
+  // OneToMany,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
+import * as bcrypt from 'bcrypt';
 import { UserStatus } from '../../common/enums';
+import { DocumentType } from '../../common/entities/document-type.entity';
+// import { Participant } from '../../participants/entities/participant.entity';
 
 @Entity('users')
 export class User {
@@ -38,9 +47,6 @@ export class User {
   })
   secondLastName?: string;
 
-  @Column({ name: 'phone_number', type: 'varchar', length: 15, unique: true })
-  phoneNumber: string;
-
   @Column({
     name: 'email',
     type: 'varchar',
@@ -53,26 +59,71 @@ export class User {
     name: 'password',
     type: 'varchar',
     length: 255,
+  })
+  @Exclude()
+  password: string;
+
+  @Column({
+    name: 'phone_number',
+    type: 'varchar',
+    length: 20,
     nullable: true,
   })
-  password?: string;
+  phoneNumber?: string;
+
+  @Column({
+    name: 'position',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  position?: string;
+
+  @Column({
+    name: 'organization',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  organization?: string;
 
   @Column({
     name: 'document_number',
     type: 'varchar',
-    length: 20,
-    unique: true,
+    length: 50,
+    nullable: true,
   })
-  documentNumber: string;
+  documentNumber?: string;
 
-  @Column({ name: 'address', type: 'varchar', length: 200 })
-  address: string;
+  @Column({
+    name: 'address',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  address?: string;
 
-  @Column({ name: 'city', type: 'varchar', length: 100 })
-  city: string;
+  @Column({
+    name: 'city',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  city?: string;
 
-  @Column({ name: 'birth_date', type: 'date' })
-  birthDate: Date;
+  @Column({
+    name: 'birth_date',
+    type: 'date',
+    nullable: true,
+  })
+  birthDate?: Date;
+
+  @Column({
+    name: 'document_type_id',
+    type: 'int',
+    nullable: true,
+  })
+  documentTypeId?: number;
 
   @Column({
     name: 'status',
@@ -87,4 +138,33 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  // RELACIONES
+  @ManyToOne(() => DocumentType, { nullable: true })
+  @JoinColumn({ name: 'document_type_id' })
+  documentType?: DocumentType;
+
+  // RELACIONES - Comentado temporalmente para evitar errores de compilación
+  // @OneToMany(() => Participant, (participant) => participant.registeredBy)
+  // participants: Participant[];
+
+  // MÉTODOS
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword(): Promise<void> {
+    if (this.password) {
+      const saltRounds = 12;
+      this.password = await bcrypt.hash(this.password, saltRounds);
+    }
+  }
+
+  async validatePassword(password: string): Promise<boolean> {
+    return bcrypt.compare(password, this.password);
+  }
+
+  toResponseObject() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...result } = this;
+    return result;
+  }
 }
