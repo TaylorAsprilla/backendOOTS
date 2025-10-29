@@ -7,15 +7,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Case } from '../participants/entities/case.entity';
 import { Participant } from '../participants/entities/participant.entity';
-import { ConsultationReason } from '../participants/entities/consultation-reason.entity';
-import { Intervention } from '../participants/entities/intervention.entity';
 import { CaseFollowUpPlan } from '../participants/entities/case-follow-up-plan.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
 import { MentalHealthHistory } from '../participants/entities/mental-health-history.entity';
 import { Ponderacion } from '../participants/entities/ponderacion.entity';
 import { InterventionPlan } from '../participants/entities/intervention-plan.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
-import { Referrals } from '../participants/entities/referrals.entity';
 import { ClosingNote } from '../participants/entities/closing-note.entity';
 import { ParticipantIdentifiedSituation } from '../participants/entities/participant-identified-situation.entity';
 import { IdentifiedSituation } from '../common/entities';
@@ -30,10 +27,6 @@ export class CasesService {
     private readonly caseRepository: Repository<Case>,
     @InjectRepository(Participant)
     private readonly participantRepository: Repository<Participant>,
-    @InjectRepository(ConsultationReason)
-    private readonly consultationReasonRepository: Repository<ConsultationReason>,
-    @InjectRepository(Intervention)
-    private readonly interventionRepository: Repository<Intervention>,
     @InjectRepository(CaseFollowUpPlan)
     private readonly caseFollowUpPlanRepository: Repository<CaseFollowUpPlan>,
     @InjectRepository(PhysicalHealthHistory)
@@ -46,8 +39,6 @@ export class CasesService {
     private readonly interventionPlanRepository: Repository<InterventionPlan>,
     @InjectRepository(ProgressNote)
     private readonly progressNoteRepository: Repository<ProgressNote>,
-    @InjectRepository(Referrals)
-    private readonly referralsRepository: Repository<Referrals>,
     @InjectRepository(ClosingNote)
     private readonly closingNoteRepository: Repository<ClosingNote>,
     @InjectRepository(ParticipantIdentifiedSituation)
@@ -76,32 +67,17 @@ export class CasesService {
       // Generar número de caso único
       const caseNumber = await this.generateCaseNumber();
 
-      // Crear el caso (sin title y description separados)
+      // Crear el caso con los campos simples
       const newCase = manager.create(Case, {
         caseNumber,
         participantId: createCaseDto.participantId,
         status: CaseStatus.OPEN,
+        consultationReason: createCaseDto.consultationReason,
+        intervention: createCaseDto.intervention,
+        referrals: createCaseDto.referrals,
       });
 
       const savedCase = await manager.save(newCase);
-
-      // 2. Crear ConsultationReason si se proporciona (ahora es string simple)
-      if (createCaseDto.consultationReason) {
-        const consultationReason = manager.create(ConsultationReason, {
-          reason: createCaseDto.consultationReason,
-          caseId: savedCase.id,
-        });
-        await manager.save(consultationReason);
-      }
-
-      // 4. Crear Intervention si se proporciona (ahora es string simple)
-      if (createCaseDto.intervention) {
-        const intervention = manager.create(Intervention, {
-          intervention: createCaseDto.intervention,
-          caseId: savedCase.id,
-        });
-        await manager.save(intervention);
-      }
 
       // 5. Crear relaciones con FollowUpPlan si se proporcionan (ahora es array de IDs)
       if (createCaseDto.followUpPlan && createCaseDto.followUpPlan.length > 0) {
@@ -183,14 +159,7 @@ export class CasesService {
         }
       }
 
-      // 11. Crear Referrals si se proporciona (ahora es string simple)
-      if (createCaseDto.referrals) {
-        const referrals = manager.create(Referrals, {
-          referrals: createCaseDto.referrals,
-          caseId: savedCase.id,
-        });
-        await manager.save(referrals);
-      }
+      // 11. Referrals ya está incluido en el Case principal como campo simple
 
       // 3. Crear situaciones identificadas si se proporcionan
       if (
@@ -248,8 +217,6 @@ export class CasesService {
         where: { id: savedCase.id },
         relations: [
           'participant',
-          'consultationReason',
-          'intervention',
           'caseFollowUpPlans',
           'caseFollowUpPlans.followUpPlan',
           'physicalHealthHistory',
@@ -257,7 +224,6 @@ export class CasesService {
           'ponderacion',
           'interventionPlans',
           'progressNotes',
-          'referrals',
           'closingNote',
           'participantIdentifiedSituations',
           'participantIdentifiedSituations.identifiedSituation',

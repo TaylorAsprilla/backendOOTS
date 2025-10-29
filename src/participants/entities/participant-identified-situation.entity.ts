@@ -7,6 +7,7 @@ import {
   Column,
 } from 'typeorm';
 import { IdentifiedSituation } from '../../common/entities';
+import { Case } from './case.entity';
 
 @Entity('participant_identified_situations')
 export class ParticipantIdentifiedSituation {
@@ -15,6 +16,10 @@ export class ParticipantIdentifiedSituation {
 
   @Column({ name: 'case_id', type: 'int' })
   caseId!: number;
+
+  @ManyToOne(() => Case)
+  @JoinColumn({ name: 'case_id' })
+  case!: Case;
 
   @Column({ name: 'identified_situation_id', type: 'int' })
   identifiedSituationId!: number;

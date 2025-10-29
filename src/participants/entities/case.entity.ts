@@ -13,11 +13,8 @@ import { CaseStatus } from '../../common/enums';
 import { Participant } from './participant.entity';
 import { PhysicalHealthHistory } from './physical-health-history.entity';
 import { MentalHealthHistory } from './mental-health-history.entity';
-import { ConsultationReason } from './consultation-reason.entity';
-import { Intervention } from './intervention.entity';
 import { InterventionPlan } from './intervention-plan.entity';
 import { ProgressNote } from './progress-note.entity';
-import { Referrals } from './referrals.entity';
 import { ClosingNote } from './closing-note.entity';
 import { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
 import { Ponderacion } from './ponderacion.entity';
@@ -46,17 +43,13 @@ export class Case {
   @JoinColumn({ name: 'participant_id' })
   participant!: Participant;
 
-  // 2. MOTIVO DE LA CONSULTA
-  @OneToOne(() => ConsultationReason, (reason) => reason.case, {
-    cascade: true,
-  })
-  consultationReason!: ConsultationReason;
+  // 2. MOTIVO DE LA CONSULTA - ahora es string simple
+  @Column({ name: 'consultation_reason', type: 'text', nullable: true })
+  consultationReason?: string;
 
-  // 4. INTERVENCIÓN INICIAL
-  @OneToOne(() => Intervention, (intervention) => intervention.case, {
-    cascade: true,
-  })
-  intervention!: Intervention;
+  // 4. INTERVENCIÓN INICIAL - ahora es string simple
+  @Column({ name: 'intervention', type: 'text', nullable: true })
+  intervention?: string;
 
   // 5. PLAN DE SEGUIMIENTO - ahora es many-to-many con IDs
   @OneToMany(() => CaseFollowUpPlan, (cfp) => cfp.case, {
@@ -94,11 +87,9 @@ export class Case {
   })
   progressNotes!: ProgressNote[];
 
-  // 11. REFERIDOS (MENCIONAR Y JUSTIFICAR)
-  @OneToOne(() => Referrals, (referrals) => referrals.case, {
-    cascade: true,
-  })
-  referrals!: Referrals;
+  // 11. REFERIDOS - ahora es string simple
+  @Column({ name: 'referrals', type: 'text', nullable: true })
+  referrals?: string;
 
   // 12. NOTA DE CIERRE
   @OneToOne(() => ClosingNote, { cascade: true })
@@ -106,7 +97,7 @@ export class Case {
   closingNote!: ClosingNote;
 
   // 3. SITUACIONES IDENTIFICADAS
-  @OneToMany(() => ParticipantIdentifiedSituation, (pis) => pis.caseId, {
+  @OneToMany(() => ParticipantIdentifiedSituation, (pis) => pis.case, {
     cascade: true,
   })
   participantIdentifiedSituations!: ParticipantIdentifiedSituation[];

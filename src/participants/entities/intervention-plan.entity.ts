@@ -23,10 +23,10 @@ export class InterventionPlan {
   @Column({ name: 'activities', type: 'text', nullable: true })
   activities?: string;
 
-  @Column({ name: 'timeline', type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'timeline', type: 'text', nullable: true })
   timeline?: string;
 
-  @Column({ name: 'responsible', type: 'varchar', length: 200, nullable: true })
+  @Column({ name: 'responsible', type: 'text', nullable: true })
   responsible?: string;
 
   @Column({ name: 'evaluation_criteria', type: 'text', nullable: true })
