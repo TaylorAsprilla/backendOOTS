@@ -2,80 +2,117 @@
   <head>
     <meta charset='UTF-8' />
     <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-    <title>Correo de Prueba - OOTS Colombia</title>
+    <title>Correo de Prueba - OOTS</title>
     <style>
       body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
         line-height: 1.6;
         margin: 0;
         padding: 0;
-        background-color: #f4f4f4;
+        background-color: #fafafa;
       }
       .container {
         max-width: 600px;
         margin: 0 auto;
         background-color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        padding: 0;
       }
       .header {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        background-color: #333;
         color: white;
         padding: 30px 20px;
         text-align: center;
-        border-radius: 10px 10px 0 0;
-        margin: -20px -20px 30px -20px;
+      }
+      .header h1 {
+        margin: 0 0 5px 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+      .header p {
+        margin: 0;
+        font-size: 14px;
+        color: #e0e0e0;
       }
       .content {
-        padding: 0 10px;
+        padding: 30px 20px;
       }
       .test-box {
-        background-color: #d4edda;
+        background-color: #f5f5f5;
         padding: 20px;
-        border-radius: 8px;
-        border-left: 4px solid #28a745;
+        border: 1px solid #e0e0e0;
         margin: 20px 0;
+      }
+      .test-box h2 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+        color: #333;
+        font-weight: 600;
+      }
+      .test-box p {
+        margin: 8px 0;
+        color: #666;
+      }
+      .content h3 {
+        font-size: 16px;
+        color: #333;
+        margin: 25px 0 15px 0;
+        font-weight: 600;
+      }
+      .content ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #666;
+      }
+      .content ul li {
+        margin: 6px 0;
       }
       .footer {
         text-align: center;
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #eee;
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
         color: #666;
         font-size: 14px;
+      }
+      .footer p {
+        margin: 5px 0;
+      }
+      .footer-note {
+        font-size: 12px;
+        color: #999;
       }
     </style>
   </head>
   <body>
     <div class='container'>
       <div class='header'>
-        <h1>✅ Correo de Prueba</h1>
-        <p>OOTS Colombia - Sistema de Correos</p>
+        <h1>Correo de Prueba</h1>
+        <p>OOTS - Sistema de Correos</p>
       </div>
 
       <div class='content'>
         <div class='test-box'>
-          <h2>🎉 ¡Prueba Exitosa!</h2>
+          <h2>Prueba Exitosa</h2>
           <p>{{mensaje}}</p>
           <p><strong>Fecha y hora:</strong> {{fecha}}</p>
         </div>
 
-        <p>Si recibes este correo, significa que el sistema de envío de correos
-          electrónicos está funcionando correctamente.</p>
+        <p style='color: #666;'>Si recibes este correo, significa que el sistema
+          de envío de correos electrónicos está funcionando correctamente.</p>
 
-        <h3>📊 Características del sistema:</h3>
+        <h3>Características del sistema</h3>
         <ul>
-          <li>✅ Configuración SMTP activa</li>
-          <li>✅ Plantillas HTML funcionando</li>
-          <li>✅ Variables dinámicas operativas</li>
-          <li>✅ Integración con NestJS completa</li>
+          <li>Configuración SMTP activa</li>
+          <li>Plantillas HTML funcionando</li>
+          <li>Variables dinámicas operativas</li>
+          <li>Integración con NestJS completa</li>
         </ul>
       </div>
 
       <div class='footer'>
-        <p><strong>OOTS Colombia</strong> - Sistema de Correos Electrónicos</p>
-        <p style='font-size: 12px; color: #999;'>
+        <p><strong>OOTS</strong> - Sistema de Correos Electrónicos</p>
+        <p class='footer-note'>
           Este es un correo de prueba automático.
         </p>
       </div>

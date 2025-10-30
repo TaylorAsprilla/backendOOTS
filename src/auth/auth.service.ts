@@ -117,10 +117,13 @@ export class AuthService {
       const savedUser = await this.userRepository.save(newUser);
 
       // Enviar correo de bienvenida de forma asíncrona (no bloquea la respuesta)
-      this.mailService.sendUserRegistrationEmail(savedUser).catch((error) => {
-        // Solo log del error, no afecta el registro del usuario
-        console.error('Error enviando correo de bienvenida:', error);
-      });
+      // Pasar la contraseña original (sin hashear) para mostrarla en el correo
+      this.mailService
+        .sendUserRegistrationEmail(savedUser, registerDto.password)
+        .catch((error) => {
+          // Solo log del error, no afecta el registro del usuario
+          console.error('Error enviando correo de bienvenida:', error);
+        });
 
       // Retornar solo la información del usuario sin token
       return {
