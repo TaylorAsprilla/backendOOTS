@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ParticipantsModule } from './participants/participants.module';
 import { CasesModule } from './cases/cases.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
+import { MailModule } from './mail/mail.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -61,6 +62,7 @@ import configuration from './config/configuration';
     ParticipantsModule,
     CasesModule,
     CatalogsModule,
+    MailModule,
   ],
   controllers: [],
   providers: [

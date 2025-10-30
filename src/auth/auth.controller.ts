@@ -15,20 +15,21 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import {
-  LoginDto,
-  RegisterDto,
-  AuthResponseDto,
-  UserProfileDto,
-} from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import {
+  AuthResponseDto,
+  RegisterDto,
+  UserProfileDto,
+  LoginDto,
+  RegisterResponseDto,
+} from './dto';
 
 @ApiTags('Autenticación')
-@Controller('api/v1/auth')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -39,7 +40,7 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'Usuario registrado exitosamente',
-    type: AuthResponseDto,
+    type: RegisterResponseDto,
   })
   @ApiResponse({
     status: 409,
@@ -49,7 +50,9 @@ export class AuthController {
     status: 400,
     description: 'Error en los datos de entrada',
   })
-  async register(@Body() registerDto: RegisterDto) {
+  async register(
+    @Body() registerDto: RegisterDto,
+  ): Promise<RegisterResponseDto> {
     return await this.authService.register(registerDto);
   }
 
@@ -68,23 +71,9 @@ export class AuthController {
     status: 401,
     description: 'Credenciales inválidas',
   })
-  async login(@CurrentUser() user: User) {
+  login(@CurrentUser() user: User): AuthResponseDto {
     // El usuario ya viene validado por LocalAuthGuard
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      firstLastName: user.firstLastName,
-    };
-
-    const access_token = await this.authService['jwtService'].sign(payload);
-
-    return {
-      access_token,
-      token_type: 'Bearer',
-      expires_in: 3600,
-      user: user.toResponseObject(),
-    };
+    return this.authService.generateAuthResponse(user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -100,7 +89,7 @@ export class AuthController {
     status: 401,
     description: 'Token inválido o expirado',
   })
-  async getProfile(@CurrentUser() user: User) {
+  async getProfile(@CurrentUser() user: User): Promise<UserProfileDto> {
     const userProfile = await this.authService.getProfile(user.id);
     return userProfile.toResponseObject();
   }
@@ -124,7 +113,7 @@ export class AuthController {
     status: 401,
     description: 'Token inválido o expirado',
   })
-  async validateToken(@CurrentUser() user: User) {
+  validateToken(@CurrentUser() user: User) {
     return {
       valid: true,
       user: user.toResponseObject(),

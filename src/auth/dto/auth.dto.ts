@@ -188,6 +188,32 @@ export class LoginDto {
   password: string;
 }
 
+export class RegisterResponseDto {
+  @ApiProperty({
+    description: 'Mensaje de confirmación',
+    example: 'Usuario registrado exitosamente',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Información del usuario registrado',
+  })
+  user: {
+    id: number;
+    firstName: string;
+    secondName?: string;
+    firstLastName: string;
+    secondLastName?: string;
+    email: string;
+    phoneNumber?: string;
+    position?: string;
+    organization?: string;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
+
 export class AuthResponseDto {
   @ApiProperty({
     description: 'Token JWT de acceso',
