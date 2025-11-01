@@ -192,17 +192,6 @@ export class ParticipantsController {
             mentalHealthObservations:
               'Se sugiere evaluación psicológica especializada',
           },
-          assessment: {
-            consultationReason:
-              'Estrés laboral crónico con impacto en funcionamiento familiar y personal',
-            weighting:
-              'Situación de estrés moderado a severo con riesgo de progresión',
-            concurrentFactors:
-              'Presión laboral elevada, responsabilidades familiares múltiples',
-            criticalFactors: 'Deterioro progresivo de la calidad del sueño',
-            problemAnalysis:
-              'María presenta un cuadro de estrés laboral crónico que ha evolucionado hacia síntomas ansiosos',
-          },
           interventionPlans: [
             {
               goal: 'Reducir los niveles de estrés y ansiedad al 70% en un periodo de 8 semanas',

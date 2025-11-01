@@ -5,7 +5,10 @@ import { ParticipantsService } from './participants.service';
 import { Participant } from './entities/participant.entity';
 import { FamilyMember } from './entities/family-member.entity';
 import { BioPsychosocialHistory } from './entities/bio-psychosocial-history.entity';
+import { Weighing } from './entities/weighing.entity';
 import { User } from '../users/entities/user.entity';
+import { WeighingController } from './controllers/weighing.controller';
+import { WeighingService } from './services/weighing.service';
 
 @Module({
   imports: [
@@ -13,11 +16,12 @@ import { User } from '../users/entities/user.entity';
       Participant,
       FamilyMember,
       BioPsychosocialHistory,
+      Weighing,
       User,
     ]),
   ],
-  controllers: [ParticipantsController],
-  providers: [ParticipantsService],
-  exports: [ParticipantsService],
+  controllers: [ParticipantsController, WeighingController],
+  providers: [ParticipantsService, WeighingService],
+  exports: [ParticipantsService, WeighingService],
 })
 export class ParticipantsModule {}

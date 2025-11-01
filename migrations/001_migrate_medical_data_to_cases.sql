@@ -50,13 +50,6 @@ ADD INDEX idx_mental_health_histories_case_id (case_id),
 ADD CONSTRAINT fk_mental_health_histories_case_id 
   FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE;
 
--- Tabla assessments
-ALTER TABLE assessments 
-ADD COLUMN case_id INT NULL,
-ADD INDEX idx_assessments_case_id (case_id),
-ADD CONSTRAINT fk_assessments_case_id 
-  FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE;
-
 -- Tabla intervention_plans
 ALTER TABLE intervention_plans 
 ADD COLUMN case_id INT NULL,
@@ -111,7 +104,6 @@ WHERE p.id IN (
     UNION SELECT DISTINCT participant_id FROM follow_up_plans
     UNION SELECT DISTINCT participant_id FROM physical_health_histories
     UNION SELECT DISTINCT participant_id FROM mental_health_histories
-    UNION SELECT DISTINCT participant_id FROM assessments
     UNION SELECT DISTINCT participant_id FROM intervention_plans
     UNION SELECT DISTINCT participant_id FROM progress_notes
     UNION SELECT DISTINCT participant_id FROM referrals
@@ -141,10 +133,6 @@ SET p.case_id = c.id;
 UPDATE mental_health_histories m
 JOIN cases c ON c.participant_id = m.participant_id
 SET m.case_id = c.id;
-
-UPDATE assessments a
-JOIN cases c ON c.participant_id = a.participant_id
-SET a.case_id = c.id;
 
 UPDATE intervention_plans ip
 JOIN cases c ON c.participant_id = ip.participant_id
@@ -177,7 +165,6 @@ ALTER TABLE interventions MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE follow_up_plans MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE physical_health_histories MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE mental_health_histories MODIFY COLUMN case_id INT NOT NULL;
-ALTER TABLE assessments MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE intervention_plans MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE progress_notes MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE referrals MODIFY COLUMN case_id INT NOT NULL;
@@ -213,11 +200,6 @@ DROP FOREIGN KEY fk_mental_health_histories_participant_id,
 DROP INDEX idx_mental_health_histories_participant_id,
 DROP COLUMN participant_id;
 
-ALTER TABLE assessments 
-DROP FOREIGN KEY fk_assessments_participant_id,
-DROP INDEX idx_assessments_participant_id,
-DROP COLUMN participant_id;
-
 ALTER TABLE intervention_plans 
 DROP FOREIGN KEY fk_intervention_plans_participant_id,
 DROP INDEX idx_intervention_plans_participant_id,
@@ -251,8 +233,6 @@ UNION ALL
 SELECT 'physical_health_histories', COUNT(*) FROM physical_health_histories WHERE case_id IS NULL
 UNION ALL
 SELECT 'mental_health_histories', COUNT(*) FROM mental_health_histories WHERE case_id IS NULL
-UNION ALL
-SELECT 'assessments', COUNT(*) FROM assessments WHERE case_id IS NULL
 UNION ALL
 SELECT 'intervention_plans', COUNT(*) FROM intervention_plans WHERE case_id IS NULL
 UNION ALL

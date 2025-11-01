@@ -6,11 +6,6 @@
 
 // ❌ CAMPOS QUE CAUSAN ERROR (NO USES ESTOS)
 const CAMPOS_INCORRECTOS = {
-  assessment: [
-    'initialAssessment', // ❌ NO EXISTE
-    'riskLevel', // ❌ NO EXISTE
-    'recommendations', // ❌ NO EXISTE
-  ],
   interventionPlans: [
     'planType', // ❌ NO EXISTE
     'description', // ❌ NO EXISTE
@@ -33,13 +28,6 @@ const CAMPOS_INCORRECTOS = {
 
 // ✅ CAMPOS CORRECTOS (USA SOLO ESTOS)
 const CAMPOS_CORRECTOS = {
-  assessment: [
-    'consultationReason', // ✅ String opcional
-    'weighting', // ✅ String opcional
-    'concurrentFactors', // ✅ String opcional
-    'criticalFactors', // ✅ String opcional
-    'problemAnalysis', // ✅ String opcional
-  ],
   interventionPlans: [
     'goal', // ✅ String opcional
     'objectives', // ✅ String opcional
@@ -89,15 +77,6 @@ const PARTICIPANT_CORRECTO = {
   // 👨‍💼 USUARIO QUE REGISTRA (REQUERIDO)
   registeredById: 1,
 
-  // ✅ ASSESSMENT - SOLO ESTOS 5 CAMPOS
-  assessment: {
-    consultationReason: 'Consulta inicial por situación familiar',
-    weighting: 'Evaluación completa de factores psicosociales',
-    concurrentFactors: 'Factores familiares y económicos',
-    criticalFactors: 'Ninguno identificado en la evaluación inicial',
-    problemAnalysis: 'Análisis detallado de la situación actual',
-  },
-
   // ✅ INTERVENTION PLANS - SOLO ESTOS 6 CAMPOS
   interventionPlans: [
     {
@@ -144,46 +123,39 @@ const PARTICIPANT_CORRECTO = {
 function validarCampos(data: any): { esValido: boolean; errores: string[] } {
   const errores: string[] = [];
 
-  // Validar assessment
-  if (data.assessment) {
-    Object.keys(data.assessment).forEach((campo) => {
-      if (!CAMPOS_CORRECTOS.assessment.includes(campo)) {
-        errores.push(
-          `❌ assessment.${campo} NO ES VÁLIDO. Usa: ${CAMPOS_CORRECTOS.assessment.join(', ')}`,
-        );
-      }
-    });
-  }
-
   // Validar interventionPlans
   if (data.interventionPlans && Array.isArray(data.interventionPlans)) {
     data.interventionPlans.forEach((plan: any, index: number) => {
-      Object.keys(plan).forEach((campo) => {
-        if (!CAMPOS_CORRECTOS.interventionPlans.includes(campo)) {
-          errores.push(
-            `❌ interventionPlans[${index}].${campo} NO ES VÁLIDO. Usa: ${CAMPOS_CORRECTOS.interventionPlans.join(', ')}`,
-          );
-        }
-      });
+      if (plan && typeof plan === 'object') {
+        (Object.keys(plan) as string[]).forEach((campo) => {
+          if (!CAMPOS_CORRECTOS.interventionPlans.includes(campo)) {
+            errores.push(
+              `❌ interventionPlans[${index}].${campo} NO ES VÁLIDO. Usa: ${CAMPOS_CORRECTOS.interventionPlans.join(', ')}`,
+            );
+          }
+        });
+      }
     });
   }
 
   // Validar progressNotes
   if (data.progressNotes && Array.isArray(data.progressNotes)) {
     data.progressNotes.forEach((note: any, index: number) => {
-      Object.keys(note).forEach((campo) => {
-        if (!CAMPOS_CORRECTOS.progressNotes.includes(campo)) {
-          errores.push(
-            `❌ progressNotes[${index}].${campo} NO ES VÁLIDO. Usa: ${CAMPOS_CORRECTOS.progressNotes.join(', ')}`,
-          );
-        }
-      });
+      if (note && typeof note === 'object') {
+        (Object.keys(note) as string[]).forEach((campo) => {
+          if (!CAMPOS_CORRECTOS.progressNotes.includes(campo)) {
+            errores.push(
+              `❌ progressNotes[${index}].${campo} NO ES VÁLIDO. Usa: ${CAMPOS_CORRECTOS.progressNotes.join(', ')}`,
+            );
+          }
+        });
+      }
     });
   }
 
   // Validar referrals
-  if (data.referrals) {
-    Object.keys(data.referrals).forEach((campo) => {
+  if (data.referrals && typeof data.referrals === 'object') {
+    (Object.keys(data.referrals) as string[]).forEach((campo) => {
       if (!CAMPOS_CORRECTOS.referrals.includes(campo)) {
         errores.push(
           `❌ referrals.${campo} NO ES VÁLIDO. Usa: ${CAMPOS_CORRECTOS.referrals.join(', ')}`,
@@ -213,7 +185,6 @@ if (resultado.esValido) {
 }
 
 console.log('\n📚 RESUMEN DE CAMPOS VÁLIDOS:');
-console.log('✅ assessment:', CAMPOS_CORRECTOS.assessment.join(', '));
 console.log(
   '✅ interventionPlans:',
   CAMPOS_CORRECTOS.interventionPlans.join(', '),
@@ -222,7 +193,6 @@ console.log('✅ progressNotes:', CAMPOS_CORRECTOS.progressNotes.join(', '));
 console.log('✅ referrals:', CAMPOS_CORRECTOS.referrals.join(', '));
 
 console.log('\n🚨 CAMPOS QUE CAUSAN ERROR (NO USAR):');
-console.log('❌ assessment:', CAMPOS_INCORRECTOS.assessment.join(', '));
 console.log(
   '❌ interventionPlans:',
   CAMPOS_INCORRECTOS.interventionPlans.join(', '),
