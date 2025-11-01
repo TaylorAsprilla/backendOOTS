@@ -244,17 +244,17 @@ export class CatalogSeedService implements OnModuleInit {
     if (count > 0) return;
 
     const academicLevels = [
-      { name: 'Sin Grado Académico', code: 'SIN', orderIndex: 0 },
-      { name: 'Preescolar', code: 'PRE', orderIndex: 1 },
-      { name: 'Primaria', code: 'PRI', orderIndex: 2 },
-      { name: 'Secundaria', code: 'SEC', orderIndex: 3 },
-      { name: 'Técnico', code: 'TEC', orderIndex: 4 },
-      { name: 'Tecnólogo', code: 'TLG', orderIndex: 5 },
-      { name: 'Pregrado', code: 'PRG', orderIndex: 6 },
-      { name: 'Especialización', code: 'ESP', orderIndex: 7 },
-      { name: 'Maestria', code: 'MAE', orderIndex: 8 },
-      { name: 'Doctorado', code: 'DOC', orderIndex: 9 },
-      { name: 'Postdoctorado', code: 'POS', orderIndex: 10 },
+      { name: 'Sin Grado Académico' },
+      { name: 'Preescolar' },
+      { name: 'Primaria' },
+      { name: 'Secundaria' },
+      { name: 'Técnico' },
+      { name: 'Tecnólogo' },
+      { name: 'Pregrado' },
+      { name: 'Especialización' },
+      { name: 'Maestria' },
+      { name: 'Doctorado' },
+      { name: 'Postdoctorado' },
     ];
 
     await this.academicLevelRepository.save(academicLevels);

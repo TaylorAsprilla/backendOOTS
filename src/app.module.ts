@@ -11,6 +11,7 @@ import { ParticipantsModule } from './participants/participants.module';
 import { CasesModule } from './cases/cases.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { MailModule } from './mail/mail.module';
+import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -63,6 +64,7 @@ import configuration from './config/configuration';
     CasesModule,
     CatalogsModule,
     MailModule,
+    AcademicLevelsModule,
   ],
   controllers: [],
   providers: [
