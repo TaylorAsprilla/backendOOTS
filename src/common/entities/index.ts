@@ -5,7 +5,6 @@ export { HealthInsurance } from './health-insurance.entity';
 export { HousingType } from './housing-type.entity';
 export { FamilyRelationship } from './family-relationship.entity';
 export { AcademicLevel } from './academic-level.entity';
-export { EducationLevel } from './education-level.entity';
 export { IncomeSource } from './income-source.entity';
 export { IncomeLevel } from './income-level.entity';
 export { IdentifiedSituation } from './identified-situation.entity';

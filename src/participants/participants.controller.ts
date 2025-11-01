@@ -19,6 +19,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
@@ -32,12 +33,17 @@ export class ParticipantsController {
 
   @Post()
   @ApiOperation({
-    summary: 'Crear nuevo participante',
+    summary: 'Crear nuevo participante en el sistema',
     description:
-      'Crea un nuevo participante en el sistema OOTS con toda su información personal, familiar, médica y psicosocial',
+      'Crea un nuevo participante en el sistema OOTS Colombia con toda su información personal completa. ' +
+      'Este endpoint permite registrar datos personales básicos (nombres, documento, contacto), información de emergencia, ' +
+      'miembros de familia, historia biopsicosocial, motivo de consulta, situaciones identificadas, intervención inicial, ' +
+      'plan de seguimiento, historias de salud física y mental, planes de intervención, notas de progreso, referidos y nota de cierre. ' +
+      'IMPORTANTE: Solo se deben incluir campos de información básica del participante. La información médica detallada se registra posteriormente en los CASOS.',
   })
   @ApiCreatedResponse({
-    description: 'Participante creado exitosamente',
+    description:
+      'Participante creado exitosamente con toda su información básica. Retorna el ID del participante y datos principales.',
     schema: {
       type: 'object',
       properties: {
@@ -50,7 +56,8 @@ export class ParticipantsController {
     },
   })
   @ApiBadRequestResponse({
-    description: 'Datos de entrada inválidos',
+    description:
+      'Datos de entrada inválidos. Verifica que todos los campos requeridos estén presentes y con el formato correcto.',
     schema: {
       type: 'object',
       properties: {
@@ -61,14 +68,34 @@ export class ParticipantsController {
           example: [
             'firstName must be longer than or equal to 2 characters',
             'email must be an email',
+            'phoneNumber must match the format +57 XXX XXX XXXX',
+            'documentNumber is required',
           ],
         },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
   })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Conflicto: Ya existe un participante con el mismo número de documento.',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 409 },
+        message: {
+          type: 'string',
+          example:
+            'Ya existe un participante con el número de documento 1234567890',
+        },
+        error: { type: 'string', example: 'Conflict' },
+      },
+    },
+  })
   @ApiInternalServerErrorResponse({
-    description: 'Error interno del servidor',
+    description:
+      'Error interno del servidor al crear el participante o sus entidades relacionadas.',
     schema: {
       type: 'object',
       properties: {
@@ -78,7 +105,8 @@ export class ParticipantsController {
     },
   })
   @ApiBody({
-    description: 'Datos completos del participante a crear',
+    description:
+      'Datos completos del participante a crear. Los campos marcados como requeridos son obligatorios.',
     type: CreateParticipantDto,
     examples: {
       'ejemplo-completo': {
@@ -144,7 +172,7 @@ export class ParticipantsController {
             occupationalHistory:
               '5 años como psicóloga clínica en hospital público, 3 años en consulta privada',
             housingTypeId: 1,
-            educationLevelId: 3,
+            academicLevelId: 3,
             incomeSourceId: 2,
             incomeLevelId: 4,
             housing:
@@ -270,12 +298,16 @@ export class ParticipantsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Obtener todos los participantes',
+    summary: 'Obtener lista de participantes con paginación y filtros',
     description:
-      'Obtiene una lista paginada de participantes con filtros opcionales de búsqueda',
+      'Obtiene una lista paginada de participantes del sistema con capacidad de búsqueda y filtrado. ' +
+      'Soporta búsqueda por nombre/apellido, filtro por ciudad, y paginación configurable. ' +
+      'Útil para listados generales, búsquedas rápidas y vistas administrativas. ' +
+      'Por defecto retorna 10 participantes por página ordenados por fecha de creación descendente.',
   })
   @ApiOkResponse({
-    description: 'Lista de participantes obtenida exitosamente',
+    description:
+      'Lista de participantes obtenida exitosamente con metadatos de paginación.',
     schema: {
       type: 'object',
       properties: {
@@ -303,33 +335,59 @@ export class ParticipantsController {
   @ApiQuery({
     name: 'search',
     required: false,
-    description: 'Buscar por nombre o apellido del participante',
+    description:
+      'Término de búsqueda para filtrar por nombre o apellido del participante. La búsqueda es insensible a mayúsculas/minúsculas y busca coincidencias parciales.',
     type: String,
-    example: 'María',
+    example: 'María González',
   })
   @ApiQuery({
     name: 'city',
     required: false,
-    description: 'Filtrar por ciudad',
+    description:
+      'Filtrar participantes por ciudad de residencia. Busca coincidencia exacta.',
     type: String,
     example: 'Bogotá',
   })
   @ApiQuery({
     name: 'page',
     required: false,
-    description: 'Número de página para paginación',
+    description:
+      'Número de página a consultar (inicia en 1). Por defecto es la página 1.',
     type: Number,
     example: 1,
   })
   @ApiQuery({
     name: 'limit',
     required: false,
-    description: 'Cantidad de registros por página',
+    description:
+      'Cantidad de registros por página (máximo 100). Por defecto son 10 registros.',
     type: Number,
     example: 10,
   })
   @ApiBadRequestResponse({
-    description: 'Parámetros de consulta inválidos',
+    description:
+      'Parámetros de consulta inválidos. Verifica que page y limit sean números positivos.',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [
+          'page must be a positive number',
+          'limit must not exceed 100',
+        ],
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor al consultar los participantes.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Error interno del servidor',
+        error: 'Internal Server Error',
+      },
+    },
   })
   findAll(@Query() searchDto: SearchParticipantsDto) {
     return this.participantsService.findAll(searchDto);
@@ -337,18 +395,22 @@ export class ParticipantsController {
 
   @Get(':id')
   @ApiOperation({
-    summary: 'Obtener participante por ID',
+    summary: 'Obtener participante completo por ID',
     description:
-      'Obtiene los datos completos de un participante específico por su ID',
+      'Obtiene todos los datos de un participante específico por su ID único, incluyendo: ' +
+      'información personal completa, datos de contacto, contacto de emergencia, miembros de familia, ' +
+      'historia biopsicosocial, y relaciones con catálogos (género, estado civil, tipo de documento, etc.). ' +
+      'Útil para vistas de detalle y edición de participantes.',
   })
   @ApiParam({
     name: 'id',
-    description: 'ID único del participante',
+    description: 'ID único del participante a consultar',
     type: Number,
     example: 1,
   })
   @ApiOkResponse({
-    description: 'Participante encontrado exitosamente',
+    description:
+      'Participante encontrado exitosamente con toda su información.',
     schema: {
       type: 'object',
       properties: {
@@ -370,7 +432,8 @@ export class ParticipantsController {
     },
   })
   @ApiNotFoundResponse({
-    description: 'Participante no encontrado',
+    description:
+      'Participante no encontrado con el ID proporcionado o fue eliminado (soft delete).',
     schema: {
       type: 'object',
       properties: {
@@ -381,7 +444,25 @@ export class ParticipantsController {
     },
   })
   @ApiBadRequestResponse({
-    description: 'ID inválido proporcionado',
+    description: 'ID inválido proporcionado. Debe ser un número entero.',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Validation failed (numeric string is expected)',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor al consultar el participante.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Error interno del servidor',
+        error: 'Internal Server Error',
+      },
+    },
   })
   findOne(@Param('id') id: string) {
     return this.participantsService.findOne(+id);
@@ -389,9 +470,12 @@ export class ParticipantsController {
 
   @Patch(':id')
   @ApiOperation({
-    summary: 'Actualizar participante',
+    summary: 'Actualizar datos de un participante',
     description:
-      'Actualiza los datos de un participante existente. Solo se actualizan los campos proporcionados.',
+      'Actualiza parcialmente los datos de un participante existente. Solo se actualizan los campos proporcionados en el body, ' +
+      'el resto de campos permanecen sin cambios (actualización parcial - PATCH). ' +
+      'Permite actualizar información personal, contacto, emergencia, y datos relacionados. ' +
+      'NOTA: Para actualizar información médica, utilice los endpoints de CASOS.',
   })
   @ApiParam({
     name: 'id',
@@ -400,26 +484,98 @@ export class ParticipantsController {
     example: 1,
   })
   @ApiBody({
-    description: 'Datos del participante a actualizar (campos opcionales)',
+    description:
+      'Datos del participante a actualizar. Todos los campos son opcionales. Solo incluya los campos que desea modificar.',
     type: UpdateParticipantDto,
+    examples: {
+      'actualizar-contacto': {
+        summary: 'Actualizar solo información de contacto',
+        value: {
+          phoneNumber: '+57 300 999 8888',
+          email: 'nuevo.email@example.com',
+          address: 'Nueva dirección Calle 100 # 20-30',
+        },
+      },
+      'actualizar-emergencia': {
+        summary: 'Actualizar contacto de emergencia',
+        value: {
+          emergencyContactName: 'Pedro Gómez',
+          emergencyContactPhone: '+57 301 888 7777',
+          emergencyContactEmail: 'pedro.gomez@email.com',
+        },
+      },
+      'actualizar-completo': {
+        summary: 'Actualización múltiple de campos',
+        value: {
+          secondName: 'Isabel',
+          phoneNumber: '+57 300 111 2222',
+          city: 'Cali',
+          maritalStatusId: 2,
+        },
+      },
+    },
   })
   @ApiOkResponse({
-    description: 'Participante actualizado exitosamente',
+    description:
+      'Participante actualizado exitosamente. Retorna el participante con los cambios aplicados.',
     schema: {
       type: 'object',
       properties: {
         id: { type: 'number', example: 1 },
         firstName: { type: 'string', example: 'María' },
         firstLastName: { type: 'string', example: 'González' },
+        phoneNumber: { type: 'string', example: '+57 300 999 8888' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
     },
   })
   @ApiNotFoundResponse({
-    description: 'Participante no encontrado',
+    description: 'Participante no encontrado con el ID proporcionado.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Participant with ID 1 not found',
+        error: 'Not Found',
+      },
+    },
   })
   @ApiBadRequestResponse({
-    description: 'Datos de actualización inválidos',
+    description:
+      'Datos de actualización inválidos. Verifica el formato de los campos proporcionados.',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [
+          'email must be an email',
+          'phoneNumber must match the format +57 XXX XXX XXXX',
+        ],
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Conflicto: El número de documento actualizado ya está en uso por otro participante.',
+    schema: {
+      example: {
+        statusCode: 409,
+        message:
+          'El número de documento 1234567890 ya está registrado para otro participante',
+        error: 'Conflict',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor al actualizar el participante.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Error interno del servidor',
+        error: 'Internal Server Error',
+      },
+    },
   })
   update(@Param('id') id: string, @Body() updateDto: UpdateParticipantDto) {
     return this.participantsService.update(+id, updateDto);
@@ -427,18 +583,24 @@ export class ParticipantsController {
 
   @Delete(':id')
   @ApiOperation({
-    summary: 'Eliminar participante',
+    summary: 'Eliminar participante (Soft Delete)',
     description:
-      'Realiza un borrado lógico (soft delete) del participante. Los datos no se eliminan físicamente.',
+      'Realiza un borrado lógico (soft delete) del participante. Los datos NO se eliminan físicamente de la base de datos, ' +
+      'solo se marca el registro con una fecha de eliminación (deletedAt). ' +
+      'El participante y toda su información permanecen en la base de datos para auditoría e histórico, ' +
+      'pero ya no aparecerán en las consultas normales. ' +
+      'IMPORTANTE: Esta operación también afecta a todos los casos y datos médicos asociados al participante.',
   })
   @ApiParam({
     name: 'id',
-    description: 'ID único del participante a eliminar',
+    description:
+      'ID único del participante a eliminar (borrado lógico, no físico)',
     type: Number,
     example: 1,
   })
   @ApiOkResponse({
-    description: 'Participante eliminado exitosamente',
+    description:
+      'Participante eliminado exitosamente mediante borrado lógico. Los datos permanecen en la base de datos.',
     schema: {
       type: 'object',
       properties: {
@@ -451,10 +613,36 @@ export class ParticipantsController {
     },
   })
   @ApiNotFoundResponse({
-    description: 'Participante no encontrado',
+    description:
+      'Participante no encontrado con el ID proporcionado o ya fue eliminado previamente.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Participant with ID 1 not found',
+        error: 'Not Found',
+      },
+    },
   })
   @ApiBadRequestResponse({
-    description: 'ID inválido proporcionado',
+    description: 'ID inválido proporcionado. Debe ser un número entero.',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Validation failed (numeric string is expected)',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor al eliminar el participante.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Error interno del servidor',
+        error: 'Internal Server Error',
+      },
+    },
   })
   remove(@Param('id') id: string) {
     return this.participantsService.remove(+id);
@@ -462,12 +650,16 @@ export class ParticipantsController {
 
   @Get('stats/demographic')
   @ApiOperation({
-    summary: 'Estadísticas demográficas',
+    summary: 'Obtener estadísticas demográficas de participantes',
     description:
-      'Obtiene estadísticas demográficas de los participantes registrados en el sistema',
+      'Obtiene estadísticas y análisis demográfico de todos los participantes registrados en el sistema. ' +
+      'Incluye distribución por género, ciudad de residencia, rangos de edad, estado civil, y otros indicadores demográficos. ' +
+      'Útil para reportes, análisis poblacional, dashboards administrativos y toma de decisiones. ' +
+      'Los datos se calculan en tiempo real sobre todos los participantes activos (no eliminados).',
   })
   @ApiOkResponse({
-    description: 'Estadísticas obtenidas exitosamente',
+    description:
+      'Estadísticas demográficas obtenidas exitosamente con información detallada de distribución poblacional.',
     schema: {
       type: 'object',
       properties: {
@@ -509,7 +701,15 @@ export class ParticipantsController {
     },
   })
   @ApiInternalServerErrorResponse({
-    description: 'Error al generar estadísticas',
+    description:
+      'Error interno del servidor al generar las estadísticas demográficas.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Error al generar estadísticas demográficas',
+        error: 'Internal Server Error',
+      },
+    },
   })
   getStats() {
     return this.participantsService.getDemographicStats();

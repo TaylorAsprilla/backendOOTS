@@ -8,7 +8,6 @@ import {
   HealthInsurance,
   FamilyRelationship,
   AcademicLevel,
-  EducationLevel,
   IncomeSource,
   IncomeLevel,
   HousingType,
@@ -33,8 +32,6 @@ export class CatalogController {
     private readonly familyRelationshipRepository: Repository<FamilyRelationship>,
     @InjectRepository(AcademicLevel)
     private readonly academicLevelRepository: Repository<AcademicLevel>,
-    @InjectRepository(EducationLevel)
-    private readonly educationLevelRepository: Repository<EducationLevel>,
     @InjectRepository(IncomeSource)
     private readonly incomeSourceRepository: Repository<IncomeSource>,
     @InjectRepository(IncomeLevel)
@@ -81,11 +78,6 @@ export class CatalogController {
     return this.academicLevelRepository.find({ order: { name: 'ASC' } });
   }
 
-  @Get('education-levels')
-  async getEducationLevels() {
-    return this.educationLevelRepository.find({ order: { name: 'ASC' } });
-  }
-
   @Get('income-sources')
   async getIncomeSources() {
     return this.incomeSourceRepository.find({ order: { name: 'ASC' } });
@@ -130,7 +122,6 @@ export class CatalogController {
       healthInsurances,
       familyRelationships,
       academicLevels,
-      educationLevels,
       incomeSources,
       incomeLevels,
       housingTypes,
@@ -145,7 +136,6 @@ export class CatalogController {
       this.healthInsuranceRepository.find({ order: { name: 'ASC' } }),
       this.familyRelationshipRepository.find({ order: { name: 'ASC' } }),
       this.academicLevelRepository.find({ order: { name: 'ASC' } }),
-      this.educationLevelRepository.find({ order: { name: 'ASC' } }),
       this.incomeSourceRepository.find({ order: { name: 'ASC' } }),
       this.incomeLevelRepository.find({ order: { name: 'ASC' } }),
       this.housingTypeRepository.find({ order: { name: 'ASC' } }),
@@ -162,7 +152,6 @@ export class CatalogController {
       healthInsurances,
       familyRelationships,
       academicLevels,
-      educationLevels,
       incomeSources,
       incomeLevels,
       housingTypes,

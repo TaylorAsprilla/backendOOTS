@@ -124,7 +124,7 @@ export class ParticipantsService {
       relations: [
         'familyMembers',
         'bioPsychosocialHistory',
-        'bioPsychosocialHistory.educationLevel',
+        'bioPsychosocialHistory.academicLevel',
         'bioPsychosocialHistory.incomeSource',
         'bioPsychosocialHistory.incomeLevel',
         'bioPsychosocialHistory.housingType',

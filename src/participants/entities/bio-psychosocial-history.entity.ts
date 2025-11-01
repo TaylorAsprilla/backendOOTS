@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Participant } from './participant.entity';
 import {
-  EducationLevel,
+  AcademicLevel,
   IncomeSource,
   IncomeLevel,
   HousingType,
@@ -44,8 +44,8 @@ export class BioPsychosocialHistory {
   @Column({ name: 'participant_id', type: 'int', unique: true })
   participantId!: number;
 
-  @Column({ name: 'education_level_id', type: 'int', nullable: true })
-  educationLevelId?: number;
+  @Column({ name: 'academic_level_id', type: 'int', nullable: true })
+  academicLevelId?: number;
 
   @Column({ name: 'income_source_id', type: 'int', nullable: true })
   incomeSourceId?: number;
@@ -63,9 +63,9 @@ export class BioPsychosocialHistory {
   @JoinColumn({ name: 'participant_id' })
   participant!: Participant;
 
-  @ManyToOne(() => EducationLevel, { eager: true, nullable: true })
-  @JoinColumn({ name: 'education_level_id' })
-  educationLevel?: EducationLevel;
+  @ManyToOne(() => AcademicLevel, { eager: true, nullable: true })
+  @JoinColumn({ name: 'academic_level_id' })
+  academicLevel?: AcademicLevel;
 
   @ManyToOne(() => IncomeSource, { eager: true, nullable: true })
   @JoinColumn({ name: 'income_source_id' })

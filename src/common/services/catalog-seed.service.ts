@@ -9,7 +9,6 @@ import {
   HousingType,
   FamilyRelationship,
   AcademicLevel,
-  EducationLevel,
   IncomeSource,
   IncomeLevel,
   IdentifiedSituation,
@@ -42,9 +41,6 @@ export class CatalogSeedService implements OnModuleInit {
 
     @InjectRepository(AcademicLevel)
     private readonly academicLevelRepository: Repository<AcademicLevel>,
-
-    @InjectRepository(EducationLevel)
-    private readonly educationLevelRepository: Repository<EducationLevel>,
 
     @InjectRepository(IncomeSource)
     private readonly incomeSourceRepository: Repository<IncomeSource>,
@@ -82,7 +78,6 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedHousingTypes();
     await this.seedFamilyRelationships();
     await this.seedAcademicLevels();
-    await this.seedEducationLevels();
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
     await this.seedIdentifiedSituations();
@@ -259,26 +254,6 @@ export class CatalogSeedService implements OnModuleInit {
 
     await this.academicLevelRepository.save(academicLevels);
     console.log('🎓 Academic levels seeded');
-  }
-
-  private async seedEducationLevels() {
-    const count = await this.educationLevelRepository.count();
-    if (count > 0) return;
-
-    const educationLevels = [
-      { name: 'No tiene estudios', code: 'NTE', orderIndex: 0 },
-      { name: 'Primaria', code: 'PRI', orderIndex: 1 },
-      { name: 'Secundaria', code: 'SEC', orderIndex: 2 },
-      { name: 'Técnico', code: 'TEC', orderIndex: 3 },
-      { name: 'Tecnólogo', code: 'TLG', orderIndex: 4 },
-      { name: 'Universidad', code: 'UNI', orderIndex: 5 },
-      { name: 'Especialización', code: 'ESP', orderIndex: 6 },
-      { name: 'Maestría', code: 'MAE', orderIndex: 7 },
-      { name: 'Doctorado', code: 'DOC', orderIndex: 8 },
-    ];
-
-    await this.educationLevelRepository.save(educationLevels);
-    console.log('📚 Education levels seeded');
   }
 
   private async seedIncomeSources() {

@@ -55,7 +55,7 @@ export class CreateBioPsychosocialHistoryDto {
 
   @IsOptional()
   @IsNumber()
-  educationLevelId?: number;
+  academicLevelId?: number;
 
   @IsOptional()
   @IsNumber()
