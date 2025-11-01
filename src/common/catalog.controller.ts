@@ -11,7 +11,6 @@ import {
   IncomeSource,
   IncomeLevel,
   HousingType,
-  FollowUpPlanType,
   TreatmentStatus,
   ApproachType,
   ProcessType,
@@ -38,8 +37,6 @@ export class CatalogController {
     private readonly incomeLevelRepository: Repository<IncomeLevel>,
     @InjectRepository(HousingType)
     private readonly housingTypeRepository: Repository<HousingType>,
-    @InjectRepository(FollowUpPlanType)
-    private readonly followUpPlanTypeRepository: Repository<FollowUpPlanType>,
     @InjectRepository(TreatmentStatus)
     private readonly treatmentStatusRepository: Repository<TreatmentStatus>,
     @InjectRepository(ApproachType)
@@ -93,11 +90,6 @@ export class CatalogController {
     return this.housingTypeRepository.find({ order: { name: 'ASC' } });
   }
 
-  @Get('follow-up-plan-types')
-  async getFollowUpPlanTypes() {
-    return this.followUpPlanTypeRepository.find({ order: { name: 'ASC' } });
-  }
-
   @Get('treatment-statuses')
   async getTreatmentStatuses() {
     return this.treatmentStatusRepository.find({ order: { name: 'ASC' } });
@@ -125,7 +117,6 @@ export class CatalogController {
       incomeSources,
       incomeLevels,
       housingTypes,
-      followUpPlanTypes,
       treatmentStatuses,
       approachTypes,
       processTypes,
@@ -139,7 +130,6 @@ export class CatalogController {
       this.incomeSourceRepository.find({ order: { name: 'ASC' } }),
       this.incomeLevelRepository.find({ order: { name: 'ASC' } }),
       this.housingTypeRepository.find({ order: { name: 'ASC' } }),
-      this.followUpPlanTypeRepository.find({ order: { name: 'ASC' } }),
       this.treatmentStatusRepository.find({ order: { name: 'ASC' } }),
       this.approachTypeRepository.find({ order: { name: 'ASC' } }),
       this.processTypeRepository.find({ order: { name: 'ASC' } }),
@@ -155,7 +145,6 @@ export class CatalogController {
       incomeSources,
       incomeLevels,
       housingTypes,
-      followUpPlanTypes,
       treatmentStatuses,
       approachTypes,
       processTypes,

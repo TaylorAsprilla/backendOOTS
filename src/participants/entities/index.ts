@@ -9,4 +9,3 @@ export { CaseFollowUpPlan } from './case-follow-up-plan.entity';
 export { InterventionPlan } from './intervention-plan.entity';
 export { ClosingNote } from './closing-note.entity';
 export { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
-export { Ponderacion } from './ponderacion.entity';

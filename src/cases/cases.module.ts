@@ -7,7 +7,6 @@ import { Participant } from '../participants/entities/participant.entity';
 import { CaseFollowUpPlan } from '../participants/entities/case-follow-up-plan.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
 import { MentalHealthHistory } from '../participants/entities/mental-health-history.entity';
-import { Ponderacion } from '../participants/entities/ponderacion.entity';
 import { InterventionPlan } from '../participants/entities/intervention-plan.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { ClosingNote } from '../participants/entities/closing-note.entity';
@@ -23,7 +22,6 @@ import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.e
       CaseFollowUpPlan,
       PhysicalHealthHistory,
       MentalHealthHistory,
-      Ponderacion,
       InterventionPlan,
       ProgressNote,
       ClosingNote,

@@ -72,18 +72,6 @@ export class CasesController {
             observations:
               'Se sugiere evaluación psicológica especializada complementaria',
           },
-          ponderacion: {
-            consultationMotiveAnalysis:
-              'Se evidencia sintomatología ansiosa moderada con afectación del sueño y concentración',
-            identifiedSituationAnalysis:
-              'Situación de crisis vital por cambio en estructura familiar',
-            favorableConditions:
-              'Cuenta con red de apoyo familiar, empleo estable, buena adherencia al tratamiento',
-            unfavorableConditions:
-              'Escasa red de apoyo social externo, resistencia inicial a proceso terapéutico',
-            theoreticalApproach:
-              'Terapia cognitivo-conductual con enfoque en manejo de ansiedad y reestructuración cognitiva',
-          },
           interventionPlans: [
             {
               goal: 'Reducir niveles de ansiedad al 70% en 8 semanas',
@@ -297,10 +285,6 @@ export class CasesController {
         },
         mentalHealthHistory: {
           currentConditions: 'Episodios de ansiedad',
-        },
-        ponderacion: {
-          consultationMotiveAnalysis: 'Sintomatología ansiosa moderada',
-          theoreticalApproach: 'Terapia cognitivo-conductual',
         },
         interventionPlans: [
           {

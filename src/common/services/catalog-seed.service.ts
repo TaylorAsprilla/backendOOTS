@@ -12,7 +12,6 @@ import {
   IncomeSource,
   IncomeLevel,
   IdentifiedSituation,
-  FollowUpPlanType,
   ApproachType,
   ProcessType,
   TreatmentStatus,
@@ -51,9 +50,6 @@ export class CatalogSeedService implements OnModuleInit {
     @InjectRepository(IdentifiedSituation)
     private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
 
-    @InjectRepository(FollowUpPlanType)
-    private readonly followUpPlanTypeRepository: Repository<FollowUpPlanType>,
-
     @InjectRepository(ApproachType)
     private readonly approachTypeRepository: Repository<ApproachType>,
 
@@ -81,7 +77,6 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
     await this.seedIdentifiedSituations();
-    await this.seedFollowUpPlanTypes();
     await this.seedApproachTypes();
     await this.seedProcessTypes();
     await this.seedTreatmentStatuses();
@@ -469,47 +464,6 @@ export class CatalogSeedService implements OnModuleInit {
 
     await this.identifiedSituationRepository.save(situations);
     console.log('🎯 Identified situations seeded');
-  }
-
-  private async seedFollowUpPlanTypes() {
-    const count = await this.followUpPlanTypeRepository.count();
-    if (count > 0) return;
-
-    const planTypes = [
-      {
-        name: 'Se culminó el proceso de ayuda',
-        code: 'CULM',
-        requiresDetails: false,
-        description: 'El proceso de orientación ha finalizado exitosamente',
-      },
-      {
-        name: 'Se coordinó servicios en (mencionar agencia)',
-        code: 'COORD',
-        requiresDetails: true,
-        description: 'Se estableció coordinación con agencia externa',
-      },
-      {
-        name: 'Se hará un referido (mencionar los referidos y justificar)',
-        code: 'REF',
-        requiresDetails: true,
-        description: 'Se realizará referencia a especialista o institución',
-      },
-      {
-        name: 'Se coordinó cita para iniciar proceso de orientación',
-        code: 'CITA',
-        requiresDetails: false,
-        description: 'Se programó nueva cita para continuar orientación',
-      },
-      {
-        name: 'Otros',
-        code: 'OTR',
-        requiresDetails: true,
-        description: 'Otro tipo de plan de seguimiento',
-      },
-    ];
-
-    await this.followUpPlanTypeRepository.save(planTypes);
-    console.log('📋 Follow-up plan types seeded');
   }
 
   private async seedApproachTypes() {

@@ -8,7 +8,6 @@ import {
   IsArray,
   IsNumber,
   IsDateString,
-  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -190,49 +189,6 @@ export class CreateProgressNoteDto {
   agreements?: string;
 }
 
-export class CreatePonderacionDto {
-  @ApiProperty({
-    description:
-      'Análisis del motivo de consulta desde perspectiva profesional',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  consultationMotiveAnalysis?: string;
-
-  @ApiProperty({
-    description: 'Análisis de las situaciones problemáticas identificadas',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  identifiedSituationAnalysis?: string;
-
-  @ApiProperty({
-    description: 'Condiciones que favorecen el proceso terapéutico',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  favorableConditions?: string;
-
-  @ApiProperty({
-    description: 'Condiciones que pueden dificultar el proceso terapéutico',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  unfavorableConditions?: string;
-
-  @ApiProperty({
-    description: 'Enfoque teórico o modelo terapéutico a aplicar',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  theoreticalApproach?: string;
-}
-
 export class CreateClosingNoteDto {
   @ApiProperty({
     description: 'Fecha en que se cierra el caso',
@@ -354,18 +310,7 @@ export class CreateCaseDto {
   @Type(() => CreateMentalHealthHistoryDto)
   mentalHealthHistory?: CreateMentalHealthHistoryDto;
 
-  // 8. PONDERACIÓN
-  @ApiProperty({
-    description: 'Ponderación del caso (análisis profesional integral)',
-    required: false,
-  })
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreatePonderacionDto)
-  ponderacion?: CreatePonderacionDto;
-
-  // 9. PLANES DE INTERVENCIÓN DETALLADOS
+  // 8. PLANES DE INTERVENCIÓN DETALLADOS
   @ApiProperty({
     description: 'Planes de intervención del caso',
     required: false,

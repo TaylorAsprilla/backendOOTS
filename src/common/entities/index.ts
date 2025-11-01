@@ -8,7 +8,6 @@ export { AcademicLevel } from './academic-level.entity';
 export { IncomeSource } from './income-source.entity';
 export { IncomeLevel } from './income-level.entity';
 export { IdentifiedSituation } from './identified-situation.entity';
-export { FollowUpPlanType } from './follow-up-plan-type.entity';
 export { FollowUpPlanCatalog } from './follow-up-plan-catalog.entity';
 export { ApproachType } from './approach-type.entity';
 export { ProcessType } from './process-type.entity';
