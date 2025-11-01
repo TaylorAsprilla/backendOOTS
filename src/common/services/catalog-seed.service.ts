@@ -544,32 +544,26 @@ export class CatalogSeedService implements OnModuleInit {
     const approachTypes = [
       {
         name: 'Consulta Presencial',
-        code: 'CP',
         description: 'Atención presencial en las instalaciones',
       },
       {
         name: 'Email',
-        code: 'E',
         description: 'Comunicación por correo electrónico',
       },
       {
         name: 'Encuentro Casual',
-        code: 'EC',
         description: 'Encuentro no programado',
       },
       {
         name: 'Llamada',
-        code: 'Ll',
         description: 'Comunicación telefónica',
       },
       {
         name: 'Tele Consulta',
-        code: 'TC',
         description: 'Consulta por video llamada',
       },
       {
         name: 'Virtual',
-        code: 'V',
         description: 'Atención por medios virtuales',
       },
     ];
