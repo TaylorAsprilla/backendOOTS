@@ -13,6 +13,7 @@ import { ClosingNote } from '../participants/entities/closing-note.entity';
 import { ParticipantIdentifiedSituation } from '../participants/entities/participant-identified-situation.entity';
 import { IdentifiedSituation } from '../common/entities';
 import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
+import { Weighing } from '../participants/entities/weighing.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.e
       CaseFollowUpPlan,
       PhysicalHealthHistory,
       MentalHealthHistory,
+      Weighing,
       InterventionPlan,
       ProgressNote,
       ClosingNote,

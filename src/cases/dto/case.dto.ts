@@ -189,6 +189,48 @@ export class CreateProgressNoteDto {
   agreements?: string;
 }
 
+export class CreateWeighingDto {
+  @ApiProperty({
+    description: 'Motivo de consulta para la ponderación',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  reasonConsultation?: string;
+
+  @ApiProperty({
+    description: 'Situación identificada',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  identifiedSituation?: string;
+
+  @ApiProperty({
+    description: 'Condiciones favorables',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  favorableConditions?: string;
+
+  @ApiProperty({
+    description: 'Condiciones no favorables',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  conditionsNotFavorable?: string;
+
+  @ApiProperty({
+    description: 'Proceso de ayuda',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  helpProcess?: string;
+}
+
 export class CreateClosingNoteDto {
   @ApiProperty({
     description: 'Fecha en que se cierra el caso',
@@ -310,7 +352,18 @@ export class CreateCaseDto {
   @Type(() => CreateMentalHealthHistoryDto)
   mentalHealthHistory?: CreateMentalHealthHistoryDto;
 
-  // 8. PLANES DE INTERVENCIÓN DETALLADOS
+  // 8. PONDERACIÓN (WEIGHING)
+  @ApiProperty({
+    description: 'Ponderación del caso',
+    required: false,
+  })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => CreateWeighingDto)
+  weighing?: CreateWeighingDto;
+
+  // 9. PLANES DE INTERVENCIÓN DETALLADOS
   @ApiProperty({
     description: 'Planes de intervención del caso',
     required: false,

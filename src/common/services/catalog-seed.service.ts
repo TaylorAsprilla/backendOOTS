@@ -7,7 +7,7 @@ import {
   MaritalStatus,
   HealthInsurance,
   HousingType,
-  FamilyRelationship,
+  Relationship,
   AcademicLevel,
   IncomeSource,
   IncomeLevel,
@@ -35,8 +35,8 @@ export class CatalogSeedService implements OnModuleInit {
     @InjectRepository(HousingType)
     private readonly housingTypeRepository: Repository<HousingType>,
 
-    @InjectRepository(FamilyRelationship)
-    private readonly familyRelationshipRepository: Repository<FamilyRelationship>,
+    @InjectRepository(Relationship)
+    private readonly relationshipRepository: Repository<Relationship>,
 
     @InjectRepository(AcademicLevel)
     private readonly academicLevelRepository: Repository<AcademicLevel>,
@@ -72,7 +72,7 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedMaritalStatuses();
     await this.seedHealthInsurances();
     await this.seedHousingTypes();
-    await this.seedFamilyRelationships();
+    await this.seedRelationships();
     await this.seedAcademicLevels();
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
@@ -193,8 +193,8 @@ export class CatalogSeedService implements OnModuleInit {
     console.log('🏠 Housing types seeded');
   }
 
-  private async seedFamilyRelationships() {
-    const count = await this.familyRelationshipRepository.count();
+  private async seedRelationships() {
+    const count = await this.relationshipRepository.count();
     if (count > 0) return;
 
     const relationships = [
@@ -223,10 +223,13 @@ export class CatalogSeedService implements OnModuleInit {
       { name: 'Suegro', code: 'SUEG', genderSpecific: true },
       { name: 'Suegra', code: 'SUEA', genderSpecific: true },
       { name: 'Otro', code: 'OTR', genderSpecific: false },
+      { name: 'Amigo', code: 'AMIG', genderSpecific: false },
+      { name: 'Conocido', code: 'CONO', genderSpecific: false },
+      { name: 'Vecino', code: 'VEC', genderSpecific: false },
     ];
 
-    await this.familyRelationshipRepository.save(relationships);
-    console.log('👨‍👩‍👧‍👦 Family relationships seeded');
+    await this.relationshipRepository.save(relationships);
+    console.log('👨‍👩‍👧‍👦 Relationships seeded');
   }
 
   private async seedAcademicLevels() {

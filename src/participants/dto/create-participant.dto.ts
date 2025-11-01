@@ -15,6 +15,60 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 // DTOs para las relaciones anidadas (definidas primero)
+export class CreateEmergencyContactDto {
+  @ApiProperty({
+    description: 'Nombre completo del contacto de emergencia',
+    example: 'Carlos Alberto González Martínez',
+  })
+  @IsString()
+  @MinLength(5)
+  @MaxLength(100)
+  name: string;
+
+  @ApiProperty({
+    description: 'Teléfono del contacto de emergencia',
+    example: '+57 301 987 6543',
+  })
+  @IsString()
+  @Matches(/^\+57 3\d{2} \d{3} \d{4}$/, {
+    message: 'Phone must be in format: +57 3XX XXX XXXX',
+  })
+  phone: string;
+
+  @ApiProperty({
+    description: 'Email del contacto de emergencia',
+    example: 'carlos.gonzalez@email.com',
+  })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({
+    description: 'Dirección del contacto de emergencia',
+    example: 'Calle 45 # 12-34, Casa 101',
+  })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(200)
+  address: string;
+
+  @ApiProperty({
+    description: 'Ciudad del contacto de emergencia',
+    example: 'Bogotá',
+  })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
+  city: string;
+
+  @ApiProperty({
+    description:
+      'ID de la relación con el participante (de catálogo relationships)',
+    example: 4,
+  })
+  @IsNumber()
+  relationshipId: number;
+}
+
 export class CreateFamilyMemberDto {
   @IsString()
   name: string;
@@ -148,33 +202,18 @@ export class CreateParticipantDto {
   @MaxLength(100)
   referralSource?: string;
 
-  // CONTACTO DE EMERGENCIA
-  @IsString()
-  @MinLength(5)
-  @MaxLength(100)
-  emergencyContactName: string;
-
-  @IsString()
-  @Matches(/^\+57 3\d{2} \d{3} \d{4}$/, {
-    message: 'Emergency contact phone must be in format: +57 3XX XXX XXXX',
+  // CONTACTOS DE EMERGENCIA (array - puede tener múltiples contactos)
+  @ApiProperty({
+    description:
+      'Lista de contactos de emergencia del participante. Puede incluir uno o varios contactos.',
+    type: [CreateEmergencyContactDto],
+    required: false,
   })
-  emergencyContactPhone: string;
-
-  @IsEmail()
-  emergencyContactEmail: string;
-
-  @IsString()
-  @MinLength(10)
-  @MaxLength(200)
-  emergencyContactAddress: string;
-
-  @IsString()
-  @MinLength(3)
-  @MaxLength(50)
-  emergencyContactCity: string;
-
-  @IsNumber()
-  emergencyContactRelationshipId: number;
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateEmergencyContactDto)
+  emergencyContacts?: CreateEmergencyContactDto[];
 
   // USUARIO QUE REGISTRA AL PARTICIPANTE
   @ApiProperty({

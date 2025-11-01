@@ -132,12 +132,24 @@ export class ParticipantsController {
           customHealthInsurance: null,
           referralSource:
             'Referido por el obrero Pepito Pérez de la Congregación Mita Barranquilla',
-          emergencyContactName: 'Carlos Alberto González Martínez',
-          emergencyContactPhone: '+57 301 987 6543',
-          emergencyContactEmail: 'carlos.gonzalez@email.com',
-          emergencyContactAddress: 'Calle 45 # 12-34, Casa 101',
-          emergencyContactCity: 'Bogotá',
-          emergencyContactRelationshipId: 4,
+          emergencyContacts: [
+            {
+              name: 'Carlos Alberto González Martínez',
+              phone: '+57 301 987 6543',
+              email: 'carlos.gonzalez@email.com',
+              address: 'Calle 45 # 12-34, Casa 101',
+              city: 'Bogotá',
+              relationshipId: 2,
+            },
+            {
+              name: 'Ana María Rodríguez López',
+              phone: '+57 300 555 9999',
+              email: 'ana.rodriguez@email.com',
+              address: 'Carrera 20 # 15-30',
+              city: 'Bogotá',
+              relationshipId: 1,
+            },
+          ],
           registeredById: 1,
           familyMembers: [
             {
@@ -281,12 +293,16 @@ export class ParticipantsController {
           genderId: 1,
           maritalStatusId: 2,
           healthInsuranceId: 1,
-          emergencyContactName: 'Ana Pérez López',
-          emergencyContactPhone: '+57 301 555 5678',
-          emergencyContactEmail: 'ana.perez@email.com',
-          emergencyContactAddress: 'Calle 456 # 78-90',
-          emergencyContactCity: 'Medellín',
-          emergencyContactRelationshipId: 5,
+          emergencyContacts: [
+            {
+              name: 'Ana Pérez López',
+              phone: '+57 301 555 5678',
+              email: 'ana.perez@email.com',
+              address: 'Calle 456 # 78-90',
+              city: 'Medellín',
+              relationshipId: 5,
+            },
+          ],
           registeredById: 1,
         },
       },
@@ -497,11 +513,18 @@ export class ParticipantsController {
         },
       },
       'actualizar-emergencia': {
-        summary: 'Actualizar contacto de emergencia',
+        summary: 'Actualizar/agregar contactos de emergencia',
         value: {
-          emergencyContactName: 'Pedro Gómez',
-          emergencyContactPhone: '+57 301 888 7777',
-          emergencyContactEmail: 'pedro.gomez@email.com',
+          emergencyContacts: [
+            {
+              name: 'Pedro Gómez',
+              phone: '+57 301 888 7777',
+              email: 'pedro.gomez@email.com',
+              address: 'Calle 100 # 50-20',
+              city: 'Cali',
+              relationshipId: 3,
+            },
+          ],
         },
       },
       'actualizar-completo': {
