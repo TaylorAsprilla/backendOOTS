@@ -1,4 +1,3 @@
-export { DocumentType } from './document-type.entity';
 export { Gender } from './gender.entity';
 export { MaritalStatus } from './marital-status.entity';
 export { HealthInsurance } from './health-insurance.entity';

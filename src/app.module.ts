@@ -13,6 +13,7 @@ import { CatalogsModule } from './catalogs/catalogs.module';
 import { MailModule } from './mail/mail.module';
 import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
 import { ApproachTypesModule } from './approach-types/approach-types.module';
+import { DocumentTypesModule } from './document-types/document-types.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -67,6 +68,7 @@ import configuration from './config/configuration';
     MailModule,
     AcademicLevelsModule,
     ApproachTypesModule,
+    DocumentTypesModule,
   ],
   controllers: [],
   providers: [

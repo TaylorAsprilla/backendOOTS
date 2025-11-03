@@ -10,12 +10,8 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import {
-  DocumentType,
-  Gender,
-  MaritalStatus,
-  HealthInsurance,
-} from '../../common/entities';
+import { Gender, MaritalStatus, HealthInsurance } from '../../common/entities';
+import { DocumentType } from '../../document-types/entities';
 import { FamilyMember } from './family-member.entity';
 import { Case } from './case.entity';
 import { User } from '../../users/entities/user.entity';

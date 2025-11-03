@@ -13,7 +13,7 @@ import {
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { UserStatus } from '../../common/enums';
-import { DocumentType } from '../../common/entities/document-type.entity';
+import { DocumentType } from '../../document-types/entities';
 // import { Participant } from '../../participants/entities/participant.entity';
 
 @Entity('users')

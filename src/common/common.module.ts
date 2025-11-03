@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DocumentType } from '../document-types/entities';
 import {
-  DocumentType,
   Gender,
   MaritalStatus,
   HealthInsurance,
