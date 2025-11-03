@@ -67,15 +67,6 @@ SELECT
 UNION ALL
 SELECT 
     '',
-    'assessments',
-    CASE 
-        WHEN (SELECT COUNT(*) FROM assessments WHERE case_id IS NULL) = 0 
-        THEN 'OK - Todos los registros tienen case_id' 
-        ELSE CONCAT('ERROR - ', (SELECT COUNT(*) FROM assessments WHERE case_id IS NULL), ' registros sin case_id')
-    END
-UNION ALL
-SELECT 
-    '',
     'intervention_plans',
     CASE 
         WHEN (SELECT COUNT(*) FROM intervention_plans WHERE case_id IS NULL) = 0 
@@ -177,7 +168,6 @@ SELECT
           WHERE c.id IN (
               SELECT DISTINCT case_id FROM bio_psychosocial_histories 
               UNION SELECT DISTINCT case_id FROM consultation_reasons
-              UNION SELECT DISTINCT case_id FROM assessments
           )) AS CHAR)
 UNION ALL
 SELECT 
@@ -189,11 +179,6 @@ SELECT
     '',
     'Total motivos de consulta',
     CAST((SELECT COUNT(*) FROM consultation_reasons) AS CHAR)
-UNION ALL
-SELECT 
-    '',
-    'Total evaluaciones',
-    CAST((SELECT COUNT(*) FROM assessments) AS CHAR)
 UNION ALL
 SELECT 
     '',
@@ -224,7 +209,6 @@ JOIN participants p ON c.participant_id = p.id
 WHERE c.id IN (
     SELECT case_id FROM bio_psychosocial_histories
     UNION SELECT case_id FROM consultation_reasons
-    UNION SELECT case_id FROM assessments
 )
 ORDER BY c.id
 LIMIT 1
@@ -252,7 +236,6 @@ ALTER TABLE interventions MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE follow_up_plans MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE physical_health_histories MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE mental_health_histories MODIFY COLUMN case_id INT NOT NULL;
-ALTER TABLE assessments MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE intervention_plans MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE progress_notes MODIFY COLUMN case_id INT NOT NULL;
 ALTER TABLE referrals MODIFY COLUMN case_id INT NOT NULL;
@@ -265,7 +248,6 @@ ALTER TABLE interventions DROP COLUMN participant_id;
 ALTER TABLE follow_up_plans DROP COLUMN participant_id;
 ALTER TABLE physical_health_histories DROP COLUMN participant_id;
 ALTER TABLE mental_health_histories DROP COLUMN participant_id;
-ALTER TABLE assessments DROP COLUMN participant_id;
 ALTER TABLE intervention_plans DROP COLUMN participant_id;
 ALTER TABLE progress_notes DROP COLUMN participant_id;
 ALTER TABLE referrals DROP COLUMN participant_id;

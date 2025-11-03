@@ -16,7 +16,6 @@ Las siguientes entidades ahora se relacionan con `Case` en lugar de `Participant
 - ✅ FollowUpPlan
 - ✅ PhysicalHealthHistory
 - ✅ MentalHealthHistory
-- ✅ Assessment
 - ✅ InterventionPlan
 - ✅ ProgressNote
 - ✅ Referrals
@@ -128,7 +127,6 @@ POST /cases
   "description": "...",
   "bioPsychosocialHistory": {...},
   "consultationReason": {...},
-  "assessment": {...},
   // ... toda la información médica
 }
 ```

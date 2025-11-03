@@ -10,13 +10,13 @@ import { Participant } from '../participants/entities/participant.entity';
 import { CaseFollowUpPlan } from '../participants/entities/case-follow-up-plan.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
 import { MentalHealthHistory } from '../participants/entities/mental-health-history.entity';
-import { Ponderacion } from '../participants/entities/ponderacion.entity';
 import { InterventionPlan } from '../participants/entities/intervention-plan.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { ClosingNote } from '../participants/entities/closing-note.entity';
 import { ParticipantIdentifiedSituation } from '../participants/entities/participant-identified-situation.entity';
 import { IdentifiedSituation } from '../common/entities';
 import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
+import { Weighing } from '../participants/entities/weighing.entity';
 import { CreateCaseDto, UpdateCaseStatusDto } from './dto/case.dto';
 import { CaseStatus } from '../common/enums';
 
@@ -33,8 +33,6 @@ export class CasesService {
     private readonly physicalHealthHistoryRepository: Repository<PhysicalHealthHistory>,
     @InjectRepository(MentalHealthHistory)
     private readonly mentalHealthHistoryRepository: Repository<MentalHealthHistory>,
-    @InjectRepository(Ponderacion)
-    private readonly ponderacionRepository: Repository<Ponderacion>,
     @InjectRepository(InterventionPlan)
     private readonly interventionPlanRepository: Repository<InterventionPlan>,
     @InjectRepository(ProgressNote)
@@ -118,13 +116,13 @@ export class CasesService {
         await manager.save(mentalHealthHistory);
       }
 
-      // 8. Crear Ponderacion si se proporciona
-      if (createCaseDto.ponderacion) {
-        const ponderacion = manager.create(Ponderacion, {
-          ...createCaseDto.ponderacion,
+      // 8. Crear Weighing si se proporciona
+      if (createCaseDto.weighing) {
+        const weighing = manager.create(Weighing, {
+          ...createCaseDto.weighing,
           caseId: savedCase.id,
         });
-        await manager.save(ponderacion);
+        await manager.save(weighing);
       }
 
       // 9. Crear InterventionPlans si se proporcionan
@@ -221,7 +219,7 @@ export class CasesService {
           'caseFollowUpPlans.followUpPlan',
           'physicalHealthHistory',
           'mentalHealthHistory',
-          'ponderacion',
+          'weighing',
           'interventionPlans',
           'progressNotes',
           'closingNote',

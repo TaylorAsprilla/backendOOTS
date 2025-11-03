@@ -6,13 +6,11 @@ import {
   Gender,
   MaritalStatus,
   HealthInsurance,
-  FamilyRelationship,
+  Relationship,
   AcademicLevel,
-  EducationLevel,
   IncomeSource,
   IncomeLevel,
   HousingType,
-  FollowUpPlanType,
   TreatmentStatus,
   ApproachType,
   ProcessType,
@@ -29,20 +27,16 @@ export class CatalogController {
     private readonly maritalStatusRepository: Repository<MaritalStatus>,
     @InjectRepository(HealthInsurance)
     private readonly healthInsuranceRepository: Repository<HealthInsurance>,
-    @InjectRepository(FamilyRelationship)
-    private readonly familyRelationshipRepository: Repository<FamilyRelationship>,
+    @InjectRepository(Relationship)
+    private readonly relationshipRepository: Repository<Relationship>,
     @InjectRepository(AcademicLevel)
     private readonly academicLevelRepository: Repository<AcademicLevel>,
-    @InjectRepository(EducationLevel)
-    private readonly educationLevelRepository: Repository<EducationLevel>,
     @InjectRepository(IncomeSource)
     private readonly incomeSourceRepository: Repository<IncomeSource>,
     @InjectRepository(IncomeLevel)
     private readonly incomeLevelRepository: Repository<IncomeLevel>,
     @InjectRepository(HousingType)
     private readonly housingTypeRepository: Repository<HousingType>,
-    @InjectRepository(FollowUpPlanType)
-    private readonly followUpPlanTypeRepository: Repository<FollowUpPlanType>,
     @InjectRepository(TreatmentStatus)
     private readonly treatmentStatusRepository: Repository<TreatmentStatus>,
     @InjectRepository(ApproachType)
@@ -71,19 +65,14 @@ export class CatalogController {
     return this.healthInsuranceRepository.find({ order: { name: 'ASC' } });
   }
 
-  @Get('family-relationships')
-  async getFamilyRelationships() {
-    return this.familyRelationshipRepository.find({ order: { name: 'ASC' } });
+  @Get('relationships')
+  async getRelationships() {
+    return this.relationshipRepository.find({ order: { name: 'ASC' } });
   }
 
   @Get('academic-levels')
   async getAcademicLevels() {
     return this.academicLevelRepository.find({ order: { name: 'ASC' } });
-  }
-
-  @Get('education-levels')
-  async getEducationLevels() {
-    return this.educationLevelRepository.find({ order: { name: 'ASC' } });
   }
 
   @Get('income-sources')
@@ -99,11 +88,6 @@ export class CatalogController {
   @Get('housing-types')
   async getHousingTypes() {
     return this.housingTypeRepository.find({ order: { name: 'ASC' } });
-  }
-
-  @Get('follow-up-plan-types')
-  async getFollowUpPlanTypes() {
-    return this.followUpPlanTypeRepository.find({ order: { name: 'ASC' } });
   }
 
   @Get('treatment-statuses')
@@ -128,13 +112,11 @@ export class CatalogController {
       genders,
       maritalStatuses,
       healthInsurances,
-      familyRelationships,
+      relationships,
       academicLevels,
-      educationLevels,
       incomeSources,
       incomeLevels,
       housingTypes,
-      followUpPlanTypes,
       treatmentStatuses,
       approachTypes,
       processTypes,
@@ -143,13 +125,11 @@ export class CatalogController {
       this.genderRepository.find({ order: { name: 'ASC' } }),
       this.maritalStatusRepository.find({ order: { name: 'ASC' } }),
       this.healthInsuranceRepository.find({ order: { name: 'ASC' } }),
-      this.familyRelationshipRepository.find({ order: { name: 'ASC' } }),
+      this.relationshipRepository.find({ order: { name: 'ASC' } }),
       this.academicLevelRepository.find({ order: { name: 'ASC' } }),
-      this.educationLevelRepository.find({ order: { name: 'ASC' } }),
       this.incomeSourceRepository.find({ order: { name: 'ASC' } }),
       this.incomeLevelRepository.find({ order: { name: 'ASC' } }),
       this.housingTypeRepository.find({ order: { name: 'ASC' } }),
-      this.followUpPlanTypeRepository.find({ order: { name: 'ASC' } }),
       this.treatmentStatusRepository.find({ order: { name: 'ASC' } }),
       this.approachTypeRepository.find({ order: { name: 'ASC' } }),
       this.processTypeRepository.find({ order: { name: 'ASC' } }),
@@ -160,13 +140,11 @@ export class CatalogController {
       genders,
       maritalStatuses,
       healthInsurances,
-      familyRelationships,
+      relationships,
       academicLevels,
-      educationLevels,
       incomeSources,
       incomeLevels,
       housingTypes,
-      followUpPlanTypes,
       treatmentStatuses,
       approachTypes,
       processTypes,

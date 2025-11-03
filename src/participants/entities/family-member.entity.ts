@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Participant } from './participant.entity';
-import { FamilyRelationship, AcademicLevel } from '../../common/entities';
+import { Relationship, AcademicLevel } from '../../common/entities';
 
 @Entity('family_members')
 export class FamilyMember {
@@ -37,9 +37,9 @@ export class FamilyMember {
   @JoinColumn({ name: 'participant_id' })
   participant!: Participant;
 
-  @ManyToOne(() => FamilyRelationship, { eager: true })
+  @ManyToOne(() => Relationship, { eager: true })
   @JoinColumn({ name: 'family_relationship_id' })
-  familyRelationship!: FamilyRelationship;
+  familyRelationship!: Relationship;
 
   @ManyToOne(() => AcademicLevel, { eager: true })
   @JoinColumn({ name: 'academic_level_id' })

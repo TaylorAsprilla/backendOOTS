@@ -7,6 +7,8 @@ import { SearchParticipantsDto } from './dto/search-participants.dto';
 import { Participant } from './entities/participant.entity';
 import { FamilyMember } from './entities/family-member.entity';
 import { BioPsychosocialHistory } from './entities/bio-psychosocial-history.entity';
+import { EmergencyContact } from './entities/emergency-contact.entity';
+import { ParticipantEmergencyContact } from './entities/participant-emergency-contact.entity';
 
 @Injectable()
 export class ParticipantsService {
@@ -17,6 +19,10 @@ export class ParticipantsService {
     private readonly familyMemberRepository: Repository<FamilyMember>,
     @InjectRepository(BioPsychosocialHistory)
     private readonly bioPsychosocialHistoryRepository: Repository<BioPsychosocialHistory>,
+    @InjectRepository(EmergencyContact)
+    private readonly emergencyContactRepository: Repository<EmergencyContact>,
+    @InjectRepository(ParticipantEmergencyContact)
+    private readonly participantEmergencyContactRepository: Repository<ParticipantEmergencyContact>,
   ) {}
 
   async create(
@@ -25,8 +31,12 @@ export class ParticipantsService {
     return await this.participantRepository.manager.transaction(
       async (transactionalEntityManager) => {
         // Extraer las relaciones anidadas del DTO principal
-        const { familyMembers, bioPsychosocialHistory, ...participantData } =
-          createParticipantDto;
+        const {
+          familyMembers,
+          bioPsychosocialHistory,
+          emergencyContacts,
+          ...participantData
+        } = createParticipantDto;
 
         // Crear el participante principal primero (dentro de la transacción)
         const participant = transactionalEntityManager.create(
@@ -66,6 +76,45 @@ export class ParticipantsService {
           );
         }
 
+        // 3. Crear contactos de emergencia (ManyToMany con pivot)
+        if (emergencyContacts && emergencyContacts.length > 0) {
+          for (const contactData of emergencyContacts) {
+            const { relationshipId, ...emergencyContactInfo } = contactData;
+
+            // Buscar si ya existe un contacto con el mismo email o teléfono (reutilización)
+            let emergencyContact = await transactionalEntityManager.findOne(
+              EmergencyContact,
+              {
+                where: [
+                  { email: emergencyContactInfo.email },
+                  { phone: emergencyContactInfo.phone },
+                ],
+              },
+            );
+
+            // Si no existe, crear nuevo contacto
+            if (!emergencyContact) {
+              emergencyContact = transactionalEntityManager.create(
+                EmergencyContact,
+                emergencyContactInfo,
+              );
+              emergencyContact =
+                await transactionalEntityManager.save(emergencyContact);
+            }
+
+            // Crear la relación en la tabla pivot
+            const participantEmergencyContact =
+              transactionalEntityManager.create(ParticipantEmergencyContact, {
+                participantId: savedParticipant.id,
+                emergencyContactId: emergencyContact.id,
+                relationshipId: relationshipId,
+              });
+            relationPromises.push(
+              transactionalEntityManager.save(participantEmergencyContact),
+            );
+          }
+        }
+
         // Ejecutar todas las creaciones de relaciones en paralelo (dentro de la transacción)
         if (relationPromises.length > 0) {
           await Promise.all(relationPromises);
@@ -74,7 +123,14 @@ export class ParticipantsService {
         // Retornar el participante con todas las relaciones cargadas
         const result = await transactionalEntityManager.findOne(Participant, {
           where: { id: savedParticipant.id },
-          relations: ['familyMembers', 'bioPsychosocialHistory', 'cases'],
+          relations: [
+            'familyMembers',
+            'bioPsychosocialHistory',
+            'cases',
+            'emergencyContacts',
+            'emergencyContacts.emergencyContact',
+            'emergencyContacts.relationship',
+          ],
         });
 
         if (!result) {
@@ -123,17 +179,20 @@ export class ParticipantsService {
       where: { id },
       relations: [
         'familyMembers',
+        'familyMembers.familyRelationship',
         'bioPsychosocialHistory',
-        'bioPsychosocialHistory.educationLevel',
+        'bioPsychosocialHistory.academicLevel',
         'bioPsychosocialHistory.incomeSource',
         'bioPsychosocialHistory.incomeLevel',
         'bioPsychosocialHistory.housingType',
+        'emergencyContacts',
+        'emergencyContacts.emergencyContact',
+        'emergencyContacts.relationship',
         'cases',
         'documentType',
         'gender',
         'maritalStatus',
         'healthInsurance',
-        'emergencyContactRelationship',
         'registeredBy',
       ],
     });
@@ -149,9 +208,67 @@ export class ParticipantsService {
     id: number,
     updateParticipantDto: UpdateParticipantDto,
   ): Promise<Participant> {
-    const participant = await this.findOne(id);
-    Object.assign(participant, updateParticipantDto);
-    return await this.participantRepository.save(participant);
+    return await this.participantRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        const participant = await this.findOne(id);
+
+        // Extraer emergency contacts si vienen en el DTO
+        const { emergencyContacts, ...participantData } = updateParticipantDto;
+
+        // Actualizar datos básicos del participante
+        Object.assign(participant, participantData);
+        await transactionalEntityManager.save(participant);
+
+        // Si se enviaron emergency contacts, reemplazar los existentes
+        if (emergencyContacts !== undefined) {
+          // Eliminar relaciones existentes
+          await transactionalEntityManager.delete(ParticipantEmergencyContact, {
+            participantId: id,
+          });
+
+          // Crear nuevas relaciones
+          if (emergencyContacts.length > 0) {
+            for (const contactData of emergencyContacts) {
+              const { relationshipId, ...emergencyContactInfo } = contactData;
+
+              // Buscar o crear el contacto
+              let emergencyContact = await transactionalEntityManager.findOne(
+                EmergencyContact,
+                {
+                  where: [
+                    { email: emergencyContactInfo.email },
+                    { phone: emergencyContactInfo.phone },
+                  ],
+                },
+              );
+
+              if (!emergencyContact) {
+                emergencyContact = transactionalEntityManager.create(
+                  EmergencyContact,
+                  emergencyContactInfo,
+                );
+                emergencyContact =
+                  await transactionalEntityManager.save(emergencyContact);
+              }
+
+              // Crear la relación pivot
+              const participantEmergencyContact =
+                transactionalEntityManager.create(ParticipantEmergencyContact, {
+                  participantId: id,
+                  emergencyContactId: emergencyContact.id,
+                  relationshipId: relationshipId,
+                });
+              await transactionalEntityManager.save(
+                participantEmergencyContact,
+              );
+            }
+          }
+        }
+
+        // Retornar participante actualizado con todas las relaciones
+        return await this.findOne(id);
+      },
+    );
   }
 
   async remove(id: number): Promise<void> {

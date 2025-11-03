@@ -15,12 +15,12 @@ import {
   Gender,
   MaritalStatus,
   HealthInsurance,
-  FamilyRelationship,
 } from '../../common/entities';
 import { FamilyMember } from './family-member.entity';
 import { Case } from './case.entity';
 import { User } from '../../users/entities/user.entity';
 import { BioPsychosocialHistory } from './bio-psychosocial-history.entity';
+import { ParticipantEmergencyContact } from './participant-emergency-contact.entity';
 
 @Entity('participants')
 export class Participant {
@@ -112,25 +112,6 @@ export class Participant {
   })
   referralSource?: string;
 
-  @Column({ name: 'emergency_contact_name', type: 'varchar', length: 100 })
-  emergencyContactName!: string;
-
-  @Column({ name: 'emergency_contact_phone', type: 'varchar', length: 20 })
-  emergencyContactPhone!: string;
-
-  @Column({ name: 'emergency_contact_email', type: 'varchar', length: 100 })
-  emergencyContactEmail!: string;
-
-  @Column({ name: 'emergency_contact_address', type: 'varchar', length: 200 })
-  emergencyContactAddress!: string;
-
-  @Column({ name: 'emergency_contact_city', type: 'varchar', length: 50 })
-  emergencyContactCity!: string;
-
-  @ManyToOne(() => FamilyRelationship, { eager: true })
-  @JoinColumn({ name: 'emergency_contact_relationship_id' })
-  emergencyContactRelationship!: FamilyRelationship;
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
@@ -159,6 +140,12 @@ export class Participant {
     cascade: true,
   })
   bioPsychosocialHistory!: BioPsychosocialHistory;
+
+  // CONTACTOS DE EMERGENCIA (M:N - un contacto puede ser para varios participantes)
+  @OneToMany(() => ParticipantEmergencyContact, (pivot) => pivot.participant, {
+    cascade: true,
+  })
+  emergencyContacts!: ParticipantEmergencyContact[];
 
   @OneToMany(() => Case, (caseEntity) => caseEntity.participant, {
     cascade: true,

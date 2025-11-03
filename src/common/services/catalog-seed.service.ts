@@ -7,13 +7,11 @@ import {
   MaritalStatus,
   HealthInsurance,
   HousingType,
-  FamilyRelationship,
+  Relationship,
   AcademicLevel,
-  EducationLevel,
   IncomeSource,
   IncomeLevel,
   IdentifiedSituation,
-  FollowUpPlanType,
   ApproachType,
   ProcessType,
   TreatmentStatus,
@@ -37,14 +35,11 @@ export class CatalogSeedService implements OnModuleInit {
     @InjectRepository(HousingType)
     private readonly housingTypeRepository: Repository<HousingType>,
 
-    @InjectRepository(FamilyRelationship)
-    private readonly familyRelationshipRepository: Repository<FamilyRelationship>,
+    @InjectRepository(Relationship)
+    private readonly relationshipRepository: Repository<Relationship>,
 
     @InjectRepository(AcademicLevel)
     private readonly academicLevelRepository: Repository<AcademicLevel>,
-
-    @InjectRepository(EducationLevel)
-    private readonly educationLevelRepository: Repository<EducationLevel>,
 
     @InjectRepository(IncomeSource)
     private readonly incomeSourceRepository: Repository<IncomeSource>,
@@ -54,9 +49,6 @@ export class CatalogSeedService implements OnModuleInit {
 
     @InjectRepository(IdentifiedSituation)
     private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
-
-    @InjectRepository(FollowUpPlanType)
-    private readonly followUpPlanTypeRepository: Repository<FollowUpPlanType>,
 
     @InjectRepository(ApproachType)
     private readonly approachTypeRepository: Repository<ApproachType>,
@@ -80,13 +72,11 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedMaritalStatuses();
     await this.seedHealthInsurances();
     await this.seedHousingTypes();
-    await this.seedFamilyRelationships();
+    await this.seedRelationships();
     await this.seedAcademicLevels();
-    await this.seedEducationLevels();
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
     await this.seedIdentifiedSituations();
-    await this.seedFollowUpPlanTypes();
     await this.seedApproachTypes();
     await this.seedProcessTypes();
     await this.seedTreatmentStatuses();
@@ -203,8 +193,8 @@ export class CatalogSeedService implements OnModuleInit {
     console.log('🏠 Housing types seeded');
   }
 
-  private async seedFamilyRelationships() {
-    const count = await this.familyRelationshipRepository.count();
+  private async seedRelationships() {
+    const count = await this.relationshipRepository.count();
     if (count > 0) return;
 
     const relationships = [
@@ -233,10 +223,13 @@ export class CatalogSeedService implements OnModuleInit {
       { name: 'Suegro', code: 'SUEG', genderSpecific: true },
       { name: 'Suegra', code: 'SUEA', genderSpecific: true },
       { name: 'Otro', code: 'OTR', genderSpecific: false },
+      { name: 'Amigo', code: 'AMIG', genderSpecific: false },
+      { name: 'Conocido', code: 'CONO', genderSpecific: false },
+      { name: 'Vecino', code: 'VEC', genderSpecific: false },
     ];
 
-    await this.familyRelationshipRepository.save(relationships);
-    console.log('👨‍👩‍👧‍👦 Family relationships seeded');
+    await this.relationshipRepository.save(relationships);
+    console.log('👨‍👩‍👧‍👦 Relationships seeded');
   }
 
   private async seedAcademicLevels() {
@@ -244,41 +237,21 @@ export class CatalogSeedService implements OnModuleInit {
     if (count > 0) return;
 
     const academicLevels = [
-      { name: 'Sin Grado Académico', code: 'SIN', orderIndex: 0 },
-      { name: 'Preescolar', code: 'PRE', orderIndex: 1 },
-      { name: 'Primaria', code: 'PRI', orderIndex: 2 },
-      { name: 'Secundaria', code: 'SEC', orderIndex: 3 },
-      { name: 'Técnico', code: 'TEC', orderIndex: 4 },
-      { name: 'Tecnólogo', code: 'TLG', orderIndex: 5 },
-      { name: 'Pregrado', code: 'PRG', orderIndex: 6 },
-      { name: 'Especialización', code: 'ESP', orderIndex: 7 },
-      { name: 'Maestria', code: 'MAE', orderIndex: 8 },
-      { name: 'Doctorado', code: 'DOC', orderIndex: 9 },
-      { name: 'Postdoctorado', code: 'POS', orderIndex: 10 },
+      { name: 'Sin Grado Académico' },
+      { name: 'Preescolar' },
+      { name: 'Primaria' },
+      { name: 'Secundaria' },
+      { name: 'Técnico' },
+      { name: 'Tecnólogo' },
+      { name: 'Pregrado' },
+      { name: 'Especialización' },
+      { name: 'Maestria' },
+      { name: 'Doctorado' },
+      { name: 'Postdoctorado' },
     ];
 
     await this.academicLevelRepository.save(academicLevels);
     console.log('🎓 Academic levels seeded');
-  }
-
-  private async seedEducationLevels() {
-    const count = await this.educationLevelRepository.count();
-    if (count > 0) return;
-
-    const educationLevels = [
-      { name: 'No tiene estudios', code: 'NTE', orderIndex: 0 },
-      { name: 'Primaria', code: 'PRI', orderIndex: 1 },
-      { name: 'Secundaria', code: 'SEC', orderIndex: 2 },
-      { name: 'Técnico', code: 'TEC', orderIndex: 3 },
-      { name: 'Tecnólogo', code: 'TLG', orderIndex: 4 },
-      { name: 'Universidad', code: 'UNI', orderIndex: 5 },
-      { name: 'Especialización', code: 'ESP', orderIndex: 6 },
-      { name: 'Maestría', code: 'MAE', orderIndex: 7 },
-      { name: 'Doctorado', code: 'DOC', orderIndex: 8 },
-    ];
-
-    await this.educationLevelRepository.save(educationLevels);
-    console.log('📚 Education levels seeded');
   }
 
   private async seedIncomeSources() {
@@ -496,47 +469,6 @@ export class CatalogSeedService implements OnModuleInit {
     console.log('🎯 Identified situations seeded');
   }
 
-  private async seedFollowUpPlanTypes() {
-    const count = await this.followUpPlanTypeRepository.count();
-    if (count > 0) return;
-
-    const planTypes = [
-      {
-        name: 'Se culminó el proceso de ayuda',
-        code: 'CULM',
-        requiresDetails: false,
-        description: 'El proceso de orientación ha finalizado exitosamente',
-      },
-      {
-        name: 'Se coordinó servicios en (mencionar agencia)',
-        code: 'COORD',
-        requiresDetails: true,
-        description: 'Se estableció coordinación con agencia externa',
-      },
-      {
-        name: 'Se hará un referido (mencionar los referidos y justificar)',
-        code: 'REF',
-        requiresDetails: true,
-        description: 'Se realizará referencia a especialista o institución',
-      },
-      {
-        name: 'Se coordinó cita para iniciar proceso de orientación',
-        code: 'CITA',
-        requiresDetails: false,
-        description: 'Se programó nueva cita para continuar orientación',
-      },
-      {
-        name: 'Otros',
-        code: 'OTR',
-        requiresDetails: true,
-        description: 'Otro tipo de plan de seguimiento',
-      },
-    ];
-
-    await this.followUpPlanTypeRepository.save(planTypes);
-    console.log('📋 Follow-up plan types seeded');
-  }
-
   private async seedApproachTypes() {
     const count = await this.approachTypeRepository.count();
     if (count > 0) return;
@@ -544,32 +476,26 @@ export class CatalogSeedService implements OnModuleInit {
     const approachTypes = [
       {
         name: 'Consulta Presencial',
-        code: 'CP',
         description: 'Atención presencial en las instalaciones',
       },
       {
         name: 'Email',
-        code: 'E',
         description: 'Comunicación por correo electrónico',
       },
       {
         name: 'Encuentro Casual',
-        code: 'EC',
         description: 'Encuentro no programado',
       },
       {
         name: 'Llamada',
-        code: 'Ll',
         description: 'Comunicación telefónica',
       },
       {
         name: 'Tele Consulta',
-        code: 'TC',
         description: 'Consulta por video llamada',
       },
       {
         name: 'Virtual',
-        code: 'V',
         description: 'Atención por medios virtuales',
       },
     ];

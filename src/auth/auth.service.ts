@@ -9,8 +9,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto } from './dto';
 import { UserStatus } from '../common/enums';
+import { MailService } from '../mail/mail.service';
 
 export interface JwtPayload {
   sub: number;
@@ -19,8 +20,8 @@ export interface JwtPayload {
   firstLastName: string;
 }
 
-export interface AuthResponse {
-  access_token: string;
+export interface RegisterResponse {
+  message: string;
   user: {
     id: number;
     email: string;
@@ -31,6 +32,29 @@ export interface AuthResponse {
     phoneNumber?: string;
     position?: string;
     organization?: string;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: {
+    id: number;
+    email: string;
+    firstName: string;
+    secondName?: string;
+    firstLastName: string;
+    secondLastName?: string;
+    phoneNumber?: string;
+    position?: string;
+    organization?: string;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
   };
 }
 
@@ -41,9 +65,10 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly mailService: MailService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<any> {
+  async register(registerDto: RegisterDto): Promise<RegisterResponse> {
     try {
       // Verificar si ya existe un usuario con el mismo email
       const existingUserByEmail = await this.userRepository.findOne({
@@ -91,20 +116,18 @@ export class AuthService {
       // Guardar el usuario en la base de datos
       const savedUser = await this.userRepository.save(newUser);
 
-      // Generar JWT para el usuario recién creado
-      const payload: JwtPayload = {
-        sub: savedUser.id,
-        email: savedUser.email,
-        firstName: savedUser.firstName,
-        firstLastName: savedUser.firstLastName,
-      };
+      // Enviar correo de bienvenida de forma asíncrona (no bloquea la respuesta)
+      // Pasar la contraseña original (sin hashear) para mostrarla en el correo
+      this.mailService
+        .sendUserRegistrationEmail(savedUser, registerDto.password)
+        .catch((error) => {
+          // Solo log del error, no afecta el registro del usuario
+          console.error('Error enviando correo de bienvenida:', error);
+        });
 
-      const access_token = this.jwtService.sign(payload);
-
+      // Retornar solo la información del usuario sin token
       return {
-        access_token,
-        token_type: 'Bearer',
-        expires_in: 3600,
+        message: 'Usuario registrado exitosamente',
         user: savedUser.toResponseObject(),
       };
     } catch (error) {
@@ -116,7 +139,7 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto): Promise<any> {
+  async login(loginDto: LoginDto): Promise<AuthResponse> {
     const { email, password } = loginDto;
 
     // Buscar usuario por email (solo usuarios activos)
@@ -178,6 +201,24 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  generateAuthResponse(user: User): AuthResponse {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      firstLastName: user.firstLastName,
+    };
+
+    const access_token = this.jwtService.sign(payload);
+
+    return {
+      access_token,
+      token_type: 'Bearer',
+      expires_in: 3600,
+      user: user.toResponseObject(),
+    };
   }
 
   async findUserById(id: number): Promise<User | null> {

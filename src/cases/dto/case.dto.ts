@@ -8,7 +8,6 @@ import {
   IsArray,
   IsNumber,
   IsDateString,
-  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -190,26 +189,25 @@ export class CreateProgressNoteDto {
   agreements?: string;
 }
 
-export class CreatePonderacionDto {
+export class CreateWeighingDto {
   @ApiProperty({
-    description:
-      'Análisis del motivo de consulta desde perspectiva profesional',
+    description: 'Motivo de consulta para la ponderación',
     required: false,
   })
   @IsOptional()
   @IsString()
-  consultationMotiveAnalysis?: string;
+  reasonConsultation?: string;
 
   @ApiProperty({
-    description: 'Análisis de las situaciones problemáticas identificadas',
+    description: 'Situación identificada',
     required: false,
   })
   @IsOptional()
   @IsString()
-  identifiedSituationAnalysis?: string;
+  identifiedSituation?: string;
 
   @ApiProperty({
-    description: 'Condiciones que favorecen el proceso terapéutico',
+    description: 'Condiciones favorables',
     required: false,
   })
   @IsOptional()
@@ -217,20 +215,20 @@ export class CreatePonderacionDto {
   favorableConditions?: string;
 
   @ApiProperty({
-    description: 'Condiciones que pueden dificultar el proceso terapéutico',
+    description: 'Condiciones no favorables',
     required: false,
   })
   @IsOptional()
   @IsString()
-  unfavorableConditions?: string;
+  conditionsNotFavorable?: string;
 
   @ApiProperty({
-    description: 'Enfoque teórico o modelo terapéutico a aplicar',
+    description: 'Proceso de ayuda',
     required: false,
   })
   @IsOptional()
   @IsString()
-  theoreticalApproach?: string;
+  helpProcess?: string;
 }
 
 export class CreateClosingNoteDto {
@@ -354,16 +352,16 @@ export class CreateCaseDto {
   @Type(() => CreateMentalHealthHistoryDto)
   mentalHealthHistory?: CreateMentalHealthHistoryDto;
 
-  // 8. PONDERACIÓN
+  // 8. PONDERACIÓN (WEIGHING)
   @ApiProperty({
-    description: 'Ponderación del caso (análisis profesional integral)',
+    description: 'Ponderación del caso',
     required: false,
   })
   @IsOptional()
   @IsObject()
   @ValidateNested()
-  @Type(() => CreatePonderacionDto)
-  ponderacion?: CreatePonderacionDto;
+  @Type(() => CreateWeighingDto)
+  weighing?: CreateWeighingDto;
 
   // 9. PLANES DE INTERVENCIÓN DETALLADOS
   @ApiProperty({

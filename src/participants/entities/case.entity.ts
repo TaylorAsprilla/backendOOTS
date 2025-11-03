@@ -17,8 +17,8 @@ import { InterventionPlan } from './intervention-plan.entity';
 import { ProgressNote } from './progress-note.entity';
 import { ClosingNote } from './closing-note.entity';
 import { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
-import { Ponderacion } from './ponderacion.entity';
 import { CaseFollowUpPlan } from './case-follow-up-plan.entity';
+import { Weighing } from './weighing.entity';
 
 @Entity('cases')
 export class Case {
@@ -69,11 +69,11 @@ export class Case {
   })
   mentalHealthHistory!: MentalHealthHistory;
 
-  // 8. PONDERACIÓN
-  @OneToOne(() => Ponderacion, (ponderacion) => ponderacion.case, {
+  // 8. WEIGHING (Tabla de ponderación)
+  @OneToOne(() => Weighing, (weighing) => weighing.case, {
     cascade: true,
   })
-  ponderacion!: Ponderacion;
+  weighing!: Weighing;
 
   // 9. PLANES DE INTERVENCIÓN DETALLADOS
   @OneToMany(() => InterventionPlan, (plan) => plan.case, {

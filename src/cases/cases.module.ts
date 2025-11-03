@@ -7,13 +7,13 @@ import { Participant } from '../participants/entities/participant.entity';
 import { CaseFollowUpPlan } from '../participants/entities/case-follow-up-plan.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
 import { MentalHealthHistory } from '../participants/entities/mental-health-history.entity';
-import { Ponderacion } from '../participants/entities/ponderacion.entity';
 import { InterventionPlan } from '../participants/entities/intervention-plan.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { ClosingNote } from '../participants/entities/closing-note.entity';
 import { ParticipantIdentifiedSituation } from '../participants/entities/participant-identified-situation.entity';
 import { IdentifiedSituation } from '../common/entities';
 import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
+import { Weighing } from '../participants/entities/weighing.entity';
 
 @Module({
   imports: [
@@ -23,7 +23,7 @@ import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.e
       CaseFollowUpPlan,
       PhysicalHealthHistory,
       MentalHealthHistory,
-      Ponderacion,
+      Weighing,
       InterventionPlan,
       ProgressNote,
       ClosingNote,

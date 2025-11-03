@@ -155,7 +155,6 @@ src/
    ```
 
 6. **Acceder a la aplicación:**
-
    - **API**: http://localhost:3000
    - **Documentación Swagger**: http://localhost:3000/api
 
@@ -195,16 +194,16 @@ npm run test:cov
 
 ## 🌐 Endpoints Principales
 
-| Método | Endpoint                  | Descripción          | Autenticación |
-| ------ | ------------------------- | -------------------- | ------------- |
-| `POST` | `/api/v1/auth/register`   | Registro de usuarios | ❌            |
-| `POST` | `/api/v1/auth/login`      | Login de usuarios    | ❌            |
-| `GET`  | `/api/v1/auth/profile`    | Perfil del usuario   | ✅            |
-| `GET`  | `/users`                  | Lista de usuarios    | ✅            |
-| `PATCH`| `/users/:id`              | Actualizar usuario   | ✅            |
-| `DELETE`| `/users/:id`             | Eliminar usuario     | ✅            |
-| `GET`  | `/api/v1/catalogs/all`    | Todos los catálogos  | ❌            |
-| `GET`  | `/api/v1/catalogs/{type}` | Catálogo específico  | ❌            |
+| Método   | Endpoint                  | Descripción          | Autenticación |
+| -------- | ------------------------- | -------------------- | ------------- |
+| `POST`   | `/api/v1/auth/register`   | Registro de usuarios | ❌            |
+| `POST`   | `/api/v1/auth/login`      | Login de usuarios    | ❌            |
+| `GET`    | `/api/v1/auth/profile`    | Perfil del usuario   | ✅            |
+| `GET`    | `/users`                  | Lista de usuarios    | ✅            |
+| `PATCH`  | `/users/:id`              | Actualizar usuario   | ✅            |
+| `DELETE` | `/users/:id`              | Eliminar usuario     | ✅            |
+| `GET`    | `/api/v1/catalogs/all`    | Todos los catálogos  | ❌            |
+| `GET`    | `/api/v1/catalogs/{type}` | Catálogo específico  | ❌            |
 
 ---
 
@@ -219,16 +218,16 @@ El módulo de usuarios maneja el ciclo completo de vida de los profesionales que
 #### Características del Usuario
 
 - **Información Personal**: Nombres, apellidos, email, teléfono
-- **Información Profesional**: Cargo, organización  
+- **Información Profesional**: Cargo, organización
 - **Datos de Identificación**: Documento, dirección, ciudad, fecha de nacimiento
 - **Control de Estado**: ACTIVE, INACTIVE, SUSPENDED, DELETED
 - **Auditoría**: Timestamps de creación y actualización
 
-#### Proceso Unificado de Usuario
+#### Proceso Separado de Usuario
 
-1. **Registro** → `/api/v1/auth/register` (Crea usuario + Autenticación automática)
-2. **Gestión** → `/users/*` endpoints (Operaciones administrativas)
-3. **Autenticación** → `/api/v1/auth/login` (Login de usuarios existentes)
+1. **Registro** → `/api/v1/auth/register` (Solo crea usuario, sin autenticación automática)
+2. **Autenticación** → `/api/v1/auth/login` (Login posterior al registro)
+3. **Gestión** → `/users/*` endpoints (Operaciones administrativas)
 
 #### Validaciones Implementadas
 
@@ -260,7 +259,7 @@ El módulo de usuarios maneja el ciclo completo de vida de los profesionales que
 La documentación técnica completa está disponible en:
 
 - [🔐 Módulo de Autenticación](./docs/auth-module.md)
-- [👥 Módulo de Usuarios](./docs/users-module.md)  
+- [👥 Módulo de Usuarios](./docs/users-module.md)
 - [📊 Módulo de Catálogos](./docs/catalogs-module.md)
 - [👤 Módulo de Participantes](./docs/participants-module.md)
 - [📋 Módulo de Casos](./docs/cases-module.md)
@@ -302,7 +301,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: oots_colombia
     ports:
-      - "3306:3306"
+      - '3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -432,4 +431,4 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 
 ---
 
-*Documentación actualizada - Octubre 2025* 🚀
+_Documentación actualizada - Octubre 2025_ 🚀
