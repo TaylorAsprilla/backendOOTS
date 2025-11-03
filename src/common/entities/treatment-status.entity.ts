@@ -8,7 +8,7 @@ import {
 
 @Entity('treatment_statuses')
 export class TreatmentStatus {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 50, unique: true })

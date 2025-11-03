@@ -18,7 +18,7 @@ import {
 
 @Entity('bio_psychosocial_history')
 export class BioPsychosocialHistory {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({
@@ -41,19 +41,19 @@ export class BioPsychosocialHistory {
   @Column({ name: 'housing', type: 'text', nullable: true })
   housing?: string;
 
-  @Column({ name: 'participant_id', type: 'int', unique: true })
+  @Column({ name: 'participant_id', type: 'int', unsigned: true, unique: true })
   participantId!: number;
 
-  @Column({ name: 'academic_level_id', type: 'int', nullable: true })
+  @Column({ name: 'academic_level_id', type: 'int', unsigned: true, nullable: true })
   academicLevelId?: number;
 
-  @Column({ name: 'income_source_id', type: 'int', nullable: true })
+  @Column({ name: 'income_source_id', type: 'int', unsigned: true, nullable: true })
   incomeSourceId?: number;
 
-  @Column({ name: 'income_level_id', type: 'int', nullable: true })
+  @Column({ name: 'income_level_id', type: 'int', unsigned: true, nullable: true })
   incomeLevelId?: number;
 
-  @Column({ name: 'housing_type_id', type: 'int', nullable: true })
+  @Column({ name: 'housing_type_id', type: 'int', unsigned: true, nullable: true })
   housingTypeId?: number;
 
   @OneToOne(

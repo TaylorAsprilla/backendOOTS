@@ -60,7 +60,7 @@ export class CreateUserDto {
   @IsOptional()
   @MinLength(2)
   @MaxLength(200)
-  organization?: string;
+  headquarters?: string;
 
   @IsString()
   @IsNotEmpty()

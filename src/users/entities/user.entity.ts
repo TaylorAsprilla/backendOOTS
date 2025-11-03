@@ -80,12 +80,12 @@ export class User {
   position?: string;
 
   @Column({
-    name: 'organization',
+    name: 'headquarters',
     type: 'varchar',
     length: 200,
     nullable: true,
   })
-  organization?: string;
+  headquarters?: string;
 
   @Column({
     name: 'document_number',
@@ -121,6 +121,7 @@ export class User {
   @Column({
     name: 'document_type_id',
     type: 'int',
+    unsigned: true,
     nullable: true,
   })
   documentTypeId?: number;

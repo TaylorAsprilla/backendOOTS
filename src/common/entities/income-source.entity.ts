@@ -8,7 +8,7 @@ import {
 
 @Entity('income_sources')
 export class IncomeSource {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })

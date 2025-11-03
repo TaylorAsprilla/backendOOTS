@@ -8,7 +8,7 @@ import {
 
 @Entity('health_insurances')
 export class HealthInsurance {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })

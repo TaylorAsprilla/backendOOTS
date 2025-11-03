@@ -11,7 +11,7 @@ import { Case } from './case.entity';
 
 @Entity('mental_health_history')
 export class MentalHealthHistory {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({
@@ -49,8 +49,8 @@ export class MentalHealthHistory {
   })
   observations?: string;
 
-  @Column({ name: 'case_id' })
-  caseId: number;
+  @Column({ name: 'case_id', type: 'int', unsigned: true })
+  caseId!: number;
 
   @OneToOne(() => Case, (caseEntity) => caseEntity.mentalHealthHistory)
   @JoinColumn({ name: 'case_id' })

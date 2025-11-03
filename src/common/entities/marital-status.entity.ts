@@ -8,7 +8,7 @@ import {
 
 @Entity('marital_statuses')
 export class MaritalStatus {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 50, unique: true })

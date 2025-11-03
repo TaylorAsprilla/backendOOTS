@@ -8,7 +8,7 @@ import {
 
 @Entity('housing_types')
 export class HousingType {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 50, unique: true })

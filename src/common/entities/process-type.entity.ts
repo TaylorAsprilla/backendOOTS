@@ -8,7 +8,7 @@ import {
 
 @Entity('process_types')
 export class ProcessType {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })

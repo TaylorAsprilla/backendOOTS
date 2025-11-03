@@ -11,7 +11,7 @@ import { Case } from './case.entity';
 
 @Entity('progress_notes')
 export class ProgressNote {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'session_date', type: 'date' })
@@ -42,7 +42,7 @@ export class ProgressNote {
   })
   agreements?: string;
 
-  @Column({ name: 'case_id', type: 'int' })
+  @Column({ name: 'case_id', type: 'int', unsigned: true })
   caseId!: number;
 
   @CreateDateColumn({ name: 'created_at' })

@@ -8,7 +8,7 @@ import {
 
 @Entity('closing_notes')
 export class ClosingNote {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'closing_date', type: 'date', nullable: true })
@@ -26,8 +26,8 @@ export class ClosingNote {
   @Column({ name: 'observations', type: 'text', nullable: true })
   observations?: string;
 
-  @Column({ name: 'case_id', nullable: true })
-  caseId?: number;
+  @Column({ name: 'case_id', type: 'int', unsigned: true })
+  caseId!: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

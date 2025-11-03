@@ -74,7 +74,7 @@ export class UsersService {
         'password',
         'phoneNumber',
         'position',
-        'organization',
+        'headquarters',
         'status',
         'createdAt',
         'updatedAt',

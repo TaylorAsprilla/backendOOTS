@@ -31,7 +31,7 @@ export interface RegisterResponse {
     secondLastName?: string;
     phoneNumber?: string;
     position?: string;
-    organization?: string;
+    headquarters?: string;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -51,7 +51,7 @@ export interface AuthResponse {
     secondLastName?: string;
     phoneNumber?: string;
     position?: string;
-    organization?: string;
+    headquarters?: string;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -102,7 +102,7 @@ export class AuthService {
         password: registerDto.password,
         phoneNumber: registerDto.phoneNumber,
         position: registerDto.position,
-        organization: registerDto.organization,
+        headquarters: registerDto.headquarters,
         documentNumber: registerDto.documentNumber,
         address: registerDto.address,
         city: registerDto.city,
@@ -155,7 +155,7 @@ export class AuthService {
         'secondLastName',
         'phoneNumber',
         'position',
-        'organization',
+        'headquarters',
         'status',
         'createdAt',
         'updatedAt',
