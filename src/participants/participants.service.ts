@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateParticipantDto } from './dto/create-participant.dto';
@@ -15,14 +19,6 @@ export class ParticipantsService {
   constructor(
     @InjectRepository(Participant)
     private readonly participantRepository: Repository<Participant>,
-    @InjectRepository(FamilyMember)
-    private readonly familyMemberRepository: Repository<FamilyMember>,
-    @InjectRepository(BioPsychosocialHistory)
-    private readonly bioPsychosocialHistoryRepository: Repository<BioPsychosocialHistory>,
-    @InjectRepository(EmergencyContact)
-    private readonly emergencyContactRepository: Repository<EmergencyContact>,
-    @InjectRepository(ParticipantEmergencyContact)
-    private readonly participantEmergencyContactRepository: Repository<ParticipantEmergencyContact>,
   ) {}
 
   async create(
@@ -37,6 +33,36 @@ export class ParticipantsService {
           emergencyContacts,
           ...participantData
         } = createParticipantDto;
+
+        // Validar si el documentNumber ya existe
+        const existingByDocument = await transactionalEntityManager.findOne(
+          Participant,
+          {
+            where: { documentNumber: participantData.documentNumber },
+          },
+        );
+
+        if (existingByDocument) {
+          throw new ConflictException(
+            `El número de documento ${participantData.documentNumber} ya está registrado`,
+          );
+        }
+
+        // Validar si el email ya existe (solo si se proporciona)
+        if (participantData.email) {
+          const existingByEmail = await transactionalEntityManager.findOne(
+            Participant,
+            {
+              where: { email: participantData.email },
+            },
+          );
+
+          if (existingByEmail) {
+            throw new ConflictException(
+              `El email ${participantData.email} ya está registrado`,
+            );
+          }
+        }
 
         // Crear el participante principal primero (dentro de la transacción)
         const participant = transactionalEntityManager.create(

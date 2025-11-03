@@ -11,7 +11,7 @@ import { Case } from './case.entity';
 
 @Entity('weighings')
 export class Weighing {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'reason_consultation', type: 'text', nullable: true })
@@ -29,7 +29,7 @@ export class Weighing {
   @Column({ name: 'help_process', type: 'text', nullable: true })
   helpProcess?: string;
 
-  @Column({ name: 'case_id', type: 'int', unique: true })
+  @Column({ name: 'case_id', type: 'int', unsigned: true, unique: true })
   caseId!: number;
 
   @OneToOne(() => Case, (caseEntity) => caseEntity.weighing)

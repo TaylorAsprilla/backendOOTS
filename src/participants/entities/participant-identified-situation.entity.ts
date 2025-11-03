@@ -11,17 +11,17 @@ import { Case } from './case.entity';
 
 @Entity('participant_identified_situations')
 export class ParticipantIdentifiedSituation {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
-  @Column({ name: 'case_id', type: 'int' })
+  @Column({ name: 'case_id', type: 'int', unsigned: true })
   caseId!: number;
 
   @ManyToOne(() => Case)
   @JoinColumn({ name: 'case_id' })
   case!: Case;
 
-  @Column({ name: 'identified_situation_id', type: 'int' })
+  @Column({ name: 'identified_situation_id', type: 'int', unsigned: true })
   identifiedSituationId!: number;
 
   @ManyToOne(() => IdentifiedSituation, { eager: true })

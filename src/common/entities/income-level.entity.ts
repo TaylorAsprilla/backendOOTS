@@ -8,7 +8,7 @@ import {
 
 @Entity('income_levels')
 export class IncomeLevel {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })

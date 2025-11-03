@@ -8,7 +8,7 @@ import {
 
 @Entity('document_types')
 export class DocumentType {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 50, unique: true })
@@ -16,9 +16,6 @@ export class DocumentType {
 
   @Column({ name: 'code', type: 'varchar', length: 20, unique: true })
   code!: string;
-
-  @Column({ name: 'description', type: 'text', nullable: true })
-  description?: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

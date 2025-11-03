@@ -13,7 +13,7 @@ import { Relationship } from '../../common/entities/relationship.entity';
 
 @Entity('participant_emergency_contacts')
 export class ParticipantEmergencyContact {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'participant_id', type: 'int', unsigned: true })

@@ -22,7 +22,7 @@ import { Weighing } from './weighing.entity';
 
 @Entity('cases')
 export class Case {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'case_number', type: 'varchar', length: 20, unique: true })
@@ -36,7 +36,7 @@ export class Case {
   })
   status!: CaseStatus;
 
-  @Column({ name: 'participant_id', type: 'int' })
+  @Column({ name: 'participant_id', type: 'int', unsigned: true })
   participantId!: number;
 
   @ManyToOne(() => Participant, (participant) => participant.cases)

@@ -102,19 +102,19 @@ export class RegisterDto {
   position?: string;
 
   @ApiProperty({
-    description: 'Organización del usuario',
-    example: 'Centro de Bienestar Familiar',
+    description: 'Sede del usuario',
+    example: 'Sede Norte - Bogotá',
     required: false,
   })
-  @IsString({ message: 'La organización debe ser un texto' })
+  @IsString({ message: 'La sede debe ser un texto' })
   @IsOptional()
   @MinLength(2, {
-    message: 'La organización debe tener al menos 2 caracteres',
+    message: 'La sede debe tener al menos 2 caracteres',
   })
   @MaxLength(200, {
-    message: 'La organización no puede exceder 200 caracteres',
+    message: 'La sede no puede exceder 200 caracteres',
   })
-  organization?: string;
+  headquarters?: string;
 
   @ApiProperty({
     description: 'Número de documento de identidad',
@@ -207,7 +207,7 @@ export class RegisterResponseDto {
     email: string;
     phoneNumber?: string;
     position?: string;
-    organization?: string;
+    headquarters?: string;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -245,7 +245,7 @@ export class AuthResponseDto {
     email: string;
     phoneNumber?: string;
     position?: string;
-    organization?: string;
+    headquarters?: string;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -306,11 +306,11 @@ export class UserProfileDto {
   position?: string;
 
   @ApiProperty({
-    description: 'Organización',
-    example: 'Centro de Bienestar',
+    description: 'Sede',
+    example: 'Sede Norte - Bogotá',
     required: false,
   })
-  organization?: string;
+  headquarters?: string;
 
   @ApiProperty({
     description: 'Estado del usuario',

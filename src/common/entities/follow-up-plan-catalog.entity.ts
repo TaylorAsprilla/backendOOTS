@@ -8,7 +8,7 @@ import {
 
 @Entity('follow_up_plan_catalog')
 export class FollowUpPlanCatalog {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 255 })

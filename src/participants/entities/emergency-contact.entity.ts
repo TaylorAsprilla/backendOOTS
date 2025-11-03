@@ -10,7 +10,7 @@ import { ParticipantEmergencyContact } from './participant-emergency-contact.ent
 
 @Entity('emergency_contacts')
 export class EmergencyContact {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100 })

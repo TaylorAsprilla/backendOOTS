@@ -8,7 +8,7 @@ import {
 
 @Entity('academic_levels')
 export class AcademicLevel {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })

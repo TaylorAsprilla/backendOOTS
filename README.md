@@ -1,10 +1,10 @@
-# 🏥 OOTS Colombia - Backend API
+# 🏥 OOTS - Backend API
 
 > **API REST completa para gestión de participantes en programas sociales y de salud mental desarrollada con NestJS, TypeORM y MySQL.**
 
 ## 📋 Descripción General
 
-**OOTS Colombia** (Organización Obrera Tienda de Salud) es un sistema backend desarrollado en **NestJS** para la gestión integral de participantes y casos en programas de bienestar y salud mental. La aplicación permite el registro de usuarios, autenticación segura, gestión de participantes con información biopsicosocial completa, y seguimiento de casos con planes de intervención.
+**OOTS** (Oficina de Orientación de la Congregaciónn Mita) es un sistema backend desarrollado en **NestJS** para la gestión integral de participantes y casos en programas de bienestar y salud mental. La aplicación permite el registro de usuarios, autenticación segura, gestión de participantes con información biopsicosocial completa, y seguimiento de casos con planes de intervención.
 
 ### 🏆 Objetivos del Sistema
 
@@ -299,7 +299,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: oots_colombia
+      MYSQL_DATABASE: oots
     ports:
       - '3306:3306'
     volumes:
@@ -360,7 +360,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USERNAME=root
 DB_PASSWORD=rootpassword
-DB_DATABASE=oots_colombia
+DB_DATABASE=oots
 
 # JWT
 JWT_SECRET=your-super-secret-key

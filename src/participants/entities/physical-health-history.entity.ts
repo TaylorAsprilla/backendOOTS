@@ -11,7 +11,7 @@ import { Case } from './case.entity';
 
 @Entity('physical_health_history')
 export class PhysicalHealthHistory {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({
@@ -49,7 +49,7 @@ export class PhysicalHealthHistory {
   })
   observations?: string;
 
-  @Column({ name: 'case_id' })
+  @Column({ name: 'case_id', type: 'int', unsigned: true })
   caseId: number;
 
   @OneToOne(() => Case, (caseEntity) => caseEntity.physicalHealthHistory)

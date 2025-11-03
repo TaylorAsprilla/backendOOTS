@@ -11,7 +11,7 @@ import { Case } from './case.entity';
 
 @Entity('intervention_plans')
 export class InterventionPlan {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'goal', type: 'text', nullable: true })
@@ -32,7 +32,7 @@ export class InterventionPlan {
   @Column({ name: 'evaluation_criteria', type: 'text', nullable: true })
   evaluationCriteria?: string;
 
-  @Column({ name: 'case_id', type: 'int' })
+  @Column({ name: 'case_id', type: 'int', unsigned: true })
   caseId!: number;
 
   @ManyToOne(() => Case, (caseEntity) => caseEntity.interventionPlans)

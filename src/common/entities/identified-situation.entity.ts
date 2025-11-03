@@ -8,7 +8,7 @@ import {
 
 @Entity('catalog_identified_situations')
 export class IdentifiedSituation {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 200, unique: true })

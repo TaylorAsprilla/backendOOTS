@@ -12,7 +12,7 @@ import { Relationship, AcademicLevel } from '../../common/entities';
 
 @Entity('family_members')
 export class FamilyMember {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 100 })
@@ -24,24 +24,24 @@ export class FamilyMember {
   @Column({ name: 'occupation', type: 'varchar', length: 200 })
   occupation!: string;
 
-  @Column({ name: 'participant_id', type: 'int' })
+  @Column({ name: 'participant_id', type: 'int', unsigned: true })
   participantId!: number;
 
-  @Column({ name: 'family_relationship_id', type: 'int' })
+  @Column({ name: 'family_relationship_id', type: 'int', unsigned: true })
   familyRelationshipId!: number;
 
-  @Column({ name: 'academic_level_id', type: 'int' })
+  @Column({ name: 'academic_level_id', type: 'int', unsigned: true })
   academicLevelId!: number;
 
   @ManyToOne(() => Participant, (participant) => participant.familyMembers)
   @JoinColumn({ name: 'participant_id' })
   participant!: Participant;
 
-  @ManyToOne(() => Relationship, { eager: true })
+  @ManyToOne('Relationship', { eager: true })
   @JoinColumn({ name: 'family_relationship_id' })
   familyRelationship!: Relationship;
 
-  @ManyToOne(() => AcademicLevel, { eager: true })
+  @ManyToOne('AcademicLevel', { eager: true })
   @JoinColumn({ name: 'academic_level_id' })
   academicLevel!: AcademicLevel;
 

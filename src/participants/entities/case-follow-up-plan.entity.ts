@@ -11,13 +11,13 @@ import { FollowUpPlanCatalog } from '../../common/entities/follow-up-plan-catalo
 
 @Entity('case_follow_up_plans')
 export class CaseFollowUpPlan {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
-  @Column({ name: 'case_id', type: 'int' })
+  @Column({ name: 'case_id', type: 'int', unsigned: true })
   caseId!: number;
 
-  @Column({ name: 'follow_up_plan_id', type: 'int' })
+  @Column({ name: 'follow_up_plan_id', type: 'int', unsigned: true })
   followUpPlanId!: number;
 
   @ManyToOne(() => Case, (caseEntity) => caseEntity.caseFollowUpPlans)
