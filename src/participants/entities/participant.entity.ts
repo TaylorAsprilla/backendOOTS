@@ -60,6 +60,9 @@ export class Participant {
   })
   email?: string;
 
+  @Column({ name: 'document_type_id', type: 'int', unsigned: true })
+  documentTypeId!: number;
+
   @ManyToOne(() => DocumentType, { eager: true })
   @JoinColumn({ name: 'document_type_id' })
   documentType!: DocumentType;
@@ -84,13 +87,22 @@ export class Participant {
   @Column({ name: 'religious_affiliation', type: 'varchar', length: 100 })
   religiousAffiliation!: string;
 
+  @Column({ name: 'gender_id', type: 'int', unsigned: true })
+  genderId!: number;
+
   @ManyToOne(() => Gender, { eager: true })
   @JoinColumn({ name: 'gender_id' })
   gender!: Gender;
 
+  @Column({ name: 'marital_status_id', type: 'int', unsigned: true })
+  maritalStatusId!: number;
+
   @ManyToOne(() => MaritalStatus, { eager: true })
   @JoinColumn({ name: 'marital_status_id' })
   maritalStatus!: MaritalStatus;
+
+  @Column({ name: 'health_insurance_id', type: 'int', unsigned: true })
+  healthInsuranceId!: number;
 
   @ManyToOne(() => HealthInsurance, { eager: true })
   @JoinColumn({ name: 'health_insurance_id' })

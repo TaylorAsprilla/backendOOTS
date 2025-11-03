@@ -76,7 +76,7 @@ export class AuthService {
       });
 
       if (existingUserByEmail) {
-        throw new ConflictException('User with this email already exists');
+        throw new ConflictException('Ya existe un usuario con este email');
       }
 
       // Verificar si ya existe un usuario con el mismo número de teléfono
@@ -87,7 +87,7 @@ export class AuthService {
 
         if (existingUserByPhone) {
           throw new ConflictException(
-            'User with this phone number already exists',
+            'Ya existe un usuario con este número de teléfono',
           );
         }
       }
