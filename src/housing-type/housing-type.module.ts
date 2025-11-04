@@ -8,6 +8,6 @@ import { HousingTypeService } from './housing-type.service';
   imports: [TypeOrmModule.forFeature([HousingType])],
   controllers: [HousingTypeController],
   providers: [HousingTypeService],
-  exports: [HousingTypeService],
+  exports: [TypeOrmModule, HousingTypeService],
 })
 export class HousingTypeModule {}

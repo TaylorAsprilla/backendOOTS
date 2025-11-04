@@ -14,12 +14,6 @@ export class Relationship {
   @Column({ name: 'name', type: 'varchar', length: 50, unique: true })
   name!: string;
 
-  @Column({ name: 'code', type: 'varchar', length: 20, unique: true })
-  code!: string;
-
-  @Column({ name: 'gender_specific', type: 'boolean', default: false })
-  genderSpecific!: boolean;
-
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 

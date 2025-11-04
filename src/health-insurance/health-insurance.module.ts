@@ -8,6 +8,6 @@ import { HealthInsurance } from './entities/health-insurance.entity';
   imports: [TypeOrmModule.forFeature([HealthInsurance])],
   controllers: [HealthInsuranceController],
   providers: [HealthInsuranceService],
-  exports: [HealthInsuranceService],
+  exports: [TypeOrmModule, HealthInsuranceService],
 })
 export class HealthInsuranceModule {}

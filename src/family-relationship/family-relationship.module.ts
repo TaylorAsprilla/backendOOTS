@@ -8,6 +8,6 @@ import { FamilyRelationshipService } from './family-relationship.service';
   imports: [TypeOrmModule.forFeature([FamilyRelationship])],
   controllers: [FamilyRelationshipController],
   providers: [FamilyRelationshipService],
-  exports: [FamilyRelationshipService],
+  exports: [TypeOrmModule, FamilyRelationshipService],
 })
 export class FamilyRelationshipModule {}

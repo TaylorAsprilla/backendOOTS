@@ -8,6 +8,6 @@ import { Gender } from './entities/gender.entity';
   imports: [TypeOrmModule.forFeature([Gender])],
   controllers: [GendersController],
   providers: [GendersService],
-  exports: [GendersService],
+  exports: [TypeOrmModule, GendersService],
 })
 export class GendersModule {}

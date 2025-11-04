@@ -8,6 +8,6 @@ import { IncomeLevelService } from './income-level.service';
   imports: [TypeOrmModule.forFeature([IncomeLevel])],
   controllers: [IncomeLevelController],
   providers: [IncomeLevelService],
-  exports: [IncomeLevelService],
+  exports: [TypeOrmModule, IncomeLevelService],
 })
 export class IncomeLevelModule {}
