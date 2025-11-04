@@ -3,7 +3,7 @@
 ## ❌ Problema
 
 ```
-Access to XMLHttpRequest at 'https://backendoots.onrender.com/api/v1/auth/login' 
+Access to XMLHttpRequest at 'https://backendoots.onrender.com/api/v1/auth/login'
 from origin 'https://congregacionmitacol.org' has been blocked by CORS policy
 ```
 
@@ -12,6 +12,7 @@ from origin 'https://congregacionmitacol.org' has been blocked by CORS policy
 ### 1. Actualizado `src/main.ts`
 
 **Mejoras:**
+
 - ✅ Soporta `CORS_ORIGIN` y `CORS_ORIGINS` (ambas variables)
 - ✅ Función dinámica de validación de origins
 - ✅ Logs de origins permitidos y bloqueados
@@ -20,10 +21,11 @@ from origin 'https://congregacionmitacol.org' has been blocked by CORS policy
 - ✅ Helmet configurado para permitir cross-origin
 
 **Código actualizado:**
+
 ```typescript
 const corsOriginEnv = process.env.CORS_ORIGIN || process.env.CORS_ORIGINS;
 const corsOrigins = corsOriginEnv
-  ? corsOriginEnv.split(',').map(origin => origin.trim())
+  ? corsOriginEnv.split(',').map((origin) => origin.trim())
   : [
       'http://localhost:4200',
       'http://127.0.0.1:4200',
@@ -59,12 +61,14 @@ Dashboard > backend-oots > Environment
 ### Paso 2: Agregar/Actualizar CORS_ORIGIN
 
 **Opción A: Un solo origen**
+
 ```
 Key: CORS_ORIGIN
 Value: https://congregacionmitacol.org
 ```
 
 **Opción B: Múltiples orígenes (Recomendado)**
+
 ```
 Key: CORS_ORIGIN
 Value: https://congregacionmitacol.org,https://www.congregacionmitacol.org
@@ -102,13 +106,13 @@ fetch('https://backendoots.onrender.com/api/v1/auth/login', {
   },
   body: JSON.stringify({
     email: 'test@example.com',
-    password: 'password123'
+    password: 'password123',
   }),
-  credentials: 'include' // Si usas cookies
+  credentials: 'include', // Si usas cookies
 })
-.then(res => res.json())
-.then(data => console.log('✅ Success:', data))
-.catch(err => console.error('❌ Error:', err));
+  .then((res) => res.json())
+  .then((data) => console.log('✅ Success:', data))
+  .catch((err) => console.error('❌ Error:', err));
 ```
 
 ### 3. Test con curl (simulando preflight)
@@ -133,16 +137,19 @@ curl -X OPTIONS https://backendoots.onrender.com/api/v1/auth/login \
 ## 📋 Valores Recomendados para CORS_ORIGIN
 
 ### Producción
+
 ```env
 CORS_ORIGIN=https://congregacionmitacol.org,https://www.congregacionmitacol.org
 ```
 
 ### Si tienes múltiples dominios
+
 ```env
 CORS_ORIGIN=https://congregacionmitacol.org,https://www.congregacionmitacol.org,https://app.congregacionmitacol.org
 ```
 
 ### Desarrollo + Producción (NO recomendado)
+
 ```env
 CORS_ORIGIN=http://localhost:4200,https://congregacionmitacol.org
 ```
@@ -152,11 +159,13 @@ CORS_ORIGIN=http://localhost:4200,https://congregacionmitacol.org
 ## 🔐 Consideraciones de Seguridad
 
 ### ✅ Correcto
+
 - Lista específica de dominios permitidos
 - HTTPS en producción
 - `credentials: true` solo si usas cookies/auth
 
 ### ❌ Evitar en Producción
+
 ```typescript
 // ❌ NO HACER ESTO EN PRODUCCIÓN
 app.enableCors({
@@ -171,24 +180,27 @@ app.enableCors({
 ### Error persiste después del deploy
 
 **1. Verificar variable en Render:**
+
 ```bash
 # En Render Dashboard > Environment
 # Debe existir: CORS_ORIGIN
 ```
 
 **2. Verificar logs de Render:**
+
 ```bash
 # Buscar en logs:
 🌐 CORS enabled for origins: [...]
 ```
 
 **3. Verificar que el frontend usa HTTPS:**
+
 ```javascript
 // ❌ MAL (mixed content)
-fetch('http://backendoots.onrender.com/...')
+fetch('http://backendoots.onrender.com/...');
 
 // ✅ BIEN
-fetch('https://backendoots.onrender.com/...')
+fetch('https://backendoots.onrender.com/...');
 ```
 
 ### Error "Origin not allowed by CORS"
@@ -196,6 +208,7 @@ fetch('https://backendoots.onrender.com/...')
 **Causa:** El origin del frontend no está en la lista.
 
 **Solución:**
+
 1. Verificar el origin exacto en logs de Render:
    ```
    ⚠️ CORS blocked origin: https://otro-dominio.com
