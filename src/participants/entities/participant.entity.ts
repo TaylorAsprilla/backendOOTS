@@ -10,7 +10,9 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Gender, MaritalStatus, HealthInsurance } from '../../common/entities';
+import { Gender } from '../../genders/entities';
+import { MaritalStatus } from '../../marital-status/entities';
+import { HealthInsurance } from '../../health-insurance/entities';
 import { DocumentType } from '../../document-types/entities';
 import { FamilyMember } from './family-member.entity';
 import { Case } from './case.entity';

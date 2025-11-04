@@ -6,16 +6,13 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('marital_statuses')
-export class MaritalStatus {
+@Entity('genders')
+export class Gender {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
   @Column({ name: 'name', type: 'varchar', length: 50, unique: true })
   name!: string;
-
-  @Column({ name: 'code', type: 'varchar', length: 20, unique: true })
-  code!: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

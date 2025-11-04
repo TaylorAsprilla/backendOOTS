@@ -2,15 +2,15 @@ import { Controller, Get } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DocumentType } from '../document-types/entities';
+import { Gender } from '../genders/entities';
+import { MaritalStatus } from '../marital-status/entities';
+import { HealthInsurance } from '../health-insurance/entities';
+import { FamilyRelationship } from '../family-relationship/entities';
+import { IncomeSource } from '../income-source/entities';
+import { IncomeLevel } from '../income-level/entities';
+import { HousingType } from '../housing-type/entities';
 import {
-  Gender,
-  MaritalStatus,
-  HealthInsurance,
-  Relationship,
   AcademicLevel,
-  IncomeSource,
-  IncomeLevel,
-  HousingType,
   TreatmentStatus,
   ApproachType,
   ProcessType,
@@ -27,8 +27,8 @@ export class CatalogController {
     private readonly maritalStatusRepository: Repository<MaritalStatus>,
     @InjectRepository(HealthInsurance)
     private readonly healthInsuranceRepository: Repository<HealthInsurance>,
-    @InjectRepository(Relationship)
-    private readonly relationshipRepository: Repository<Relationship>,
+    @InjectRepository(FamilyRelationship)
+    private readonly relationshipRepository: Repository<FamilyRelationship>,
     @InjectRepository(AcademicLevel)
     private readonly academicLevelRepository: Repository<AcademicLevel>,
     @InjectRepository(IncomeSource)

@@ -6,19 +6,13 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('health_insurances')
-export class HealthInsurance {
+@Entity('marital_statuses')
+export class MaritalStatus {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
-  @Column({ name: 'name', type: 'varchar', length: 100, unique: true })
+  @Column({ name: 'name', type: 'varchar', length: 50, unique: true })
   name!: string;
-
-  @Column({ name: 'code', type: 'varchar', length: 30, unique: true })
-  code!: string;
-
-  @Column({ name: 'allows_custom', type: 'boolean', default: false })
-  allowsCustom!: boolean;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

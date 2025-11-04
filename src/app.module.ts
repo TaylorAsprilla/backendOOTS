@@ -14,6 +14,13 @@ import { MailModule } from './mail/mail.module';
 import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
 import { ApproachTypesModule } from './approach-types/approach-types.module';
 import { DocumentTypesModule } from './document-types/document-types.module';
+import { GendersModule } from './genders/genders.module';
+import { MaritalStatusModule } from './marital-status/marital-status.module';
+import { HealthInsuranceModule } from './health-insurance/health-insurance.module';
+import { IncomeSourceModule } from './income-source/income-source.module';
+import { IncomeLevelModule } from './income-level/income-level.module';
+import { HousingTypeModule } from './housing-type/housing-type.module';
+import { FamilyRelationshipModule } from './family-relationship/family-relationship.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -69,6 +76,13 @@ import configuration from './config/configuration';
     AcademicLevelsModule,
     ApproachTypesModule,
     DocumentTypesModule,
+    GendersModule,
+    MaritalStatusModule,
+    HealthInsuranceModule,
+    IncomeSourceModule,
+    IncomeLevelModule,
+    HousingTypeModule,
+    FamilyRelationshipModule,
   ],
   controllers: [],
   providers: [

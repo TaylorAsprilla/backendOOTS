@@ -1,11 +1,4 @@
-export { Gender } from './gender.entity';
-export { MaritalStatus } from './marital-status.entity';
-export { HealthInsurance } from './health-insurance.entity';
-export { HousingType } from './housing-type.entity';
-export { Relationship } from './relationship.entity';
 export { AcademicLevel } from './academic-level.entity';
-export { IncomeSource } from './income-source.entity';
-export { IncomeLevel } from './income-level.entity';
 export { IdentifiedSituation } from './identified-situation.entity';
 export { FollowUpPlanCatalog } from './follow-up-plan-catalog.entity';
 export { ApproachType } from './approach-type.entity';

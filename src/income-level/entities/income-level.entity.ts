@@ -1,21 +1,18 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('relationships')
-export class Relationship {
+@Entity('income_levels')
+export class IncomeLevel {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
-  @Column({ name: 'name', type: 'varchar', length: 50, unique: true })
+  @Column({ type: 'varchar', length: 50, unique: true })
   name!: string;
-
-  @Column({ name: 'code', type: 'varchar', length: 20, unique: true })
-  code!: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

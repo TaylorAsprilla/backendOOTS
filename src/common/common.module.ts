@@ -1,19 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DocumentType } from '../document-types/entities';
 import {
-  Gender,
-  MaritalStatus,
-  HealthInsurance,
-  HousingType,
-  Relationship,
-  AcademicLevel,
-  IncomeSource,
-  IncomeLevel,
   IdentifiedSituation,
   ApproachType,
   ProcessType,
   TreatmentStatus,
+  AcademicLevel,
 } from './entities';
 import { CatalogSeedService } from './services';
 import { CatalogController } from './catalog.controller';
@@ -21,19 +13,11 @@ import { CatalogController } from './catalog.controller';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      DocumentType,
-      Gender,
-      MaritalStatus,
-      HealthInsurance,
-      HousingType,
-      Relationship,
-      AcademicLevel,
-      IncomeSource,
-      IncomeLevel,
       IdentifiedSituation,
       ApproachType,
       ProcessType,
       TreatmentStatus,
+      AcademicLevel,
     ]),
   ],
   controllers: [CatalogController],

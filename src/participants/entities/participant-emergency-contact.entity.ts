@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Participant } from './participant.entity';
 import { EmergencyContact } from './emergency-contact.entity';
-import { Relationship } from '../../common/entities/relationship.entity';
+import { FamilyRelationship } from '../../family-relationship/entities';
 
 @Entity('participant_emergency_contacts')
 export class ParticipantEmergencyContact {
@@ -42,7 +42,7 @@ export class ParticipantEmergencyContact {
   @JoinColumn({ name: 'emergency_contact_id' })
   emergencyContact!: EmergencyContact;
 
-  @ManyToOne('Relationship', { eager: true })
+  @ManyToOne(() => FamilyRelationship, { eager: true })
   @JoinColumn({ name: 'relationship_id' })
-  relationship!: Relationship;
+  relationship!: FamilyRelationship;
 }
