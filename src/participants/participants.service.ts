@@ -312,4 +312,42 @@ export class ParticipantsService {
       byAgeRange: [],
     };
   }
+
+  async checkDocumentExists(
+    documentNumber: string,
+  ): Promise<{ exists: boolean; participant?: any }> {
+    const participant = await this.participantRepository.findOne({
+      where: { documentNumber },
+      select: [
+        'id',
+        'firstName',
+        'secondName',
+        'firstLastName',
+        'secondLastName',
+        'documentNumber',
+        'email',
+        'phoneNumber',
+        'createdAt',
+      ],
+    });
+
+    if (participant) {
+      return {
+        exists: true,
+        participant: {
+          id: participant.id,
+          fullName:
+            `${participant.firstName} ${participant.secondName || ''} ${participant.firstLastName} ${participant.secondLastName || ''}`.trim(),
+          documentNumber: participant.documentNumber,
+          email: participant.email,
+          phoneNumber: participant.phoneNumber,
+          createdAt: participant.createdAt,
+        },
+      };
+    }
+
+    return {
+      exists: false,
+    };
+  }
 }

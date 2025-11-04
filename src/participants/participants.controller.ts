@@ -587,6 +587,101 @@ export class ParticipantsController {
     return this.participantsService.remove(+id);
   }
 
+  @Get('check-exists/:documentNumber')
+  @ApiOperation({
+    summary: 'Verificar si un documento ya está registrado',
+    description:
+      '**Verifica si un número de documento ya existe en la base de datos.**\n\n' +
+      'Este endpoint es útil para:\n' +
+      '- ✅ Validar documentos antes de crear un nuevo participante\n' +
+      '- 🔍 Prevenir registros duplicados\n' +
+      '- 📋 Obtener información básica del participante existente\n' +
+      '- ⚡ Validación en tiempo real en formularios\n\n' +
+      '**Respuesta:**\n' +
+      '- Si el documento existe: retorna `exists: true` con datos básicos del participante\n' +
+      '- Si no existe: retorna `exists: false`',
+  })
+  @ApiParam({
+    name: 'documentNumber',
+    description:
+      '**Número de documento a verificar**\n\n' +
+      'Debe ser el número completo del documento de identidad sin puntos ni espacios.\n\n' +
+      '**Ejemplos válidos:** `1234567890`, `52025577`, `1001234567`',
+    type: String,
+    example: '52025577',
+  })
+  @ApiOkResponse({
+    description:
+      '✅ **Consulta exitosa**\n\n' +
+      'Retorna el resultado de la verificación:\n' +
+      '- **Si existe:** `exists: true` + datos básicos del participante\n' +
+      '- **Si no existe:** `exists: false`',
+    schema: {
+      oneOf: [
+        {
+          type: 'object',
+          title: 'Documento existe',
+          properties: {
+            exists: { type: 'boolean', example: true },
+            participant: {
+              type: 'object',
+              properties: {
+                id: { type: 'number', example: 15 },
+                fullName: {
+                  type: 'string',
+                  example: 'María Elena González Pérez',
+                },
+                documentNumber: { type: 'string', example: '52025577' },
+                email: { type: 'string', example: 'maria.gonzalez@email.com' },
+                phoneNumber: { type: 'string', example: '+57 300 123 4567' },
+                createdAt: {
+                  type: 'string',
+                  format: 'date-time',
+                  example: '2024-11-01T10:30:00.000Z',
+                },
+              },
+            },
+          },
+        },
+        {
+          type: 'object',
+          title: 'Documento no existe',
+          properties: {
+            exists: { type: 'boolean', example: false },
+          },
+        },
+      ],
+    },
+  })
+  @ApiBadRequestResponse({
+    description:
+      '❌ **Parámetro inválido**\n\n' +
+      'El número de documento debe ser una cadena de texto válida.',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Invalid document number format',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      '❌ **Error interno del servidor**\n\n' +
+      'Ocurrió un error al consultar la base de datos.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Error interno del servidor',
+        error: 'Internal Server Error',
+      },
+    },
+  })
+  checkDocumentExists(@Param('documentNumber') documentNumber: string) {
+    return this.participantsService.checkDocumentExists(documentNumber);
+  }
+
   @Get('stats/demographic')
   @ApiOperation({
     summary: 'Obtener estadísticas demográficas de participantes',
