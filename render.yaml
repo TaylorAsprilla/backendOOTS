@@ -1,0 +1,62 @@
+services:
+  # Servicio Web - Backend NestJS
+  - type: web
+    name: backend-oots
+    runtime: node
+    region: oregon # Cambiar según tu ubicación: oregon, frankfurt, singapore
+    plan: starter # starter (gratis con limitaciones) o paid plans
+    branch: main # Cambiar a tu rama principal (main o master)
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DB_HOST
+        fromDatabase:
+          name: mysql-oots
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: mysql-oots
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: mysql-oots
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: mysql-oots
+          property: password
+      - key: DB_DATABASE
+        fromDatabase:
+          name: mysql-oots
+          property: database
+      - key: JWT_SECRET
+        generateValue: true # Render genera un valor aleatorio seguro
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: APP_URL
+        sync: false # Configurar manualmente en el dashboard
+      - key: FRONTEND_URL
+        sync: false # Configurar manualmente en el dashboard
+      - key: MAIL_HOST
+        sync: false # Configurar manualmente
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASS
+        sync: false
+      - key: MAIL_FROM
+        value: '"Soporte OOTS Colombia" <no-reply@ootscolombia.com>'
+
+  # Base de Datos MySQL
+databases:
+  - name: mysql-oots
+    databaseName: oots_db
+    user: oots_user
+    plan: starter # starter (gratis 256MB) o paid plans
+    region: oregon # Misma región que el servicio web
