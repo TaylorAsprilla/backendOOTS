@@ -1,16 +1,16 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DocumentType } from '../../document-types/entities';
+import { Gender } from '../../genders/entities';
+import { MaritalStatus } from '../../marital-status/entities';
+import { HealthInsurance } from '../../health-insurance/entities';
+import { HousingType } from '../../housing-type/entities';
+import { FamilyRelationship } from '../../family-relationship/entities';
+import { IncomeSource } from '../../income-source/entities';
+import { IncomeLevel } from '../../income-level/entities';
 import {
-  DocumentType,
-  Gender,
-  MaritalStatus,
-  HealthInsurance,
-  HousingType,
-  Relationship,
   AcademicLevel,
-  IncomeSource,
-  IncomeLevel,
   IdentifiedSituation,
   ApproachType,
   ProcessType,
@@ -35,8 +35,8 @@ export class CatalogSeedService implements OnModuleInit {
     @InjectRepository(HousingType)
     private readonly housingTypeRepository: Repository<HousingType>,
 
-    @InjectRepository(Relationship)
-    private readonly relationshipRepository: Repository<Relationship>,
+    @InjectRepository(FamilyRelationship)
+    private readonly relationshipRepository: Repository<FamilyRelationship>,
 
     @InjectRepository(AcademicLevel)
     private readonly academicLevelRepository: Repository<AcademicLevel>,

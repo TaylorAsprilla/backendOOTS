@@ -9,12 +9,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Participant } from './participant.entity';
-import {
-  AcademicLevel,
-  IncomeSource,
-  IncomeLevel,
-  HousingType,
-} from '../../common/entities';
+import { AcademicLevel } from '../../common/entities';
+import { IncomeSource } from '../../income-source/entities';
+import { IncomeLevel } from '../../income-level/entities';
+import { HousingType } from '../../housing-type/entities';
 
 @Entity('bio_psychosocial_history')
 export class BioPsychosocialHistory {
@@ -44,16 +42,36 @@ export class BioPsychosocialHistory {
   @Column({ name: 'participant_id', type: 'int', unsigned: true, unique: true })
   participantId!: number;
 
-  @Column({ name: 'academic_level_id', type: 'int', unsigned: true, nullable: true })
+  @Column({
+    name: 'academic_level_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
   academicLevelId?: number;
 
-  @Column({ name: 'income_source_id', type: 'int', unsigned: true, nullable: true })
+  @Column({
+    name: 'income_source_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
   incomeSourceId?: number;
 
-  @Column({ name: 'income_level_id', type: 'int', unsigned: true, nullable: true })
+  @Column({
+    name: 'income_level_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
   incomeLevelId?: number;
 
-  @Column({ name: 'housing_type_id', type: 'int', unsigned: true, nullable: true })
+  @Column({
+    name: 'housing_type_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
   housingTypeId?: number;
 
   @OneToOne(

@@ -5,7 +5,6 @@ import {
   IsOptional,
   MinLength,
   MaxLength,
-  Matches,
   IsArray,
   ValidateNested,
   IsNumber,
@@ -30,9 +29,6 @@ export class CreateEmergencyContactDto {
     example: '+57 301 987 6543',
   })
   @IsString()
-  @Matches(/^\+57 3\d{2} \d{3} \d{4}$/, {
-    message: 'Phone must be in format: +57 3XX XXX XXXX',
-  })
   phone: string;
 
   @ApiProperty({
@@ -150,9 +146,6 @@ export class CreateParticipantDto {
   secondLastName?: string;
 
   @IsString()
-  @Matches(/^\+57 3\d{2} \d{3} \d{4}$/, {
-    message: 'Phone number must be in format: +57 3XX XXX XXXX',
-  })
   phoneNumber: string;
 
   @IsOptional()

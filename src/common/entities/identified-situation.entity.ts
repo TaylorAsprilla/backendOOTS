@@ -14,9 +14,6 @@ export class IdentifiedSituation {
   @Column({ name: 'name', type: 'varchar', length: 200, unique: true })
   name!: string;
 
-  @Column({ name: 'code', type: 'varchar', length: 50, unique: true })
-  code!: string;
-
   @Column({ name: 'category', type: 'varchar', length: 100, nullable: true })
   category?: string;
 
