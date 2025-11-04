@@ -12,17 +12,39 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Configurar middleware de seguridad
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(compression());
 
-  // Configurar CORS para permitir peticiones desde Angular
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
-    'http://localhost:4200',
-    'http://127.0.0.1:4200',
-  ];
+  // Configurar CORS - Soporta CORS_ORIGIN o CORS_ORIGINS
+  const corsOriginEnv = process.env.CORS_ORIGIN || process.env.CORS_ORIGINS;
+  const corsOrigins = corsOriginEnv
+    ? corsOriginEnv.split(',').map((origin) => origin.trim())
+    : [
+        'http://localhost:4200',
+        'http://127.0.0.1:4200',
+        'https://congregacionmitacol.org',
+        'https://www.congregacionmitacol.org',
+      ];
+
+  console.log('🌐 CORS enabled for origins:', corsOrigins);
 
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (como Postman, curl, o same-origin)
+      if (!origin) return callback(null, true);
+
+      // Verificar si el origin está en la lista permitida
+      if (corsOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`⚠️ CORS blocked origin: ${origin}`);
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
@@ -31,8 +53,12 @@ async function bootstrap() {
       'Accept',
       'Authorization',
       'Access-Control-Allow-Origin',
+      'Access-Control-Allow-Credentials',
     ],
-    credentials: true, // Si necesitas enviar cookies o headers de autenticación
+    exposedHeaders: ['Authorization'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   app.setGlobalPrefix('api/v1');
