@@ -311,6 +311,52 @@ volumes:
 
 ---
 
+## 🚀 Despliegue en Producción
+
+### Despliegue en Render
+
+Este proyecto está configurado para desplegarse fácilmente en [Render](https://render.com) con GitHub.
+
+**Guía completa de despliegue manual:**
+👉 Ver [DEPLOYMENT_RENDER.md](./DEPLOYMENT_RENDER.md)
+
+#### Resumen rápido
+
+1. **Conectar repositorio de GitHub** a Render
+2. **Configurar Web Service:**
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npm run start:prod`
+   - Environment: Node
+3. **Configurar variables de entorno** (ver `.env.render.example`)
+4. **Base de datos MySQL:** Usar Railway o PlanetScale (Render no ofrece MySQL gratis)
+
+#### Archivos de configuración incluidos
+
+- `render.yaml` - Configuración IaC de servicios
+- `build.sh` - Script de build optimizado
+- `.env.render.example` - Plantilla de variables de entorno para producción
+- `DEPLOYMENT_RENDER.md` - Guía paso a paso completa
+
+#### Plan Free vs Paid
+
+| Feature                | Free      | Starter ($7/mo)   |
+| ---------------------- | --------- | ----------------- |
+| Uptime                 | 750h/mes  | Ilimitado         |
+| Sleep tras inactividad | ✅ 15 min | ❌ Siempre activo |
+| Custom Domain          | ✅        | ✅                |
+| SSL automático         | ✅        | ✅                |
+
+### Otras Plataformas
+
+- **Railway**: Configuración similar a Render
+- **Heroku**: Usar buildpack de Node.js
+- **AWS**: EC2 con PM2 o ECS con Docker
+- **DigitalOcean**: App Platform o Droplet con PM2
+
+Ver [DEPLOYMENT.md](./DEPLOYMENT.md) para despliegue on-premise/VPS.
+
+---
+
 ## 🧪 Testing
 
 ### Configuración de Pruebas
