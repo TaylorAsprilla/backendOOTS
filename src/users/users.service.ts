@@ -82,6 +82,33 @@ export class UsersService {
     });
   }
 
+  async checkDocumentNumber(
+    documentNumber: string,
+  ): Promise<{ exists: boolean; message: string }> {
+    if (!documentNumber || documentNumber.trim() === '') {
+      return {
+        exists: false,
+        message: 'Document number is required',
+      };
+    }
+
+    const existingUser = await this.userRepository.findOne({
+      where: { documentNumber, status: UserStatus.ACTIVE },
+    });
+
+    if (existingUser) {
+      return {
+        exists: true,
+        message: 'Document number already exists',
+      };
+    }
+
+    return {
+      exists: false,
+      message: 'Document number is available',
+    };
+  }
+
   private excludePassword(user: User): User {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
