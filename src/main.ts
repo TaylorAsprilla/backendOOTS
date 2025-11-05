@@ -33,9 +33,15 @@ async function bootstrap() {
   console.log('🌐 CORS enabled for origins:', corsOrigins);
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Permitir requests sin origin (como Postman, curl, o same-origin)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
 
       // Verificar si el origin está en la lista permitida
       if (corsOrigins.includes(origin)) {
