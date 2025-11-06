@@ -9,12 +9,10 @@ import { FamilyRelationship } from '../family-relationship/entities';
 import { IncomeSource } from '../income-source/entities';
 import { IncomeLevel } from '../income-level/entities';
 import { HousingType } from '../housing-type/entities';
-import {
-  AcademicLevel,
-  TreatmentStatus,
-  ApproachType,
-  ProcessType,
-} from './entities';
+import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
+import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
+import { ApproachType } from 'src/approach-types/entities/approach-type.entity';
+import { ProcessType } from 'src/process-types/entities/process-type.entity';
 
 @Controller('api/v1/catalogs')
 export class CatalogController {

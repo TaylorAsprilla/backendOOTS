@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Case } from './case.entity';
-import { FollowUpPlanCatalog } from '../../common/entities/follow-up-plan-catalog.entity';
+import { FollowUpPlanCatalog } from '../../follow-up-plan-catalog/entities/follow-up-plan-catalog.entity';
 
 @Entity('case_follow_up_plans')
 export class CaseFollowUpPlan {

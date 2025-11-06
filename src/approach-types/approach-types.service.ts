@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ApproachType } from '../common/entities/approach-type.entity';
+import { ApproachType } from './entities/approach-type.entity';
 import { CreateApproachTypeDto } from './dto/create-approach-type.dto';
 import { UpdateApproachTypeDto } from './dto/update-approach-type.dto';
 

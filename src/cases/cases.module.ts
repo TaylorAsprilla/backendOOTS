@@ -11,8 +11,8 @@ import { InterventionPlan } from '../participants/entities/intervention-plan.ent
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { ClosingNote } from '../participants/entities/closing-note.entity';
 import { ParticipantIdentifiedSituation } from '../participants/entities/participant-identified-situation.entity';
-import { IdentifiedSituation } from '../common/entities';
-import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
+import { IdentifiedSituation } from '../identified-situations/entities/identified-situation.entity';
+import { FollowUpPlanCatalog } from '../follow-up-plan-catalog/entities/follow-up-plan-catalog.entity';
 import { Weighing } from '../participants/entities/weighing.entity';
 
 @Module({

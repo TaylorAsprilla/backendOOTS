@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Participant } from './participant.entity';
-import { AcademicLevel } from '../../common/entities';
+import { AcademicLevel } from '../../academic-levels/entities/academic-level.entity';
 import { IncomeSource } from '../../income-source/entities';
 import { IncomeLevel } from '../../income-level/entities';
 import { HousingType } from '../../housing-type/entities';

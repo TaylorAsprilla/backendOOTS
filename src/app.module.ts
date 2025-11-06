@@ -22,6 +22,7 @@ import { IncomeSourceModule } from './income-source/income-source.module';
 import { IncomeLevelModule } from './income-level/income-level.module';
 import { HousingTypeModule } from './housing-type/housing-type.module';
 import { FamilyRelationshipModule } from './family-relationship/family-relationship.module';
+import { IdentifiedSituationsModule } from './identified-situations/identified-situations.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -84,6 +85,7 @@ import configuration from './config/configuration';
     IncomeLevelModule,
     HousingTypeModule,
     FamilyRelationshipModule,
+    IdentifiedSituationsModule,
   ],
   controllers: [AppController],
   providers: [

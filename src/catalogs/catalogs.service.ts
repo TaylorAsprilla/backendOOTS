@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IdentifiedSituation } from '../common/entities';
-import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
+import { IdentifiedSituation } from '../identified-situations/entities/identified-situation.entity';
+import { FollowUpPlanCatalog } from '../follow-up-plan-catalog/entities/follow-up-plan-catalog.entity';
 
 @Injectable()
 export class CatalogsService {
@@ -16,7 +16,7 @@ export class CatalogsService {
   async findAllIdentifiedSituations(): Promise<IdentifiedSituation[]> {
     return await this.identifiedSituationRepository.find({
       where: { isActive: true },
-      order: { category: 'ASC', name: 'ASC' },
+      order: { id: 'ASC', name: 'ASC' },
     });
   }
 
