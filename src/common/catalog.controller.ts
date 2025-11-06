@@ -11,7 +11,6 @@ import { IncomeLevel } from '../income-level/entities';
 import { HousingType } from '../housing-type/entities';
 import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
 import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
-import { ApproachType } from 'src/approach-types/entities/approach-type.entity';
 import { ProcessType } from 'src/process-types/entities/process-type.entity';
 
 @Controller('api/v1/catalogs')
@@ -37,8 +36,6 @@ export class CatalogController {
     private readonly housingTypeRepository: Repository<HousingType>,
     @InjectRepository(TreatmentStatus)
     private readonly treatmentStatusRepository: Repository<TreatmentStatus>,
-    @InjectRepository(ApproachType)
-    private readonly approachTypeRepository: Repository<ApproachType>,
     @InjectRepository(ProcessType)
     private readonly processTypeRepository: Repository<ProcessType>,
   ) {}
@@ -93,11 +90,6 @@ export class CatalogController {
     return this.treatmentStatusRepository.find({ order: { name: 'ASC' } });
   }
 
-  @Get('approach-types')
-  async getApproachTypes() {
-    return this.approachTypeRepository.find({ order: { name: 'ASC' } });
-  }
-
   @Get('process-types')
   async getProcessTypes() {
     return this.processTypeRepository.find({ order: { name: 'ASC' } });
@@ -116,7 +108,6 @@ export class CatalogController {
       incomeLevels,
       housingTypes,
       treatmentStatuses,
-      approachTypes,
       processTypes,
     ] = await Promise.all([
       this.documentTypeRepository.find({ order: { name: 'ASC' } }),
@@ -129,7 +120,6 @@ export class CatalogController {
       this.incomeLevelRepository.find({ order: { name: 'ASC' } }),
       this.housingTypeRepository.find({ order: { name: 'ASC' } }),
       this.treatmentStatusRepository.find({ order: { name: 'ASC' } }),
-      this.approachTypeRepository.find({ order: { name: 'ASC' } }),
       this.processTypeRepository.find({ order: { name: 'ASC' } }),
     ]);
 
@@ -144,7 +134,6 @@ export class CatalogController {
       incomeLevels,
       housingTypes,
       treatmentStatuses,
-      approachTypes,
       processTypes,
     };
   }

@@ -12,7 +12,6 @@ import { FamilyRelationshipModule } from '../family-relationship/family-relation
 import { IncomeSourceModule } from '../income-source/income-source.module';
 import { IncomeLevelModule } from '../income-level/income-level.module';
 import { IdentifiedSituation } from 'src/identified-situations/entities';
-import { ApproachType } from 'src/approach-types/entities/approach-type.entity';
 import { ProcessType } from 'src/process-types/entities/process-type.entity';
 import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
 import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
@@ -21,7 +20,6 @@ import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entit
   imports: [
     TypeOrmModule.forFeature([
       IdentifiedSituation,
-      ApproachType,
       ProcessType,
       TreatmentStatus,
       AcademicLevel,

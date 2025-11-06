@@ -11,7 +11,6 @@ import { IncomeSource } from '../../income-source/entities';
 import { IncomeLevel } from '../../income-level/entities';
 import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
 import { IdentifiedSituation } from 'src/identified-situations/entities';
-import { ApproachType } from 'src/approach-types/entities/approach-type.entity';
 import { ProcessType } from 'src/process-types/entities/process-type.entity';
 import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
 
@@ -48,9 +47,6 @@ export class CatalogSeedService implements OnModuleInit {
     @InjectRepository(IdentifiedSituation)
     private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
 
-    @InjectRepository(ApproachType)
-    private readonly approachTypeRepository: Repository<ApproachType>,
-
     @InjectRepository(ProcessType)
     private readonly processTypeRepository: Repository<ProcessType>,
 
@@ -75,7 +71,6 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
     await this.seedIdentifiedSituations();
-    await this.seedApproachTypes();
     await this.seedProcessTypes();
     await this.seedTreatmentStatuses();
 
@@ -465,41 +460,6 @@ export class CatalogSeedService implements OnModuleInit {
 
     await this.identifiedSituationRepository.save(situations);
     console.log('🎯 Identified situations seeded');
-  }
-
-  private async seedApproachTypes() {
-    const count = await this.approachTypeRepository.count();
-    if (count > 0) return;
-
-    const approachTypes = [
-      {
-        name: 'Consulta Presencial',
-        description: 'Atención presencial en las instalaciones',
-      },
-      {
-        name: 'Email',
-        description: 'Comunicación por correo electrónico',
-      },
-      {
-        name: 'Encuentro Casual',
-        description: 'Encuentro no programado',
-      },
-      {
-        name: 'Llamada',
-        description: 'Comunicación telefónica',
-      },
-      {
-        name: 'Tele Consulta',
-        description: 'Consulta por video llamada',
-      },
-      {
-        name: 'Virtual',
-        description: 'Atención por medios virtuales',
-      },
-    ];
-
-    await this.approachTypeRepository.save(approachTypes);
-    console.log('📞 Approach types seeded');
   }
 
   private async seedProcessTypes() {

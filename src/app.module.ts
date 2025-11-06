@@ -13,7 +13,6 @@ import { CasesModule } from './cases/cases.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { MailModule } from './mail/mail.module';
 import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
-import { ApproachTypesModule } from './approach-types/approach-types.module';
 import { DocumentTypesModule } from './document-types/document-types.module';
 import { GendersModule } from './genders/genders.module';
 import { MaritalStatusModule } from './marital-status/marital-status.module';
@@ -76,7 +75,6 @@ import configuration from './config/configuration';
     CatalogsModule,
     MailModule,
     AcademicLevelsModule,
-    ApproachTypesModule,
     DocumentTypesModule,
     GendersModule,
     MaritalStatusModule,
