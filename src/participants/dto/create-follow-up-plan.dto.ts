@@ -3,7 +3,6 @@ import {
   IsOptional,
   IsString,
   IsDateString,
-  IsNotEmpty,
   IsNumber,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -11,11 +10,11 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateFollowUpPlanDto {
   @ApiProperty({
     description: 'ID del caso al que pertenece este plan de seguimiento',
-    required: true,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  caseId!: number;
+  caseId?: number;
 
   @ApiProperty({
     description: 'Indica si el proceso ha sido completado',
