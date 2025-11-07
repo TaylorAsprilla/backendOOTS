@@ -6,6 +6,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,6 +15,7 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -71,8 +73,23 @@ export class AuthController {
     status: 401,
     description: 'Credenciales inválidas',
   })
-  login(@CurrentUser() user: User): AuthResponseDto {
+  login(@CurrentUser() user: User, @Req() request: Request): AuthResponseDto {
     // El usuario ya viene validado por LocalAuthGuard
+    // Capturar la IP del cliente
+    const ipAddress =
+      (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      request.headers['x-real-ip'] ||
+      request.socket.remoteAddress ||
+      request.ip ||
+      '0.0.0.0';
+
+    // Guardar geolocalización de forma asíncrona (no bloquea la respuesta)
+    this.authService
+      .saveLoginGeolocation(user.id, ipAddress as string)
+      .catch((error) => {
+        console.error('Error guardando geolocalización:', error);
+      });
+
     return this.authService.generateAuthResponse(user);
   }
 

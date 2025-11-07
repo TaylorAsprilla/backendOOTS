@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service';
 import { LoginDto, RegisterDto } from './dto';
 import { UserStatus } from '../common/enums';
 import { MailService } from '../mail/mail.service';
+import { GeolocationService } from '../geolocation/geolocation.service';
 
 export interface JwtPayload {
   sub: number;
@@ -66,6 +67,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
+    private readonly geolocationService: GeolocationService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<RegisterResponse> {
@@ -259,5 +261,17 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async saveLoginGeolocation(userId: number, ipAddress: string): Promise<void> {
+    try {
+      await this.geolocationService.saveGeolocation(userId, ipAddress, 'login');
+    } catch (error) {
+      // No lanzamos el error para que no afecte el login
+      console.error(
+        `Error guardando geolocalización para usuario ${userId}:`,
+        error,
+      );
+    }
   }
 }
