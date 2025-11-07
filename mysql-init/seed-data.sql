@@ -239,6 +239,24 @@ INSERT INTO situations_identified (name, code, is_active) VALUES
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
+-- CATÁLOGO: TYPE PROGRESS (Tipos de Progreso)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de type_progress (solo si la tabla existe)
+INSERT INTO type_progress (name, code, description, is_active) VALUES
+('Consulta Presencial', 'CP', 'Atención presencial en las instalaciones', TRUE),
+('Email', 'E', 'Comunicación por correo electrónico', TRUE),
+('Encuentro Casual', 'EC', 'Encuentro no programado', TRUE),
+('Llamada telefónica', 'LL', 'Comunicación telefónica', TRUE),
+('Tele consulta', 'TC', 'Consulta por videollamada', TRUE),
+('Seguimiento', 'S', 'Proceso de seguimiento continuo', TRUE),
+('Cierre', 'C', 'Finalización del proceso', TRUE),
+('Transferencia', 'T', 'Transferencia a otro profesional o institución', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
 -- CATÁLOGO: PROCESS TYPES (Tipos de Proceso)
 -- ============================================================================
 -- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
@@ -265,8 +283,28 @@ INSERT INTO treatment_statuses (name, code, is_active) VALUES
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
+-- CATÁLOGO: TYPE PROGRESS (Tipos de Progreso)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de type_progress (solo si la tabla existe)
+INSERT INTO type_progress (name, code, is_active) VALUES
+-- Tipos de contacto/sesión
+('Consulta Presencial', 'CP', TRUE),
+('E-mail', 'E', TRUE),
+('Encuentro Casual', 'EC', TRUE),
+('Llamada telefónica', 'LL', TRUE),
+('Tele consulta', 'TC', TRUE),
+-- Tipos de proceso
+('Seguimiento', 'S', TRUE),
+('Cierre', 'C', TRUE),
+('Transferencia', 'T', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
 -- MENSAJE DE CONFIRMACIÓN
 -- ============================================================================
 
 SELECT '✅ Base de datos OOTS Colombia inicializada correctamente' AS status;
-SELECT 'Catálogos creados: relationships, academic_levels, document_types, genders, marital_statuses, health_insurances, housing_types, income_sources, income_levels, situations_identified, process_types, treatment_statuses' AS info;
+SELECT 'Catálogos creados: relationships, academic_levels, document_types, genders, marital_statuses, health_insurances, housing_types, income_sources, income_levels, situations_identified, type_progress, process_types, treatment_statuses' AS info;

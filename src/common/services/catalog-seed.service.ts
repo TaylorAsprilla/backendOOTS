@@ -13,6 +13,7 @@ import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entit
 import { IdentifiedSituation } from 'src/identified-situations/entities';
 import { ProcessType } from 'src/process-types/entities/process-type.entity';
 import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
+import { TypeProgress } from 'src/type-progress/entities/type-progress.entity';
 
 @Injectable()
 export class CatalogSeedService implements OnModuleInit {
@@ -52,6 +53,9 @@ export class CatalogSeedService implements OnModuleInit {
 
     @InjectRepository(TreatmentStatus)
     private readonly treatmentStatusRepository: Repository<TreatmentStatus>,
+
+    @InjectRepository(TypeProgress)
+    private readonly typeProgressRepository: Repository<TypeProgress>,
   ) {}
 
   async onModuleInit() {
@@ -71,6 +75,7 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
     await this.seedIdentifiedSituations();
+    await this.seedTypeProgress();
     await this.seedProcessTypes();
     await this.seedTreatmentStatuses();
 
@@ -460,6 +465,57 @@ export class CatalogSeedService implements OnModuleInit {
 
     await this.identifiedSituationRepository.save(situations);
     console.log('🎯 Identified situations seeded');
+  }
+
+  private async seedTypeProgress() {
+    const count = await this.typeProgressRepository.count();
+    if (count > 0) return;
+
+    const typeProgress = [
+      {
+        name: 'Consulta Presencial',
+        code: 'CP',
+        description: 'Atención presencial en las instalaciones',
+      },
+      {
+        name: 'Email',
+        code: 'E',
+        description: 'Comunicación por correo electrónico',
+      },
+      {
+        name: 'Encuentro Casual',
+        code: 'EC',
+        description: 'Encuentro no programado',
+      },
+      {
+        name: 'Llamada telefónica',
+        code: 'LL',
+        description: 'Comunicación telefónica',
+      },
+      {
+        name: 'Tele consulta',
+        code: 'TC',
+        description: 'Consulta por videollamada',
+      },
+      {
+        name: 'Seguimiento',
+        code: 'S',
+        description: 'Proceso de seguimiento continuo',
+      },
+      {
+        name: 'Cierre',
+        code: 'C',
+        description: 'Finalización del proceso',
+      },
+      {
+        name: 'Transferencia',
+        code: 'T',
+        description: 'Transferencia a otro profesional o institución',
+      },
+    ];
+
+    await this.typeProgressRepository.save(typeProgress);
+    console.log('📊 Type progress seeded');
   }
 
   private async seedProcessTypes() {

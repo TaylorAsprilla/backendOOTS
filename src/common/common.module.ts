@@ -15,6 +15,7 @@ import { IdentifiedSituation } from 'src/identified-situations/entities';
 import { ProcessType } from 'src/process-types/entities/process-type.entity';
 import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
 import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
+import { TypeProgress } from 'src/type-progress/entities/type-progress.entity';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entit
       ProcessType,
       TreatmentStatus,
       AcademicLevel,
+      TypeProgress,
     ]),
     DocumentTypesModule,
     GendersModule,
