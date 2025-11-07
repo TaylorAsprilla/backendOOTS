@@ -8,12 +8,13 @@ import {
   BeforeUpdate,
   ManyToOne,
   JoinColumn,
-  // OneToMany,
+  OneToMany,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { UserStatus } from '../../common/enums';
 import { DocumentType } from '../../document-types/entities';
+import { Geolocation } from '../../geolocation/entities/geolocation.entity';
 // import { Participant } from '../../participants/entities/participant.entity';
 
 @Entity('users')
@@ -144,6 +145,9 @@ export class User {
   @ManyToOne(() => DocumentType, { nullable: true })
   @JoinColumn({ name: 'document_type_id' })
   documentType?: DocumentType;
+
+  @OneToMany(() => Geolocation, (geolocation) => geolocation.user)
+  geolocations: Geolocation[];
 
   // RELACIONES - Comentado temporalmente para evitar errores de compilación
   // @OneToMany(() => Participant, (participant) => participant.registeredBy)

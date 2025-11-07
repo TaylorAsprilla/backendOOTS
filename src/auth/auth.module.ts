@@ -10,12 +10,14 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { UsersModule } from '../users/users.module';
 import { User } from '../users/entities/user.entity';
 import { MailModule } from '../mail/mail.module';
+import { GeolocationModule } from '../geolocation/geolocation.module';
 
 @Module({
   imports: [
     ConfigModule,
     UsersModule,
     MailModule,
+    GeolocationModule,
     TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
