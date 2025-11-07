@@ -1,9 +1,9 @@
+import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { CatalogsService } from './catalogs.service';
-import { IdentifiedSituation } from '../common/entities';
-import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
+import { IdentifiedSituation } from '../identified-situations/entities/identified-situation.entity';
 
 @ApiTags('Catálogos')
 @Controller('catalogs')
@@ -48,9 +48,9 @@ export class CatalogsController {
   @ApiResponse({
     status: 200,
     description: 'Lista de planes de seguimiento',
-    type: [FollowUpPlanCatalog],
+    type: [FollowUpPlan],
   })
-  async findAllFollowUpPlans(): Promise<FollowUpPlanCatalog[]> {
+  async findAllFollowUpPlans(): Promise<FollowUpPlan[]> {
     return this.catalogsService.findAllFollowUpPlans();
   }
 
@@ -59,7 +59,7 @@ export class CatalogsController {
   @ApiResponse({
     status: 200,
     description: 'Plan de seguimiento encontrado',
-    type: FollowUpPlanCatalog,
+    type: FollowUpPlan,
   })
   @ApiResponse({
     status: 404,
@@ -67,7 +67,7 @@ export class CatalogsController {
   })
   async findFollowUpPlanById(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<FollowUpPlanCatalog | null> {
+  ): Promise<FollowUpPlan | null> {
     return this.catalogsService.findFollowUpPlanById(id);
   }
 }

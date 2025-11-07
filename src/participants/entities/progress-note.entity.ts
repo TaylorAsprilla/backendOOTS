@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Case } from './case.entity';
+import { TypeProgress } from '../../type-progress/entities/type-progress.entity';
 
 @Entity('progress_notes')
 export class ProgressNote {
@@ -18,12 +19,15 @@ export class ProgressNote {
   sessionDate!: Date;
 
   @Column({
-    name: 'session_type',
-    type: 'varchar',
-    length: 50,
+    name: 'type_progress_id',
+    type: 'int',
+    unsigned: true,
     nullable: true,
   })
-  sessionType?: string;
+  typeProgressId?: number;
+
+  @Column({ name: 'process', type: 'text', nullable: true })
+  process?: string;
 
   @Column({ name: 'summary', type: 'text', nullable: true })
   summary?: string;
@@ -55,4 +59,8 @@ export class ProgressNote {
   @ManyToOne(() => Case, (caseEntity) => caseEntity.progressNotes)
   @JoinColumn({ name: 'case_id' })
   case!: Case;
+
+  @ManyToOne(() => TypeProgress, (typeProgress) => typeProgress.progressNotes)
+  @JoinColumn({ name: 'type_progress_id' })
+  typeProgress?: TypeProgress;
 }

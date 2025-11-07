@@ -85,33 +85,221 @@ INSERT INTO academic_levels (name, code, description, is_active) VALUES
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
--- CATÁLOGO: APPROACH TYPES (Tipos de Abordaje)
+-- CATÁLOGO: DOCUMENT TYPES (Tipos de Documento)
 -- ============================================================================
 -- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
 -- ============================================================================
 
--- Datos iniciales de approach_types (solo si la tabla existe)
-INSERT INTO approach_types (name, code, description, is_active) VALUES
-('Individual', 'INDIVIDUAL', 'Atención individual al participante', TRUE),
-('Familiar', 'FAMILIAR', 'Atención junto con la familia', TRUE),
-('Grupal', 'GRUPAL', 'Atención en grupo', TRUE),
-('Comunitario', 'COMUNITARIO', 'Intervención a nivel comunitario', TRUE),
-('Remisión', 'REMISION', 'Remisión a otra entidad o profesional', TRUE)
+-- Datos iniciales de document_types (solo si la tabla existe)
+INSERT INTO document_types (name, code, is_active) VALUES
+('Cédula de Ciudadanía', 'CC', TRUE),
+('Tarjeta de Identidad', 'TI', TRUE),
+('Cédula de Extranjería', 'CE', TRUE),
+('Pasaporte', 'PASAPORTE', TRUE),
+('Registro Civil', 'RC', TRUE),
+('NIT', 'NIT', TRUE),
+('Permiso Especial de Permanencia', 'PEP', TRUE),
+('Permiso por Protección Temporal', 'PPT', TRUE)
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
--- CATÁLOGO: FOLLOW UP PLAN CATALOG (Catálogo de Planes de Seguimiento)
+-- CATÁLOGO: GENDERS (Géneros)
 -- ============================================================================
 -- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
 -- ============================================================================
 
--- Datos iniciales de follow_up_plan_catalog (solo si la tabla existe)
-INSERT INTO follow_up_plan_catalog (name, code, description, is_active) VALUES
-('Seguimiento mensual', 'MENSUAL', 'Seguimiento cada 30 días', TRUE),
-('Seguimiento quincenal', 'QUINCENAL', 'Seguimiento cada 15 días', TRUE),
-('Seguimiento semanal', 'SEMANAL', 'Seguimiento cada 7 días', TRUE),
-('Seguimiento trimestral', 'TRIMESTRAL', 'Seguimiento cada 3 meses', TRUE),
-('Sin seguimiento', 'SIN_SEGUIMIENTO', 'No requiere seguimiento adicional', TRUE)
+-- Datos iniciales de genders (solo si la tabla existe)
+INSERT INTO genders (name, code, is_active) VALUES
+('Masculino', 'M', TRUE),
+('Femenino', 'F', TRUE),
+('No binario', 'NB', TRUE),
+('Prefiero no decir', 'PND', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: MARITAL STATUSES (Estados Civiles)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de marital_statuses (solo si la tabla existe)
+INSERT INTO marital_statuses (name, code, is_active) VALUES
+('Soltero/a', 'SOLTERO', TRUE),
+('Casado/a', 'CASADO', TRUE),
+('Unión libre', 'UNION_LIBRE', TRUE),
+('Separado/a', 'SEPARADO', TRUE),
+('Divorciado/a', 'DIVORCIADO', TRUE),
+('Viudo/a', 'VIUDO', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: HEALTH INSURANCES (Entidades Prestadoras de Salud)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de health_insurances (solo si la tabla existe)
+INSERT INTO health_insurances (name, code, is_active) VALUES
+('SISBÉN', 'SISBEN', TRUE),
+('EPS Sanitas', 'SANITAS', TRUE),
+('EPS Sura', 'SURA', TRUE),
+('EPS Salud Total', 'SALUD_TOTAL', TRUE),
+('EPS Compensar', 'COMPENSAR', TRUE),
+('EPS Famisanar', 'FAMISANAR', TRUE),
+('Nueva EPS', 'NUEVA_EPS', TRUE),
+('EPS Coomeva', 'COOMEVA', TRUE),
+('Régimen subsidiado', 'REG_SUBSIDIADO', TRUE),
+('Sin afiliación', 'SIN_AFILIACION', TRUE),
+('Régimen especial', 'REG_ESPECIAL', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: HOUSING TYPES (Tipos de Vivienda)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de housing_types (solo si la tabla existe)
+INSERT INTO housing_types (name, code, is_active) VALUES
+('Casa propia', 'CASA_PROPIA', TRUE),
+('Casa arrendada', 'CASA_ARRENDADA', TRUE),
+('Casa familiar', 'CASA_FAMILIAR', TRUE),
+('Apartamento propio', 'APTO_PROPIO', TRUE),
+('Apartamento arrendado', 'APTO_ARRENDADO', TRUE),
+('Cuarto', 'CUARTO', TRUE),
+('Inquilinato', 'INQUILINATO', TRUE),
+('Albergue', 'ALBERGUE', TRUE),
+('Situación de calle', 'SIT_CALLE', TRUE),
+('Invasión', 'INVASION', TRUE),
+('Otro', 'OTRO', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: INCOME SOURCES (Fuentes de Ingreso)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de income_sources (solo si la tabla existe)
+INSERT INTO income_sources (name, code, is_active) VALUES
+('Trabajo formal', 'TRABAJO_FORMAL', TRUE),
+('Trabajo informal', 'TRABAJO_INFORMAL', TRUE),
+('Pensión', 'PENSION', TRUE),
+('Auxilio gubernamental', 'AUXILIO_GOB', TRUE),
+('Familias en Acción', 'FAMILIAS_ACCION', TRUE),
+('Jóvenes en Acción', 'JOVENES_ACCION', TRUE),
+('Ingreso Solidario', 'INGRESO_SOLIDARIO', TRUE),
+('Remesas', 'REMESAS', TRUE),
+('Ayuda familiar', 'AYUDA_FAMILIAR', TRUE),
+('Actividades ilegales', 'ACT_ILEGALES', TRUE),
+('Sin ingresos', 'SIN_INGRESOS', TRUE),
+('Otro', 'OTRO', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: INCOME LEVELS (Niveles de Ingreso)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de income_levels (solo si la tabla existe)
+INSERT INTO income_levels (name, code, min_amount, max_amount, is_active) VALUES
+('Sin ingresos', 'SIN_INGRESOS', 0, 0, TRUE),
+('Menos de 1 SMMLV', 'MENOS_1_SMMLV', 1, 1299999, TRUE),
+('1 SMMLV', '1_SMMLV', 1300000, 1300000, TRUE),
+('Entre 1 y 2 SMMLV', '1_2_SMMLV', 1300001, 2600000, TRUE),
+('Entre 2 y 3 SMMLV', '2_3_SMMLV', 2600001, 3900000, TRUE),
+('Entre 3 y 4 SMMLV', '3_4_SMMLV', 3900001, 5200000, TRUE),
+('Más de 4 SMMLV', 'MAS_4_SMMLV', 5200001, 999999999, TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: SITUATIONS IDENTIFIED (Situaciones Identificadas)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de situations_identified (solo si la tabla existe)
+INSERT INTO situations_identified (name, code, is_active) VALUES
+('Violencia intrafamiliar', 'VIF', TRUE),
+('Abandono escolar', 'ABANDONO_ESC', TRUE),
+('Consumo de sustancias psicoactivas', 'CONSUMO_SPA', TRUE),
+('Embarazo adolescente', 'EMB_ADOLESC', TRUE),
+('Trabajo infantil', 'TRABAJO_INF', TRUE),
+('Desnutrición', 'DESNUTRICION', TRUE),
+('Problemas de salud mental', 'SALUD_MENTAL', TRUE),
+('Situación de calle', 'SIT_CALLE', TRUE),
+('Discapacidad', 'DISCAPACIDAD', TRUE),
+('Migración forzada', 'MIGRACION', TRUE),
+('Conflicto armado', 'CONF_ARMADO', TRUE),
+('Pobreza extrema', 'POBREZA_EXT', TRUE),
+('Maltrato institucional', 'MALTRATO_INST', TRUE),
+('Explotación sexual', 'EXPLOT_SEX', TRUE),
+('Reclutamiento forzado', 'RECLUT_FORZ', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: TYPE PROGRESS (Tipos de Progreso)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de type_progress (solo si la tabla existe)
+INSERT INTO type_progress (name, code, description, is_active) VALUES
+('Consulta Presencial', 'CP', 'Atención presencial en las instalaciones', TRUE),
+('Email', 'E', 'Comunicación por correo electrónico', TRUE),
+('Encuentro Casual', 'EC', 'Encuentro no programado', TRUE),
+('Llamada telefónica', 'LL', 'Comunicación telefónica', TRUE),
+('Tele consulta', 'TC', 'Consulta por videollamada', TRUE),
+('Seguimiento', 'S', 'Proceso de seguimiento continuo', TRUE),
+('Cierre', 'C', 'Finalización del proceso', TRUE),
+('Transferencia', 'T', 'Transferencia a otro profesional o institución', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: PROCESS TYPES (Tipos de Proceso)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de process_types (solo si la tabla existe)
+INSERT INTO process_types (name, code, description, is_active) VALUES
+('Seguimiento', 'S', 'Proceso de seguimiento continuo', TRUE),
+('Cierre', 'C', 'Finalización del proceso', TRUE),
+('Transferencia', 'T', 'Transferencia a otro profesional', TRUE),
+('Derivación', 'D', 'Derivación a otra institución', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: TREATMENT STATUSES (Estados de Tratamiento)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de treatment_statuses (solo si la tabla existe)
+INSERT INTO treatment_statuses (name, code, is_active) VALUES
+('Sí', 'SI', TRUE),
+('No', 'NO', TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
+-- CATÁLOGO: TYPE PROGRESS (Tipos de Progreso)
+-- ============================================================================
+-- NOTA: La tabla será creada por TypeORM, aquí solo insertamos datos
+-- ============================================================================
+
+-- Datos iniciales de type_progress (solo si la tabla existe)
+INSERT INTO type_progress (name, code, is_active) VALUES
+-- Tipos de contacto/sesión
+('Consulta Presencial', 'CP', TRUE),
+('E-mail', 'E', TRUE),
+('Encuentro Casual', 'EC', TRUE),
+('Llamada telefónica', 'LL', TRUE),
+('Tele consulta', 'TC', TRUE),
+-- Tipos de proceso
+('Seguimiento', 'S', TRUE),
+('Cierre', 'C', TRUE),
+('Transferencia', 'T', TRUE)
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
@@ -119,4 +307,4 @@ ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 -- ============================================================================
 
 SELECT '✅ Base de datos OOTS Colombia inicializada correctamente' AS status;
-SELECT 'Catálogos creados: relationships, academic_levels, approach_types, follow_up_plan_catalog' AS info;
+SELECT 'Catálogos creados: relationships, academic_levels, document_types, genders, marital_statuses, health_insurances, housing_types, income_sources, income_levels, situations_identified, type_progress, process_types, treatment_statuses' AS info;

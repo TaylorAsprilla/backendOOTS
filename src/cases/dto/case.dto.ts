@@ -12,6 +12,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { CaseStatus } from '../../common/enums';
+import { CreateFollowUpPlanDto } from '../../participants/dto/create-follow-up-plan.dto';
 
 // DTOs para las entidades médicas relacionadas con Case
 export class CreatePhysicalHealthHistoryDto {
@@ -318,39 +319,69 @@ export class CreateCaseDto {
   @IsString()
   intervention?: string;
 
-  // 5. PLAN DE SEGUIMIENTO - ahora es array de IDs
+  // 5. PLAN DE SEGUIMIENTO - array de objetos FollowUpPlan
   @ApiProperty({
-    description: 'IDs de planes de seguimiento del catálogo',
+    description: 'Planes de seguimiento del caso',
     required: false,
-    type: [Number],
-    example: [1, 2, 3],
+    type: [Object],
+    example: [
+      {
+        processCompleted: false,
+        coordinatedService: 'Terapia psicológica',
+        referred: false,
+        orientationAppointment: true,
+        appointmentDate: '2025-11-10',
+        appointmentTime: '14:30:00',
+      },
+    ],
   })
   @IsOptional()
   @IsArray()
-  @IsNumber({}, { each: true })
-  followUpPlan?: number[];
+  @ValidateNested({ each: true })
+  @Type(() => CreateFollowUpPlanDto)
+  followUpPlan?: CreateFollowUpPlanDto[];
 
-  // 6. HISTORIA DE SALUD FÍSICA
+  // 6. HISTORIA DE SALUD FÍSICA - ahora es array
   @ApiProperty({
-    description: 'Historia de salud física del caso',
+    description: 'Historias de salud física del caso (array)',
     required: false,
+    type: [CreatePhysicalHealthHistoryDto],
+    example: [
+      {
+        currentConditions: 'Diabetes tipo 2',
+        medications: 'Metformina 500mg',
+        familyHistoryFather: 'Hipertensión',
+        familyHistoryMother: 'Diabetes',
+        observations: 'Control cada 3 meses',
+      },
+    ],
   })
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
+  @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => CreatePhysicalHealthHistoryDto)
-  physicalHealthHistory?: CreatePhysicalHealthHistoryDto;
+  physicalHealthHistory?: CreatePhysicalHealthHistoryDto[];
 
-  // 7. HISTORIA DE SALUD MENTAL
+  // 7. HISTORIA DE SALUD MENTAL - ahora es array
   @ApiProperty({
-    description: 'Historia de salud mental del caso',
+    description: 'Historias de salud mental del caso (array)',
     required: false,
+    type: [CreateMentalHealthHistoryDto],
+    example: [
+      {
+        currentConditions: 'Ansiedad generalizada',
+        medications: 'Sertralina 50mg',
+        familyHistoryFather: 'Depresión',
+        familyHistoryMother: 'Ninguna',
+        observations: 'Seguimiento psicológico mensual',
+      },
+    ],
   })
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
+  @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => CreateMentalHealthHistoryDto)
-  mentalHealthHistory?: CreateMentalHealthHistoryDto;
+  mentalHealthHistory?: CreateMentalHealthHistoryDto[];
 
   // 8. PONDERACIÓN (WEIGHING)
   @ApiProperty({

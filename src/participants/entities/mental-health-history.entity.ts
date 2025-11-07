@@ -4,7 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
+  ManyToOne,
   JoinColumn,
 } from 'typeorm';
 import { Case } from './case.entity';
@@ -52,7 +52,7 @@ export class MentalHealthHistory {
   @Column({ name: 'case_id', type: 'int', unsigned: true })
   caseId!: number;
 
-  @OneToOne(() => Case, (caseEntity) => caseEntity.mentalHealthHistory)
+  @ManyToOne(() => Case, (caseEntity) => caseEntity.mentalHealthHistories)
   @JoinColumn({ name: 'case_id' })
   case: Case;
 

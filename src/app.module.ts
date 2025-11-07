@@ -13,7 +13,6 @@ import { CasesModule } from './cases/cases.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { MailModule } from './mail/mail.module';
 import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
-import { ApproachTypesModule } from './approach-types/approach-types.module';
 import { DocumentTypesModule } from './document-types/document-types.module';
 import { GendersModule } from './genders/genders.module';
 import { MaritalStatusModule } from './marital-status/marital-status.module';
@@ -22,6 +21,8 @@ import { IncomeSourceModule } from './income-source/income-source.module';
 import { IncomeLevelModule } from './income-level/income-level.module';
 import { HousingTypeModule } from './housing-type/housing-type.module';
 import { FamilyRelationshipModule } from './family-relationship/family-relationship.module';
+import { IdentifiedSituationsModule } from './identified-situations/identified-situations.module';
+import { TypeProgressModule } from './type-progress/type-progress.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -75,7 +76,6 @@ import configuration from './config/configuration';
     CatalogsModule,
     MailModule,
     AcademicLevelsModule,
-    ApproachTypesModule,
     DocumentTypesModule,
     GendersModule,
     MaritalStatusModule,
@@ -84,6 +84,8 @@ import configuration from './config/configuration';
     IncomeLevelModule,
     HousingTypeModule,
     FamilyRelationshipModule,
+    IdentifiedSituationsModule,
+    TypeProgressModule,
   ],
   controllers: [AppController],
   providers: [

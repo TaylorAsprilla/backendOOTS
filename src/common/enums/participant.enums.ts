@@ -159,15 +159,6 @@ export enum TreatmentStatus {
   NO = 'No',
 }
 
-export enum ApproachType {
-  CP = 'CP', // Consulta Presencial
-  E = 'E', // Email
-  EC = 'EC', // Encuentro Casual
-  LL = 'Ll', // Llamada
-  TC = 'TC', // Tele Consulta
-  V = 'V', // Virtual
-}
-
 export enum ProcessType {
   S = 'S', // Seguimiento
   C = 'C', // Cierre

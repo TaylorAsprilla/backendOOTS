@@ -17,7 +17,7 @@ import { InterventionPlan } from './intervention-plan.entity';
 import { ProgressNote } from './progress-note.entity';
 import { ClosingNote } from './closing-note.entity';
 import { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
-import { CaseFollowUpPlan } from './case-follow-up-plan.entity';
+import { FollowUpPlan } from './follow-up-plan.entity';
 import { Weighing } from './weighing.entity';
 
 @Entity('cases')
@@ -51,23 +51,23 @@ export class Case {
   @Column({ name: 'intervention', type: 'text', nullable: true })
   intervention?: string;
 
-  // 5. PLAN DE SEGUIMIENTO - ahora es many-to-many con IDs
-  @OneToMany(() => CaseFollowUpPlan, (cfp) => cfp.case, {
+  // 5. PLAN DE SEGUIMIENTO - relación directa OneToMany
+  @OneToMany(() => FollowUpPlan, (followUpPlan) => followUpPlan.case, {
     cascade: true,
   })
-  caseFollowUpPlans!: CaseFollowUpPlan[];
+  followUpPlans!: FollowUpPlan[];
 
-  // 6. HISTORIA DE SALUD FÍSICA
-  @OneToOne(() => PhysicalHealthHistory, (history) => history.case, {
+  // 6. HISTORIA DE SALUD FÍSICA - ahora es OneToMany
+  @OneToMany(() => PhysicalHealthHistory, (history) => history.case, {
     cascade: true,
   })
-  physicalHealthHistory!: PhysicalHealthHistory;
+  physicalHealthHistories!: PhysicalHealthHistory[];
 
-  // 7. HISTORIA DE SALUD MENTAL
-  @OneToOne(() => MentalHealthHistory, (history) => history.case, {
+  // 7. HISTORIA DE SALUD MENTAL - ahora es OneToMany
+  @OneToMany(() => MentalHealthHistory, (history) => history.case, {
     cascade: true,
   })
-  mentalHealthHistory!: MentalHealthHistory;
+  mentalHealthHistories!: MentalHealthHistory[];
 
   // 8. WEIGHING (Tabla de ponderación)
   @OneToOne(() => Weighing, (weighing) => weighing.case, {

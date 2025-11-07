@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Participant } from './participant.entity';
 import { FamilyRelationship } from '../../family-relationship/entities';
-import { AcademicLevel } from '../../common/entities';
+import { AcademicLevel } from '../../academic-levels/entities/academic-level.entity';
 
 @Entity('family_members')
 export class FamilyMember {

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AcademicLevel } from '../common/entities/academic-level.entity';
+import { AcademicLevel } from './entities/academic-level.entity';
 import { CreateAcademicLevelDto } from './dto/create-academic-level.dto';
 import { UpdateAcademicLevelDto } from './dto/update-academic-level.dto';
 

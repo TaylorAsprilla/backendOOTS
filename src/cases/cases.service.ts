@@ -7,15 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Case } from '../participants/entities/case.entity';
 import { Participant } from '../participants/entities/participant.entity';
-import { CaseFollowUpPlan } from '../participants/entities/case-follow-up-plan.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
 import { MentalHealthHistory } from '../participants/entities/mental-health-history.entity';
 import { InterventionPlan } from '../participants/entities/intervention-plan.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { ClosingNote } from '../participants/entities/closing-note.entity';
 import { ParticipantIdentifiedSituation } from '../participants/entities/participant-identified-situation.entity';
-import { IdentifiedSituation } from '../common/entities';
-import { FollowUpPlanCatalog } from '../common/entities/follow-up-plan-catalog.entity';
+import { IdentifiedSituation } from '../identified-situations/entities/identified-situation.entity';
+import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { Weighing } from '../participants/entities/weighing.entity';
 import { CreateCaseDto, UpdateCaseStatusDto } from './dto/case.dto';
 import { CaseStatus } from '../common/enums';
@@ -27,8 +26,6 @@ export class CasesService {
     private readonly caseRepository: Repository<Case>,
     @InjectRepository(Participant)
     private readonly participantRepository: Repository<Participant>,
-    @InjectRepository(CaseFollowUpPlan)
-    private readonly caseFollowUpPlanRepository: Repository<CaseFollowUpPlan>,
     @InjectRepository(PhysicalHealthHistory)
     private readonly physicalHealthHistoryRepository: Repository<PhysicalHealthHistory>,
     @InjectRepository(MentalHealthHistory)
@@ -43,8 +40,8 @@ export class CasesService {
     private readonly participantIdentifiedSituationRepository: Repository<ParticipantIdentifiedSituation>,
     @InjectRepository(IdentifiedSituation)
     private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
-    @InjectRepository(FollowUpPlanCatalog)
-    private readonly followUpPlanCatalogRepository: Repository<FollowUpPlanCatalog>,
+    @InjectRepository(FollowUpPlan)
+    private readonly followUpPlanRepository: Repository<FollowUpPlan>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -77,43 +74,43 @@ export class CasesService {
 
       const savedCase = await manager.save(newCase);
 
-      // 5. Crear relaciones con FollowUpPlan si se proporcionan (ahora es array de IDs)
+      // 5. Crear FollowUpPlans directamente si se proporcionan datos
       if (createCaseDto.followUpPlan && createCaseDto.followUpPlan.length > 0) {
-        for (const followUpPlanId of createCaseDto.followUpPlan) {
-          // Verificar que el plan existe
-          const followUpPlanExists = await manager.findOne(
-            FollowUpPlanCatalog,
-            {
-              where: { id: followUpPlanId, isActive: true },
-            },
-          );
-
-          if (followUpPlanExists) {
-            const caseFollowUpPlan = manager.create(CaseFollowUpPlan, {
-              caseId: savedCase.id,
-              followUpPlanId: followUpPlanId,
-            });
-            await manager.save(caseFollowUpPlan);
-          }
+        for (const followUpPlanData of createCaseDto.followUpPlan) {
+          const followUpPlan = manager.create(FollowUpPlan, {
+            ...followUpPlanData,
+            caseId: savedCase.id,
+          });
+          await manager.save(followUpPlan);
         }
       }
 
-      // Crear PhysicalHealthHistory si se proporciona
-      if (createCaseDto.physicalHealthHistory) {
-        const physicalHealthHistory = manager.create(PhysicalHealthHistory, {
-          ...createCaseDto.physicalHealthHistory,
-          caseId: savedCase.id,
-        });
-        await manager.save(physicalHealthHistory);
+      // Crear PhysicalHealthHistories si se proporcionan (ahora es array)
+      if (
+        createCaseDto.physicalHealthHistory &&
+        createCaseDto.physicalHealthHistory.length > 0
+      ) {
+        for (const historyData of createCaseDto.physicalHealthHistory) {
+          const physicalHealthHistory = manager.create(PhysicalHealthHistory, {
+            ...historyData,
+            caseId: savedCase.id,
+          });
+          await manager.save(physicalHealthHistory);
+        }
       }
 
-      // Crear MentalHealthHistory si se proporciona
-      if (createCaseDto.mentalHealthHistory) {
-        const mentalHealthHistory = manager.create(MentalHealthHistory, {
-          ...createCaseDto.mentalHealthHistory,
-          caseId: savedCase.id,
-        });
-        await manager.save(mentalHealthHistory);
+      // Crear MentalHealthHistories si se proporcionan (ahora es array)
+      if (
+        createCaseDto.mentalHealthHistory &&
+        createCaseDto.mentalHealthHistory.length > 0
+      ) {
+        for (const historyData of createCaseDto.mentalHealthHistory) {
+          const mentalHealthHistory = manager.create(MentalHealthHistory, {
+            ...historyData,
+            caseId: savedCase.id,
+          });
+          await manager.save(mentalHealthHistory);
+        }
       }
 
       // 8. Crear Weighing si se proporciona
@@ -215,10 +212,9 @@ export class CasesService {
         where: { id: savedCase.id },
         relations: [
           'participant',
-          'caseFollowUpPlans',
-          'caseFollowUpPlans.followUpPlan',
-          'physicalHealthHistory',
-          'mentalHealthHistory',
+          'followUpPlans',
+          'physicalHealthHistories',
+          'mentalHealthHistories',
           'weighing',
           'interventionPlans',
           'progressNotes',

@@ -6,12 +6,14 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,6 +34,24 @@ export class UsersController {
   })
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('check-document')
+  @ApiOperation({ summary: 'Verificar si existe un número de documento' })
+  @ApiQuery({
+    name: 'documentNumber',
+    required: true,
+    description: 'Número de documento a verificar',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado de la verificación',
+    schema: {
+      example: { exists: true, message: 'Document number already exists' },
+    },
+  })
+  async checkDocument(@Query('documentNumber') documentNumber: string) {
+    return await this.usersService.checkDocumentNumber(documentNumber);
   }
 
   @Get(':id')

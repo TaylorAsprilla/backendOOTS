@@ -8,6 +8,7 @@ import { BioPsychosocialHistory } from './entities/bio-psychosocial-history.enti
 import { Weighing } from './entities/weighing.entity';
 import { EmergencyContact } from './entities/emergency-contact.entity';
 import { ParticipantEmergencyContact } from './entities/participant-emergency-contact.entity';
+import { FollowUpPlan } from './entities/follow-up-plan.entity';
 import { User } from '../users/entities/user.entity';
 import { WeighingService } from './services/weighing.service';
 
@@ -20,6 +21,7 @@ import { WeighingService } from './services/weighing.service';
       Weighing,
       EmergencyContact,
       ParticipantEmergencyContact,
+      FollowUpPlan,
       User,
     ]),
   ],

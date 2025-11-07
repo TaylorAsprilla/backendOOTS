@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
   Column,
 } from 'typeorm';
-import { IdentifiedSituation } from '../../common/entities';
+import { IdentifiedSituation } from '../../identified-situations/entities/identified-situation.entity';
 import { Case } from './case.entity';
 
 @Entity('participant_identified_situations')

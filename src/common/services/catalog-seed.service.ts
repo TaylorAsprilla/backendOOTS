@@ -9,13 +9,11 @@ import { HousingType } from '../../housing-type/entities';
 import { FamilyRelationship } from '../../family-relationship/entities';
 import { IncomeSource } from '../../income-source/entities';
 import { IncomeLevel } from '../../income-level/entities';
-import {
-  AcademicLevel,
-  IdentifiedSituation,
-  ApproachType,
-  ProcessType,
-  TreatmentStatus,
-} from '../entities';
+import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
+import { IdentifiedSituation } from 'src/identified-situations/entities';
+import { ProcessType } from 'src/process-types/entities/process-type.entity';
+import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
+import { TypeProgress } from 'src/type-progress/entities/type-progress.entity';
 
 @Injectable()
 export class CatalogSeedService implements OnModuleInit {
@@ -50,14 +48,14 @@ export class CatalogSeedService implements OnModuleInit {
     @InjectRepository(IdentifiedSituation)
     private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
 
-    @InjectRepository(ApproachType)
-    private readonly approachTypeRepository: Repository<ApproachType>,
-
     @InjectRepository(ProcessType)
     private readonly processTypeRepository: Repository<ProcessType>,
 
     @InjectRepository(TreatmentStatus)
     private readonly treatmentStatusRepository: Repository<TreatmentStatus>,
+
+    @InjectRepository(TypeProgress)
+    private readonly typeProgressRepository: Repository<TypeProgress>,
   ) {}
 
   async onModuleInit() {
@@ -77,7 +75,7 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
     await this.seedIdentifiedSituations();
-    await this.seedApproachTypes();
+    await this.seedTypeProgress();
     await this.seedProcessTypes();
     await this.seedTreatmentStatuses();
 
@@ -469,39 +467,55 @@ export class CatalogSeedService implements OnModuleInit {
     console.log('🎯 Identified situations seeded');
   }
 
-  private async seedApproachTypes() {
-    const count = await this.approachTypeRepository.count();
+  private async seedTypeProgress() {
+    const count = await this.typeProgressRepository.count();
     if (count > 0) return;
 
-    const approachTypes = [
+    const typeProgress = [
       {
         name: 'Consulta Presencial',
+        code: 'CP',
         description: 'Atención presencial en las instalaciones',
       },
       {
         name: 'Email',
+        code: 'E',
         description: 'Comunicación por correo electrónico',
       },
       {
         name: 'Encuentro Casual',
+        code: 'EC',
         description: 'Encuentro no programado',
       },
       {
-        name: 'Llamada',
+        name: 'Llamada telefónica',
+        code: 'LL',
         description: 'Comunicación telefónica',
       },
       {
-        name: 'Tele Consulta',
-        description: 'Consulta por video llamada',
+        name: 'Tele consulta',
+        code: 'TC',
+        description: 'Consulta por videollamada',
       },
       {
-        name: 'Virtual',
-        description: 'Atención por medios virtuales',
+        name: 'Seguimiento',
+        code: 'S',
+        description: 'Proceso de seguimiento continuo',
+      },
+      {
+        name: 'Cierre',
+        code: 'C',
+        description: 'Finalización del proceso',
+      },
+      {
+        name: 'Transferencia',
+        code: 'T',
+        description: 'Transferencia a otro profesional o institución',
       },
     ];
 
-    await this.approachTypeRepository.save(approachTypes);
-    console.log('📞 Approach types seeded');
+    await this.typeProgressRepository.save(typeProgress);
+    console.log('📊 Type progress seeded');
   }
 
   private async seedProcessTypes() {
