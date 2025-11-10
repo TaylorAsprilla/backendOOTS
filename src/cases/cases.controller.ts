@@ -779,6 +779,82 @@ export class CasesController {
     return await this.casesService.updateStatus(id, updateCaseStatusDto);
   }
 
+  @Get('by-user/:userId')
+  @ApiOperation({
+    summary: 'Obtener casos de participantes creados por un usuario específico',
+    description:
+      '**Consulta todos los casos médicos de participantes registrados por un usuario específico.**\n\n' +
+      '### Información retornada:\n' +
+      '- 📋 **Datos del caso:** número, estado, motivo de consulta, intervención\n' +
+      '- 👤 **Información del participante:** nombre completo, documento, edad\n' +
+      '- 📅 **Fechas:** creación, actualización, cierre (si aplica)\n' +
+      '- 🔄 **Estado:** open, in_progress, on_hold, closed\n\n' +
+      '### Características:\n' +
+      '- ✅ Solo casos de participantes creados por el usuario especificado\n' +
+      '- 📊 Incluye contador total de casos\n' +
+      '- ⬇️ Ordenados por fecha de creación (más recientes primero)\n\n' +
+      '### Casos de uso:\n' +
+      '- Ver mis casos como profesional\n' +
+      '- Reportes por usuario\n' +
+      '- Carga de trabajo individual\n' +
+      '- Auditoría de atención por profesional',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID del usuario que registró los participantes',
+    type: Number,
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de casos obtenida exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'number', example: 1 },
+        total: { type: 'number', example: 15 },
+        cases: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              caseNumber: { type: 'string', example: 'CASE-0001' },
+              status: { type: 'string', example: 'in_progress' },
+              consultationReason: {
+                type: 'string',
+                example: 'Consulta por ansiedad',
+              },
+              createdAt: { type: 'string', format: 'date-time' },
+              participant: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', example: 1 },
+                  fullName: { type: 'string', example: 'María González' },
+                  documentNumber: { type: 'string', example: '1234567890' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuario no encontrado',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'User with ID 1 not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  findCasesByUser(@Param('userId', ParseIntPipe) userId: number) {
+    return this.casesService.findCasesByUser(userId);
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Listar todos los casos médicos del sistema',

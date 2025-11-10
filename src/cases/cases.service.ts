@@ -324,4 +324,50 @@ export class CasesService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async findCasesByUser(userId: number): Promise<{
+    userId: number;
+    total: number;
+    cases: Array<{
+      id: number;
+      caseNumber: string;
+      status: CaseStatus;
+      consultationReason?: string;
+      intervention?: string;
+      createdAt: Date;
+      updatedAt: Date;
+      participant: {
+        id: number;
+        fullName: string;
+        documentNumber: string;
+      };
+    }>;
+  }> {
+    const cases = await this.caseRepository
+      .createQueryBuilder('case')
+      .leftJoinAndSelect('case.participant', 'participant')
+      .where('participant.registeredById = :userId', { userId })
+      .orderBy('case.createdAt', 'DESC')
+      .getMany();
+
+    return {
+      userId,
+      total: cases.length,
+      cases: cases.map((caseEntity) => ({
+        id: caseEntity.id,
+        caseNumber: caseEntity.caseNumber,
+        status: caseEntity.status,
+        consultationReason: caseEntity.consultationReason,
+        intervention: caseEntity.intervention,
+        createdAt: caseEntity.createdAt,
+        updatedAt: caseEntity.updatedAt,
+        participant: {
+          id: caseEntity.participant.id,
+          fullName:
+            `${caseEntity.participant.firstName} ${caseEntity.participant.secondName || ''} ${caseEntity.participant.firstLastName} ${caseEntity.participant.secondLastName || ''}`.trim(),
+          documentNumber: caseEntity.participant.documentNumber,
+        },
+      })),
+    };
+  }
 }
