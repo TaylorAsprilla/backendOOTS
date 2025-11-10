@@ -350,4 +350,58 @@ export class ParticipantsService {
       exists: false,
     };
   }
+
+  async findByUser(userId: number): Promise<{
+    userId: number;
+    total: number;
+    participants: Array<{
+      id: number;
+      firstName: string;
+      secondName?: string;
+      firstLastName: string;
+      secondLastName?: string;
+      fullName: string;
+      documentNumber: string;
+      phoneNumber?: string;
+      email?: string;
+      city?: string;
+      createdAt: Date;
+    }>;
+  }> {
+    const participants = await this.participantRepository.find({
+      where: { registeredById: userId },
+      order: { createdAt: 'DESC' },
+      select: [
+        'id',
+        'firstName',
+        'secondName',
+        'firstLastName',
+        'secondLastName',
+        'documentNumber',
+        'phoneNumber',
+        'email',
+        'city',
+        'createdAt',
+      ],
+    });
+
+    return {
+      userId,
+      total: participants.length,
+      participants: participants.map((p) => ({
+        id: p.id,
+        firstName: p.firstName,
+        secondName: p.secondName,
+        firstLastName: p.firstLastName,
+        secondLastName: p.secondLastName,
+        fullName:
+          `${p.firstName} ${p.secondName || ''} ${p.firstLastName} ${p.secondLastName || ''}`.trim(),
+        documentNumber: p.documentNumber,
+        phoneNumber: p.phoneNumber,
+        email: p.email,
+        city: p.city,
+        createdAt: p.createdAt,
+      })),
+    };
+  }
 }
