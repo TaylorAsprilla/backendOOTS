@@ -861,20 +861,20 @@ export class CasesController {
     description:
       '**Obtiene la lista completa de todos los casos registrados en el sistema.**\n\n' +
       '### Información incluida:\n' +
-      '- 📋 **Datos básicos de cada caso:** número, estado, motivo de consulta\n' +
-      '- 👤 **Información del participante:** nombre completo, documento de identidad\n' +
-      '- 📅 **Fechas:** creación, última actualización, cierre (si aplica)\n' +
-      '- 🔄 **Estado actual:** open, in_progress, on_hold, closed\n\n' +
+      '- **Datos básicos de cada caso:** número, estado, motivo de consulta\n' +
+      '- **Información del participante:** nombre completo, documento de identidad\n' +
+      '- **Fechas:** creación, última actualización, cierre (si aplica)\n' +
+      '- **Estado actual:** open, in_progress, on_hold, closed\n\n' +
       '### Características:\n' +
-      '- ⬇️ **Ordenamiento:** Del caso más reciente al más antiguo (por fecha de creación)\n' +
-      '- 📊 **Paginación:** Actualmente retorna todos los casos (considerar paginación en producción)\n' +
-      '- 🔍 **Filtros:** No implementados actualmente (usar endpoints específicos para búsquedas filtradas)\n\n' +
+      '- **Ordenamiento:** Del caso más reciente al más antiguo (por fecha de creación)\n' +
+      '- **Paginación:** Actualmente retorna todos los casos (considerar paginación en producción)\n' +
+      '- **Filtros:** No implementados actualmente (usar endpoints específicos para búsquedas filtradas)\n\n' +
       '### Casos de uso:\n' +
-      '- 🏥 **Vista administrativa:** Panel de control con todos los casos del sistema\n' +
-      '- 📈 **Dashboards:** Estadísticas y métricas generales de atención\n' +
-      '- 📊 **Reportes:** Generación de reportes institucionales y de gestión\n' +
-      '- 🔍 **Búsqueda general:** Exploración de casos sin filtros previos\n\n' +
-      '💡 **Recomendación:** Para búsquedas específicas, usar:\n' +
+      '- **Vista administrativa:** Panel de control con todos los casos del sistema\n' +
+      '- **Dashboards:** Estadísticas y métricas generales de atención\n' +
+      '- **Reportes:** Generación de reportes institucionales y de gestión\n' +
+      '- **Búsqueda general:** Exploración de casos sin filtros previos\n\n' +
+      '**Recomendación:** Para búsquedas específicas, usar:\n' +
       '- `GET /participants/:id/cases` para casos de un participante\n' +
       '- `GET /cases/:id` para detalles completos de un caso específico',
   })
@@ -883,9 +883,9 @@ export class CasesController {
     description:
       '✅ **Lista de casos obtenida exitosamente**\n\n' +
       'Retorna array con todos los casos del sistema, cada uno incluyendo:\n' +
-      '- 📋 **Información del caso:** número, estado, motivo de consulta, intervención\n' +
-      '- 👤 **Datos del participante:** nombre completo y documento de identidad\n' +
-      '- 📅 **Fechas:** creación, última actualización, cierre (si está cerrado)\n\n' +
+      '- **Información del caso:** número, estado, motivo de consulta, intervención\n' +
+      '- **Datos del participante:** nombre completo y documento de identidad\n' +
+      '- **Fechas:** creación, última actualización, cierre (si está cerrado)\n\n' +
       '**Nota:** Si no hay casos registrados, retorna un array vacío `[]`',
     type: [CaseResponseDto],
     schema: {
