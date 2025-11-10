@@ -593,10 +593,10 @@ export class ParticipantsController {
     description:
       '**Verifica si un número de documento ya existe en la base de datos.**\n\n' +
       'Este endpoint es útil para:\n' +
-      '- ✅ Validar documentos antes de crear un nuevo participante\n' +
-      '- 🔍 Prevenir registros duplicados\n' +
-      '- 📋 Obtener información básica del participante existente\n' +
-      '- ⚡ Validación en tiempo real en formularios\n\n' +
+      '- Validar documentos antes de crear un nuevo participante\n' +
+      '- Prevenir registros duplicados\n' +
+      '- Obtener información básica del participante existente\n' +
+      '- Validación en tiempo real en formularios\n\n' +
       '**Respuesta:**\n' +
       '- Si el documento existe: retorna `exists: true` con datos básicos del participante\n' +
       '- Si no existe: retorna `exists: false`',
@@ -612,7 +612,7 @@ export class ParticipantsController {
   })
   @ApiOkResponse({
     description:
-      '✅ **Consulta exitosa**\n\n' +
+      '**Consulta exitosa**\n\n' +
       'Retorna el resultado de la verificación:\n' +
       '- **Si existe:** `exists: true` + datos básicos del participante\n' +
       '- **Si no existe:** `exists: false`',
@@ -655,7 +655,7 @@ export class ParticipantsController {
   })
   @ApiBadRequestResponse({
     description:
-      '❌ **Parámetro inválido**\n\n' +
+      '**Parámetro inválido**\n\n' +
       'El número de documento debe ser una cadena de texto válida.',
     schema: {
       example: {
@@ -668,7 +668,7 @@ export class ParticipantsController {
   @ApiResponse({
     status: 500,
     description:
-      '❌ **Error interno del servidor**\n\n' +
+      '**Error interno del servidor**\n\n' +
       'Ocurrió un error al consultar la base de datos.',
     schema: {
       example: {
@@ -680,6 +680,85 @@ export class ParticipantsController {
   })
   checkDocumentExists(@Param('documentNumber') documentNumber: string) {
     return this.participantsService.checkDocumentExists(documentNumber);
+  }
+
+  @Get('by-user/:userId')
+  @ApiOperation({
+    summary: 'Obtener participantes creados por un usuario específico',
+    description:
+      'Obtiene una lista de todos los participantes que fueron registrados por un usuario específico. ' +
+      'Útil para que cada usuario vea solo los participantes que ha creado, o para reportes por usuario. ' +
+      'Incluye información básica del participante y fecha de creación.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID del usuario que registró los participantes',
+    type: Number,
+    example: 1,
+  })
+  @ApiOkResponse({
+    description:
+      'Lista de participantes creados por el usuario obtenida exitosamente.',
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'number', example: 1 },
+        total: { type: 'number', example: 25 },
+        participants: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              firstName: { type: 'string', example: 'María' },
+              firstLastName: { type: 'string', example: 'González' },
+              documentNumber: { type: 'string', example: '1234567890' },
+              phoneNumber: { type: 'string', example: '+57 300 123 4567' },
+              city: { type: 'string', example: 'Bogotá' },
+              createdAt: {
+                type: 'string',
+                format: 'date-time',
+                example: '2024-11-01T10:30:00.000Z',
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Usuario no encontrado o no tiene participantes registrados.',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'User with ID 1 not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'ID de usuario inválido. Debe ser un número entero.',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Validation failed (numeric string is expected)',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description:
+      'Error interno del servidor al consultar los participantes del usuario.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Error interno del servidor',
+        error: 'Internal Server Error',
+      },
+    },
+  })
+  findByUser(@Param('userId') userId: string) {
+    return this.participantsService.findByUser(+userId);
   }
 
   @Get('stats/demographic')

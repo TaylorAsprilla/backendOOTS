@@ -111,13 +111,17 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(
-    `🚀 Application is running on: http://localhost:${process.env.PORT ?? 3000}/api/v1`,
-  );
-  console.log(
-    `📚 Swagger documentation: http://localhost:${process.env.PORT ?? 3000}/api/docs`,
-  );
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+
+  // Obtener URL base según entorno
+  const appUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
+  const environment = process.env.NODE_ENV || 'development';
+
+  console.log('Application is running on:', `${appUrl}/api/v1`);
+  console.log('Swagger documentation:', `${appUrl}/api/docs`);
+  console.log('Environment:', environment);
+  console.log('Port:', port);
 }
 
 void bootstrap();

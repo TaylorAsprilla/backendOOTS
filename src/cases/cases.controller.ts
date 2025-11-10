@@ -779,26 +779,102 @@ export class CasesController {
     return await this.casesService.updateStatus(id, updateCaseStatusDto);
   }
 
+  @Get('by-user/:userId')
+  @ApiOperation({
+    summary: 'Obtener casos de participantes creados por un usuario específico',
+    description:
+      '**Consulta todos los casos médicos de participantes registrados por un usuario específico.**\n\n' +
+      '### Información retornada:\n' +
+      '- 📋 **Datos del caso:** número, estado, motivo de consulta, intervención\n' +
+      '- 👤 **Información del participante:** nombre completo, documento, edad\n' +
+      '- 📅 **Fechas:** creación, actualización, cierre (si aplica)\n' +
+      '- 🔄 **Estado:** open, in_progress, on_hold, closed\n\n' +
+      '### Características:\n' +
+      '- ✅ Solo casos de participantes creados por el usuario especificado\n' +
+      '- 📊 Incluye contador total de casos\n' +
+      '- ⬇️ Ordenados por fecha de creación (más recientes primero)\n\n' +
+      '### Casos de uso:\n' +
+      '- Ver mis casos como profesional\n' +
+      '- Reportes por usuario\n' +
+      '- Carga de trabajo individual\n' +
+      '- Auditoría de atención por profesional',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID del usuario que registró los participantes',
+    type: Number,
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de casos obtenida exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'number', example: 1 },
+        total: { type: 'number', example: 15 },
+        cases: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              caseNumber: { type: 'string', example: 'CASE-0001' },
+              status: { type: 'string', example: 'in_progress' },
+              consultationReason: {
+                type: 'string',
+                example: 'Consulta por ansiedad',
+              },
+              createdAt: { type: 'string', format: 'date-time' },
+              participant: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', example: 1 },
+                  fullName: { type: 'string', example: 'María González' },
+                  documentNumber: { type: 'string', example: '1234567890' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuario no encontrado',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'User with ID 1 not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  findCasesByUser(@Param('userId', ParseIntPipe) userId: number) {
+    return this.casesService.findCasesByUser(userId);
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Listar todos los casos médicos del sistema',
     description:
       '**Obtiene la lista completa de todos los casos registrados en el sistema.**\n\n' +
       '### Información incluida:\n' +
-      '- 📋 **Datos básicos de cada caso:** número, estado, motivo de consulta\n' +
-      '- 👤 **Información del participante:** nombre completo, documento de identidad\n' +
-      '- 📅 **Fechas:** creación, última actualización, cierre (si aplica)\n' +
-      '- 🔄 **Estado actual:** open, in_progress, on_hold, closed\n\n' +
+      '- **Datos básicos de cada caso:** número, estado, motivo de consulta\n' +
+      '- **Información del participante:** nombre completo, documento de identidad\n' +
+      '- **Fechas:** creación, última actualización, cierre (si aplica)\n' +
+      '- **Estado actual:** open, in_progress, on_hold, closed\n\n' +
       '### Características:\n' +
-      '- ⬇️ **Ordenamiento:** Del caso más reciente al más antiguo (por fecha de creación)\n' +
-      '- 📊 **Paginación:** Actualmente retorna todos los casos (considerar paginación en producción)\n' +
-      '- 🔍 **Filtros:** No implementados actualmente (usar endpoints específicos para búsquedas filtradas)\n\n' +
+      '- **Ordenamiento:** Del caso más reciente al más antiguo (por fecha de creación)\n' +
+      '- **Paginación:** Actualmente retorna todos los casos (considerar paginación en producción)\n' +
+      '- **Filtros:** No implementados actualmente (usar endpoints específicos para búsquedas filtradas)\n\n' +
       '### Casos de uso:\n' +
-      '- 🏥 **Vista administrativa:** Panel de control con todos los casos del sistema\n' +
-      '- 📈 **Dashboards:** Estadísticas y métricas generales de atención\n' +
-      '- 📊 **Reportes:** Generación de reportes institucionales y de gestión\n' +
-      '- 🔍 **Búsqueda general:** Exploración de casos sin filtros previos\n\n' +
-      '💡 **Recomendación:** Para búsquedas específicas, usar:\n' +
+      '- **Vista administrativa:** Panel de control con todos los casos del sistema\n' +
+      '- **Dashboards:** Estadísticas y métricas generales de atención\n' +
+      '- **Reportes:** Generación de reportes institucionales y de gestión\n' +
+      '- **Búsqueda general:** Exploración de casos sin filtros previos\n\n' +
+      '**Recomendación:** Para búsquedas específicas, usar:\n' +
       '- `GET /participants/:id/cases` para casos de un participante\n' +
       '- `GET /cases/:id` para detalles completos de un caso específico',
   })
@@ -807,9 +883,9 @@ export class CasesController {
     description:
       '✅ **Lista de casos obtenida exitosamente**\n\n' +
       'Retorna array con todos los casos del sistema, cada uno incluyendo:\n' +
-      '- 📋 **Información del caso:** número, estado, motivo de consulta, intervención\n' +
-      '- 👤 **Datos del participante:** nombre completo y documento de identidad\n' +
-      '- 📅 **Fechas:** creación, última actualización, cierre (si está cerrado)\n\n' +
+      '- **Información del caso:** número, estado, motivo de consulta, intervención\n' +
+      '- **Datos del participante:** nombre completo y documento de identidad\n' +
+      '- **Fechas:** creación, última actualización, cierre (si está cerrado)\n\n' +
       '**Nota:** Si no hay casos registrados, retorna un array vacío `[]`',
     type: [CaseResponseDto],
     schema: {
