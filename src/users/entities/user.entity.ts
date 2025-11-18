@@ -135,6 +135,63 @@ export class User {
   })
   status: UserStatus;
 
+  @Column({
+    name: 'password_reset_token',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  @Exclude()
+  passwordResetToken?: string;
+
+  @Column({
+    name: 'password_reset_expires',
+    type: 'datetime',
+    nullable: true,
+  })
+  @Exclude()
+  passwordResetExpires?: Date;
+
+  @Column({
+    name: 'facebook',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  facebook?: string;
+
+  @Column({
+    name: 'twitter',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  twitter?: string;
+
+  @Column({
+    name: 'instagram',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  instagram?: string;
+
+  @Column({
+    name: 'linkedin',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  linkedin?: string;
+
+  @Column({
+    name: 'github',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  github?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
