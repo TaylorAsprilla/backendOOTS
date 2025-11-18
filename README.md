@@ -182,6 +182,33 @@ npm run test:cov
 - **Refresh Tokens**: Implementados para renovación automática
 - **Blacklist**: Tokens invalidados almacenados en caché
 
+### Gestión de Contraseñas
+
+#### Cambio de Contraseña (Usuarios Autenticados)
+
+- Endpoint: `PATCH /api/v1/auth/change-password`
+- Requiere validación de contraseña actual
+- Validación de requisitos de seguridad
+- No permite reutilizar la misma contraseña
+
+#### Recuperación de Contraseña (Proceso Público)
+
+- Endpoint: `POST /api/v1/auth/forgot-password` - Solicita recuperación
+- Endpoint: `POST /api/v1/auth/reset-password` - Restablece con token
+- Token de uso único válido por 24 horas
+- Envío de email con instrucciones
+- No revela existencia de cuentas por seguridad
+
+#### Requisitos de Contraseña
+
+- Mínimo 8 caracteres, máximo 50
+- Al menos una mayúscula (A-Z)
+- Al menos una minúscula (a-z)
+- Al menos un número (0-9)
+- Al menos un carácter especial (@$!%\*?&#)
+
+**📖 Documentación completa:** [PASSWORD_MANAGEMENT_API.md](./docs/PASSWORD_MANAGEMENT_API.md)
+
 ### Características de Seguridad
 
 - **Rate Limiting**: Límite de requests por IP
@@ -189,21 +216,29 @@ npm run test:cov
 - **CORS**: Configurado para orígenes específicos
 - **Validación de Entrada**: DTOs con class-validator
 - **CORS**: Configurado para frontend específico
+- **Password Hashing**: Bcrypt con 12 rounds de salt
+- **Token Seguro**: Generación criptográfica aleatoria
 
 ---
 
 ## 🌐 Endpoints Principales
 
-| Método   | Endpoint                  | Descripción          | Autenticación |
-| -------- | ------------------------- | -------------------- | ------------- |
-| `POST`   | `/api/v1/auth/register`   | Registro de usuarios | ❌            |
-| `POST`   | `/api/v1/auth/login`      | Login de usuarios    | ❌            |
-| `GET`    | `/api/v1/auth/profile`    | Perfil del usuario   | ✅            |
-| `GET`    | `/users`                  | Lista de usuarios    | ✅            |
-| `PATCH`  | `/users/:id`              | Actualizar usuario   | ✅            |
-| `DELETE` | `/users/:id`              | Eliminar usuario     | ✅            |
-| `GET`    | `/api/v1/catalogs/all`    | Todos los catálogos  | ❌            |
-| `GET`    | `/api/v1/catalogs/{type}` | Catálogo específico  | ❌            |
+| Método   | Endpoint                       | Descripción               | Autenticación |
+| -------- | ------------------------------ | ------------------------- | ------------- |
+| `POST`   | `/api/v1/auth/register`        | Registro de usuarios      | ❌            |
+| `POST`   | `/api/v1/auth/login`           | Login de usuarios         | ❌            |
+| `GET`    | `/api/v1/auth/profile`         | Perfil del usuario        | ✅            |
+| `PATCH`  | `/api/v1/auth/profile`         | Actualizar perfil         | ✅            |
+| `PATCH`  | `/api/v1/auth/change-password` | Cambiar contraseña        | ✅            |
+| `POST`   | `/api/v1/auth/forgot-password` | Solicitar recuperación    | ❌            |
+| `POST`   | `/api/v1/auth/reset-password`  | Restablecer con token     | ❌            |
+| `GET`    | `/users`                       | Lista de usuarios         | ✅            |
+| `PATCH`  | `/users/:id`                   | Actualizar usuario        | ✅            |
+| `DELETE` | `/users/:id`                   | Eliminar usuario          | ✅            |
+| `GET`    | `/api/v1/catalogs/all`         | Todos los catálogos       | ❌            |
+| `GET`    | `/api/v1/catalogs/{type}`      | Catálogo específico       | ❌            |
+| `GET`    | `/participants/by-user/:id`    | Participantes por usuario | ✅            |
+| `GET`    | `/cases/by-user/:id`           | Casos por usuario         | ✅            |
 
 ---
 
@@ -220,8 +255,10 @@ El módulo de usuarios maneja el ciclo completo de vida de los profesionales que
 - **Información Personal**: Nombres, apellidos, email, teléfono
 - **Información Profesional**: Cargo, organización
 - **Datos de Identificación**: Documento, dirección, ciudad, fecha de nacimiento
+- **Redes Sociales**: Facebook, Twitter, Instagram, LinkedIn, GitHub
 - **Control de Estado**: ACTIVE, INACTIVE, SUSPENDED, DELETED
 - **Auditoría**: Timestamps de creación y actualización
+- **Actualización de Perfil**: Endpoint dedicado para que usuarios actualicen su información
 
 #### Proceso Separado de Usuario
 
@@ -242,6 +279,8 @@ El módulo de usuarios maneja el ciclo completo de vida de los profesionales que
 ## 📈 Estado del Proyecto
 
 - ✅ **Autenticación JWT**: Completado y funcional
+- ✅ **Gestión de Contraseñas**: Cambio y recuperación implementados
+- ✅ **Actualización de Perfil**: Endpoint con redes sociales implementado
 - ✅ **Gestión de Usuarios**: CRUD completo implementado con validación de estado
 - ✅ **Catálogos de Datos**: 15 catálogos implementados
 - ✅ **Base de Datos**: MySQL con Docker configurado y optimizado
@@ -250,6 +289,9 @@ El módulo de usuarios maneja el ciclo completo de vida de los profesionales que
 - ✅ **Configuración Centralizada**: ConfigService con variables de entorno
 - ✅ **Manejo de Errores**: Filtros globales de excepciones
 - ✅ **Validación TypeScript**: Sin errores de compilación o linting
+- ✅ **Sistema de Emails**: MailerService con templates Handlebars
+- ✅ **Participantes por Usuario**: Endpoint implementado
+- ✅ **Casos por Usuario**: Endpoint implementado
 - ❌ **Módulo de Participantes**: Temporalmente deshabilitado por conflictos de tipo
 
 ---
@@ -259,6 +301,8 @@ El módulo de usuarios maneja el ciclo completo de vida de los profesionales que
 La documentación técnica completa está disponible en:
 
 - [🔐 Módulo de Autenticación](./docs/auth-module.md)
+- [🔑 Gestión de Contraseñas](./docs/PASSWORD_MANAGEMENT_API.md) - **NUEVO**
+- [📝 Resumen de Implementación](./docs/PASSWORD_IMPLEMENTATION_SUMMARY.md) - **NUEVO**
 - [👥 Módulo de Usuarios](./docs/users-module.md)
 - [📊 Módulo de Catálogos](./docs/catalogs-module.md)
 - [👤 Módulo de Participantes](./docs/participants-module.md)

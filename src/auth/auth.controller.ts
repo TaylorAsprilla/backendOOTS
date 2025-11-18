@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,6 +29,10 @@ import {
   UserProfileDto,
   LoginDto,
   RegisterResponseDto,
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  UpdateProfileDto,
 } from './dto';
 
 @ApiTags('Autenticación')
@@ -135,5 +140,134 @@ export class AuthController {
       valid: true,
       user: user.toResponseObject(),
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cambiar contraseña del usuario autenticado' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Contraseña actualizada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Contraseña actualizada exitosamente',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Las contraseñas no coinciden o la nueva contraseña es igual a la actual',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'La contraseña actual es incorrecta o token inválido',
+  })
+  async changePassword(
+    @CurrentUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.changePassword(user.id, changePasswordDto);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicitar recuperación de contraseña' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Instrucciones enviadas si el correo está registrado',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example:
+            'Si el correo está registrado, recibirás las instrucciones para recuperar tu contraseña',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error en los datos de entrada o al enviar el correo',
+  })
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Restablecer contraseña con token' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Contraseña restablecida exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Contraseña restablecida exitosamente',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Token inválido/expirado, contraseñas no coinciden o la nueva contraseña es igual a la anterior',
+  })
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar perfil del usuario autenticado' })
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Perfil actualizado exitosamente',
+    type: UserProfileDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Datos de entrada inválidos',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token inválido o expirado',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuario no encontrado',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'El email o teléfono ya está registrado por otro usuario',
+  })
+  async updateProfile(
+    @CurrentUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ): Promise<UserProfileDto> {
+    const updatedUser = await this.authService.updateProfile(
+      user.id,
+      updateProfileDto,
+    );
+    return updatedUser.toResponseObject();
   }
 }

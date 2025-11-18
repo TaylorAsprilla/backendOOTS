@@ -12,11 +12,12 @@ Bienvenido a la documentación completa del backend de OOTS Colombia.
 
 ### 📘 Guías por Módulo
 
-1. [Autenticación](./authentication.md) - Sistema de login y JWT
+1. [Autenticación](./authentication.md) - Sistema de login, JWT y gestión de contraseñas
 2. [Usuarios](./users.md) - Gestión de usuarios del sistema
 3. [Catálogos](./catalogs.md) - Datos maestros y configuración
 4. [Casos](./cases.md) - Gestión de casos y seguimiento
 5. [Base de Datos](./database.md) - Estructura y migraciones
+6. [Gestión de Contraseñas](./PASSWORD_MANAGEMENT_API.md) - Cambio y recuperación completa
 
 ### 💡 Ejemplos Prácticos
 
