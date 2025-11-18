@@ -9,6 +9,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Añadido
 
+#### Campos de Dirección Extendida en Participantes
+
+- Campo `state` (estado/departamento) añadido a la entidad Participant (VARCHAR 50, nullable)
+- Campo `zipCode` (código postal) añadido a la entidad Participant (VARCHAR 20, nullable)
+- Validaciones correspondientes en `CreateParticipantDto` con decoradores de class-validator
+- Documentación Swagger automática para los nuevos campos
+- Migración SQL: `migrations/add-state-zipcode-to-participants.sql`
+
 #### Actualización de Perfil con Redes Sociales
 
 - Nuevo endpoint `PATCH /api/v1/auth/profile` para actualización de perfil de usuario autenticado

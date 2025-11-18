@@ -168,6 +168,27 @@ export class CreateParticipantDto {
   @MaxLength(50)
   city: string;
 
+  @ApiProperty({
+    description: 'Estado o departamento del participante',
+    example: 'Cundinamarca',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
+  state?: string;
+
+  @ApiProperty({
+    description: 'Código postal de la dirección del participante',
+    example: '110111',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  zipCode?: string;
+
   @IsDateString()
   birthDate: string;
 
