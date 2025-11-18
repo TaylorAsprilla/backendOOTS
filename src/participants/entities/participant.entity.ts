@@ -79,6 +79,12 @@ export class Participant {
   @Column({ name: 'city', type: 'varchar', length: 50 })
   city!: string;
 
+  @Column({ name: 'state', type: 'varchar', length: 50, nullable: true })
+  state?: string;
+
+  @Column({ name: 'zip_code', type: 'varchar', length: 20, nullable: true })
+  zipCode?: string;
+
   @Column({ name: 'birth_date', type: 'date' })
   birthDate!: Date;
 
