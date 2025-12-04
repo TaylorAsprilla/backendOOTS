@@ -83,7 +83,7 @@ export class MailService {
     try {
       const appUrl =
         this.configService.get<string>('APP_URL') || 'http://localhost:3000';
-      const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
+      const resetUrl = `${appUrl}/auth/reset-password?token=${resetToken}`;
 
       await this.mailerService.sendMail({
         to: user.email,
