@@ -16,17 +16,17 @@ export class EmergencyContact {
   @Column({ name: 'name', type: 'varchar', length: 100 })
   name!: string;
 
-  @Column({ name: 'phone', type: 'varchar', length: 20 })
-  phone!: string;
+  @Column({ name: 'phone', type: 'varchar', length: 20, nullable: true })
+  phone?: string;
 
-  @Column({ name: 'email', type: 'varchar', length: 100 })
-  email!: string;
+  @Column({ name: 'email', type: 'varchar', length: 100, nullable: true })
+  email?: string;
 
-  @Column({ name: 'address', type: 'varchar', length: 200 })
-  address!: string;
+  @Column({ name: 'address', type: 'varchar', length: 200, nullable: true })
+  address?: string;
 
-  @Column({ name: 'city', type: 'varchar', length: 50 })
-  city!: string;
+  @Column({ name: 'city', type: 'varchar', length: 50, nullable: true })
+  city?: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
