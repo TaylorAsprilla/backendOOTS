@@ -12,19 +12,19 @@ import { FamilyRelationshipModule } from '../family-relationship/family-relation
 import { IncomeSourceModule } from '../income-source/income-source.module';
 import { IncomeLevelModule } from '../income-level/income-level.module';
 import { IdentifiedSituation } from 'src/identified-situations/entities';
-import { ProcessType } from 'src/process-types/entities/process-type.entity';
 import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
 import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
-import { TypeProgress } from 'src/type-progress/entities/type-progress.entity';
+import { ApproachType } from 'src/catalogs/entities/approach-type.entity';
+import { ProcessType } from 'src/catalogs/entities/process-type.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       IdentifiedSituation,
-      ProcessType,
       TreatmentStatus,
       AcademicLevel,
-      TypeProgress,
+      ApproachType,
+      ProcessType,
     ]),
     DocumentTypesModule,
     GendersModule,

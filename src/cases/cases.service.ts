@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -16,11 +17,15 @@ import { ParticipantIdentifiedSituation } from '../participants/entities/partici
 import { IdentifiedSituation } from '../identified-situations/entities/identified-situation.entity';
 import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { Weighing } from '../participants/entities/weighing.entity';
+import { FamilyMember } from '../participants/entities/family-member.entity';
+import { BioPsychosocialHistory } from '../participants/entities/bio-psychosocial-history.entity';
 import { CreateCaseDto, UpdateCaseStatusDto } from './dto/case.dto';
 import { CaseStatus } from '../common/enums';
 
 @Injectable()
 export class CasesService {
+  private readonly logger = new Logger(CasesService.name);
+
   constructor(
     @InjectRepository(Case)
     private readonly caseRepository: Repository<Case>,
@@ -45,191 +50,339 @@ export class CasesService {
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Crea un nuevo caso con toda su información médica y familiar asociada
+   * @param createCaseDto - DTO con los datos del caso a crear
+   * @returns Promise<Case> - Caso creado con todas sus relaciones
+   * @throws NotFoundException - Si el participante no existe
+   * @throws BadRequestException - Si hay errores de validación
+   */
   async createCase(createCaseDto: CreateCaseDto): Promise<Case> {
-    // Verificar que el participante existe
+    this.logger.log(
+      `Iniciando creación de caso para participante ID: ${createCaseDto.participantId}`,
+    );
+
+    // Validar que el participante existe
     const participant = await this.participantRepository.findOne({
       where: { id: createCaseDto.participantId },
     });
 
     if (!participant) {
+      this.logger.error(
+        `Participante no encontrado: ${createCaseDto.participantId}`,
+      );
       throw new NotFoundException(
         `Participante con ID ${createCaseDto.participantId} no encontrado`,
       );
     }
 
-    // Usar transacción para crear el caso y todas las entidades médicas relacionadas
+    // Usar transacción para garantizar atomicidad
     return await this.dataSource.transaction(async (manager) => {
-      // Generar número de caso único
-      const caseNumber = await this.generateCaseNumber();
+      try {
+        // 1. Generar número de caso único
+        const caseNumber = await this.generateCaseNumber();
+        this.logger.debug(`Número de caso generado: ${caseNumber}`);
 
-      // Crear el caso con los campos simples
-      const newCase = manager.create(Case, {
-        caseNumber,
-        participantId: createCaseDto.participantId,
-        status: CaseStatus.OPEN,
-        consultationReason: createCaseDto.consultationReason,
-        intervention: createCaseDto.intervention,
-        referrals: createCaseDto.referrals,
-      });
-
-      const savedCase = await manager.save(newCase);
-
-      // 5. Crear FollowUpPlans directamente si se proporcionan datos
-      if (createCaseDto.followUpPlan && createCaseDto.followUpPlan.length > 0) {
-        for (const followUpPlanData of createCaseDto.followUpPlan) {
-          const followUpPlan = manager.create(FollowUpPlan, {
-            ...followUpPlanData,
-            caseId: savedCase.id,
-          });
-          await manager.save(followUpPlan);
-        }
-      }
-
-      // Crear PhysicalHealthHistories si se proporcionan (ahora es array)
-      if (
-        createCaseDto.physicalHealthHistory &&
-        createCaseDto.physicalHealthHistory.length > 0
-      ) {
-        for (const historyData of createCaseDto.physicalHealthHistory) {
-          const physicalHealthHistory = manager.create(PhysicalHealthHistory, {
-            ...historyData,
-            caseId: savedCase.id,
-          });
-          await manager.save(physicalHealthHistory);
-        }
-      }
-
-      // Crear MentalHealthHistories si se proporcionan (ahora es array)
-      if (
-        createCaseDto.mentalHealthHistory &&
-        createCaseDto.mentalHealthHistory.length > 0
-      ) {
-        for (const historyData of createCaseDto.mentalHealthHistory) {
-          const mentalHealthHistory = manager.create(MentalHealthHistory, {
-            ...historyData,
-            caseId: savedCase.id,
-          });
-          await manager.save(mentalHealthHistory);
-        }
-      }
-
-      // 8. Crear Weighing si se proporciona
-      if (createCaseDto.weighing) {
-        const weighing = manager.create(Weighing, {
-          ...createCaseDto.weighing,
-          caseId: savedCase.id,
+        // 2. Crear el caso principal
+        const newCase = manager.create(Case, {
+          caseNumber,
+          participantId: createCaseDto.participantId,
+          status: CaseStatus.OPEN,
+          consultationReason: createCaseDto.consultationReason,
+          intervention: createCaseDto.intervention,
+          referrals: createCaseDto.referrals,
         });
-        await manager.save(weighing);
-      }
 
-      // 9. Crear InterventionPlans si se proporcionan
-      if (
-        createCaseDto.interventionPlans &&
-        createCaseDto.interventionPlans.length > 0
-      ) {
-        for (const planData of createCaseDto.interventionPlans) {
-          const interventionPlan = manager.create(InterventionPlan, {
-            ...planData,
-            caseId: savedCase.id,
-          });
-          await manager.save(interventionPlan);
+        const savedCase = await manager.save(newCase);
+        this.logger.debug(`Caso creado con ID: ${savedCase.id}`);
+
+        // ============================================================================
+        // INFORMACIÓN FAMILIAR Y BIOPSICOSOCIAL (del participante)
+        // ============================================================================
+
+        // 3. Crear miembros familiares si se proporcionan
+        if (createCaseDto.familyMembers?.length) {
+          this.logger.debug(
+            `Creando ${createCaseDto.familyMembers.length} miembros familiares`,
+          );
+
+          const familyMemberEntities = createCaseDto.familyMembers.map(
+            (memberData) =>
+              manager.create(FamilyMember, {
+                ...memberData,
+                participantId: createCaseDto.participantId,
+              }),
+          );
+
+          await manager.save(FamilyMember, familyMemberEntities);
+          this.logger.debug('Miembros familiares creados exitosamente');
         }
-      }
 
-      // 10. Crear ProgressNotes si se proporcionan
-      if (
-        createCaseDto.progressNotes &&
-        createCaseDto.progressNotes.length > 0
-      ) {
-        for (const noteData of createCaseDto.progressNotes) {
-          const progressNote = manager.create(ProgressNote, {
-            sessionDate: new Date(noteData.sessionDate),
-            sessionType: noteData.sessionType,
-            summary: noteData.summary,
-            observations: noteData.observations,
-            agreements: noteData.agreements,
-            caseId: savedCase.id,
-          });
-          await manager.save(progressNote);
-        }
-      }
+        // 4. Crear historial biopsicosocial si se proporciona
+        if (createCaseDto.bioPsychosocialHistory) {
+          this.logger.debug('Creando historial biopsicosocial');
 
-      // 11. Referrals ya está incluido en el Case principal como campo simple
+          // Verificar si ya existe un historial para este participante
+          const existingHistory = await manager.findOne(
+            BioPsychosocialHistory,
+            {
+              where: { participantId: createCaseDto.participantId },
+            },
+          );
 
-      // 3. Crear situaciones identificadas si se proporcionan
-      if (
-        createCaseDto.identifiedSituations &&
-        createCaseDto.identifiedSituations.length > 0
-      ) {
-        // Buscar las situaciones identificadas por ID
-        const situationPromises = createCaseDto.identifiedSituations.map(
-          async (situationId) => {
-            const identifiedSituation = await manager.findOne(
-              IdentifiedSituation,
+          if (existingHistory) {
+            this.logger.warn(
+              `Ya existe historial biopsicosocial para participante ${createCaseDto.participantId}. Se actualizará.`,
+            );
+
+            // Actualizar el historial existente
+            await manager.update(
+              BioPsychosocialHistory,
+              { participantId: createCaseDto.participantId },
+              createCaseDto.bioPsychosocialHistory,
+            );
+          } else {
+            // Crear nuevo historial
+            const bioPsychosocialHistory = manager.create(
+              BioPsychosocialHistory,
               {
-                where: { id: situationId, isActive: true },
+                ...createCaseDto.bioPsychosocialHistory,
+                participantId: createCaseDto.participantId,
               },
             );
 
-            if (identifiedSituation) {
-              return manager.create(ParticipantIdentifiedSituation, {
-                caseId: savedCase.id,
-                identifiedSituationId: identifiedSituation.id,
-              });
-            }
-            return null;
-          },
-        );
-
-        const resolvedSituations = await Promise.all(situationPromises);
-        const validSituations = resolvedSituations.filter(
-          (situation): situation is ParticipantIdentifiedSituation =>
-            situation !== null,
-        );
-
-        if (validSituations.length > 0) {
-          await manager.save(validSituations);
+            await manager.save(bioPsychosocialHistory);
+            this.logger.debug('Historial biopsicosocial creado exitosamente');
+          }
         }
-      }
 
-      // 12. Crear nota de cierre si se proporciona
-      if (createCaseDto.closingNote) {
-        const closingNote = manager.create(ClosingNote, {
-          closingDate: createCaseDto.closingNote.closingDate
-            ? new Date(createCaseDto.closingNote.closingDate)
-            : undefined,
-          reason: createCaseDto.closingNote.reason,
-          achievements: createCaseDto.closingNote.achievements,
-          recommendations: createCaseDto.closingNote.recommendations,
-          observations: createCaseDto.closingNote.observations,
-          caseId: savedCase.id,
-        });
-        await manager.save(closingNote);
-      }
+        // ============================================================================
+        // INFORMACIÓN MÉDICA DEL CASO
+        // ============================================================================
 
-      // Retornar el caso completo con todas las relaciones
-      const completeCase = await manager.findOne(Case, {
-        where: { id: savedCase.id },
-        relations: [
-          'participant',
-          'followUpPlans',
-          'physicalHealthHistories',
-          'mentalHealthHistories',
-          'weighing',
-          'interventionPlans',
-          'progressNotes',
-          'closingNote',
-          'participantIdentifiedSituations',
-          'participantIdentifiedSituations.identifiedSituation',
-        ],
+        // 5. Crear planes de seguimiento
+        if (createCaseDto.followUpPlan?.length) {
+          this.logger.debug(
+            `Creando ${createCaseDto.followUpPlan.length} planes de seguimiento`,
+          );
+
+          const followUpPlans = createCaseDto.followUpPlan.map(
+            (followUpPlanData) =>
+              manager.create(FollowUpPlan, {
+                ...followUpPlanData,
+                caseId: savedCase.id,
+              }),
+          );
+
+          await manager.save(FollowUpPlan, followUpPlans);
+        }
+
+        // 6. Crear historiales de salud física
+        if (createCaseDto.physicalHealthHistory?.length) {
+          this.logger.debug(
+            `Creando ${createCaseDto.physicalHealthHistory.length} historiales de salud física`,
+          );
+
+          const physicalHealthHistories =
+            createCaseDto.physicalHealthHistory.map((historyData) =>
+              manager.create(PhysicalHealthHistory, {
+                ...historyData,
+                caseId: savedCase.id,
+              }),
+            );
+
+          await manager.save(PhysicalHealthHistory, physicalHealthHistories);
+        }
+
+        // 7. Crear historiales de salud mental
+        if (createCaseDto.mentalHealthHistory?.length) {
+          this.logger.debug(
+            `Creando ${createCaseDto.mentalHealthHistory.length} historiales de salud mental`,
+          );
+
+          const mentalHealthHistories = createCaseDto.mentalHealthHistory.map(
+            (historyData) =>
+              manager.create(MentalHealthHistory, {
+                ...historyData,
+                caseId: savedCase.id,
+              }),
+          );
+
+          await manager.save(MentalHealthHistory, mentalHealthHistories);
+        }
+
+        // 8. Crear ponderación (weighing)
+        if (createCaseDto.weighing) {
+          this.logger.debug('Creando ponderación del caso');
+
+          const weighing = manager.create(Weighing, {
+            ...createCaseDto.weighing,
+            caseId: savedCase.id,
+          });
+
+          await manager.save(weighing);
+        }
+
+        // 9. Crear planes de intervención
+        if (createCaseDto.interventionPlans?.length) {
+          this.logger.debug(
+            `Creando ${createCaseDto.interventionPlans.length} planes de intervención`,
+          );
+
+          const interventionPlans = createCaseDto.interventionPlans.map(
+            (planData) =>
+              manager.create(InterventionPlan, {
+                ...planData,
+                caseId: savedCase.id,
+              }),
+          );
+
+          await manager.save(InterventionPlan, interventionPlans);
+        }
+
+        // 10. Crear notas de progreso
+        if (createCaseDto.progressNotes?.length) {
+          this.logger.debug(
+            `Creando ${createCaseDto.progressNotes.length} notas de progreso`,
+          );
+
+          const progressNotes = createCaseDto.progressNotes.map((noteData) =>
+            manager.create(ProgressNote, {
+              sessionDate: new Date(noteData.sessionDate),
+              sessionType: noteData.sessionType,
+              summary: noteData.summary,
+              observations: noteData.observations,
+              agreements: noteData.agreements,
+              caseId: savedCase.id,
+            }),
+          );
+
+          await manager.save(ProgressNote, progressNotes);
+        }
+
+        // 11. Crear situaciones identificadas
+        if (createCaseDto.identifiedSituations?.length) {
+          this.logger.debug(
+            `Procesando ${createCaseDto.identifiedSituations.length} situaciones identificadas`,
+          );
+
+          const validSituations = await this.createIdentifiedSituations(
+            manager,
+            savedCase.id,
+            createCaseDto.identifiedSituations,
+          );
+
+          this.logger.debug(
+            `${validSituations} situaciones identificadas creadas`,
+          );
+        }
+
+        // 12. Crear nota de cierre
+        if (createCaseDto.closingNote) {
+          this.logger.debug('Creando nota de cierre del caso');
+
+          const closingNote = manager.create(ClosingNote, {
+            closingDate: createCaseDto.closingNote.closingDate
+              ? new Date(createCaseDto.closingNote.closingDate)
+              : undefined,
+            reason: createCaseDto.closingNote.reason,
+            achievements: createCaseDto.closingNote.achievements,
+            recommendations: createCaseDto.closingNote.recommendations,
+            observations: createCaseDto.closingNote.observations,
+            caseId: savedCase.id,
+          });
+
+          await manager.save(closingNote);
+        }
+
+        // Retornar el caso completo con todas las relaciones
+        const completeCase = await this.findCaseWithRelations(
+          manager,
+          savedCase.id,
+        );
+
+        this.logger.log(
+          `Caso ${caseNumber} creado exitosamente con ID: ${savedCase.id}`,
+        );
+
+        return completeCase;
+      } catch (error) {
+        this.logger.error(
+          `Error al crear caso para participante ${createCaseDto.participantId}`,
+          error,
+        );
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Método auxiliar para crear situaciones identificadas
+   */
+  private async createIdentifiedSituations(
+    manager: any,
+    caseId: number,
+    situationIds: number[],
+  ): Promise<number> {
+    const situationPromises = situationIds.map(async (situationId) => {
+      const identifiedSituation = await manager.findOne(IdentifiedSituation, {
+        where: { id: situationId, isActive: true },
       });
 
-      if (!completeCase) {
-        throw new NotFoundException('Error al recuperar el caso creado');
+      if (identifiedSituation) {
+        return manager.create(ParticipantIdentifiedSituation, {
+          caseId,
+          identifiedSituationId: identifiedSituation.id,
+        });
       }
 
-      return completeCase;
+      this.logger.warn(`Situación identificada ${situationId} no encontrada`);
+      return null;
     });
+
+    const resolvedSituations = await Promise.all(situationPromises);
+    const validSituations = resolvedSituations.filter(
+      (situation): situation is ParticipantIdentifiedSituation =>
+        situation !== null,
+    );
+
+    if (validSituations.length > 0) {
+      await manager.save(ParticipantIdentifiedSituation, validSituations);
+    }
+
+    return validSituations.length;
+  }
+
+  /**
+   * Método auxiliar para obtener caso con todas sus relaciones
+   */
+  private async findCaseWithRelations(
+    manager: any,
+    caseId: number,
+  ): Promise<Case> {
+    const completeCase = await manager.findOne(Case, {
+      where: { id: caseId },
+      relations: [
+        'participant',
+        'participant.familyMembers',
+        'participant.bioPsychosocialHistory',
+        'followUpPlans',
+        'physicalHealthHistories',
+        'mentalHealthHistories',
+        'weighing',
+        'interventionPlans',
+        'progressNotes',
+        'closingNote',
+        'participantIdentifiedSituations',
+        'participantIdentifiedSituations.identifiedSituation',
+      ],
+    });
+
+    if (!completeCase) {
+      throw new NotFoundException('Error al recuperar el caso creado');
+    }
+
+    return completeCase;
   }
 
   async findAllByParticipant(participantId: number): Promise<Case[]> {

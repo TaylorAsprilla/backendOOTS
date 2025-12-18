@@ -22,7 +22,6 @@ import { IncomeLevelModule } from './income-level/income-level.module';
 import { HousingTypeModule } from './housing-type/housing-type.module';
 import { FamilyRelationshipModule } from './family-relationship/family-relationship.module';
 import { IdentifiedSituationsModule } from './identified-situations/identified-situations.module';
-import { TypeProgressModule } from './type-progress/type-progress.module';
 import { GeolocationModule } from './geolocation/geolocation.module';
 import configuration from './config/configuration';
 
@@ -86,7 +85,6 @@ import configuration from './config/configuration';
     HousingTypeModule,
     FamilyRelationshipModule,
     IdentifiedSituationsModule,
-    TypeProgressModule,
     GeolocationModule,
   ],
   controllers: [AppController],

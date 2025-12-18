@@ -24,8 +24,13 @@ export class FollowUpPlan {
   @Column({ name: 'process_completed', type: 'boolean', default: false })
   processCompleted!: boolean;
 
-  @Column({ name: 'coordinated_service', type: 'boolean', default: false })
-  coordinatedService!: boolean;
+  @Column({
+    name: 'coordinated_service',
+    type: 'boolean',
+    default: false,
+    nullable: true,
+  })
+  coordinatedService?: boolean;
 
   @Column({ name: 'referred', type: 'boolean', default: false })
   referred!: boolean;
