@@ -97,7 +97,7 @@ export class CasesService {
         this.logger.debug(`Caso creado con ID: ${savedCase.id}`);
 
         // ============================================================================
-        // INFORMACIÓN FAMILIAR Y BIOPSICOSOCIAL (del participante)
+        // INFORMACIÓN FAMILIAR Y BIOPSICOSOCIAL (ahora del caso)
         // ============================================================================
 
         // 3. Crear miembros familiares si se proporcionan
@@ -110,7 +110,7 @@ export class CasesService {
             (memberData) =>
               manager.create(FamilyMember, {
                 ...memberData,
-                participantId: createCaseDto.participantId,
+                caseId: savedCase.id,
               }),
           );
 
@@ -122,23 +122,23 @@ export class CasesService {
         if (createCaseDto.bioPsychosocialHistory) {
           this.logger.debug('Creando historial biopsicosocial');
 
-          // Verificar si ya existe un historial para este participante
+          // Verificar si ya existe un historial para este caso
           const existingHistory = await manager.findOne(
             BioPsychosocialHistory,
             {
-              where: { participantId: createCaseDto.participantId },
+              where: { caseId: savedCase.id },
             },
           );
 
           if (existingHistory) {
             this.logger.warn(
-              `Ya existe historial biopsicosocial para participante ${createCaseDto.participantId}. Se actualizará.`,
+              `Ya existe historial biopsicosocial para caso ${savedCase.id}. Se actualizará.`,
             );
 
             // Actualizar el historial existente
             await manager.update(
               BioPsychosocialHistory,
-              { participantId: createCaseDto.participantId },
+              { caseId: savedCase.id },
               createCaseDto.bioPsychosocialHistory,
             );
           } else {
@@ -147,7 +147,7 @@ export class CasesService {
               BioPsychosocialHistory,
               {
                 ...createCaseDto.bioPsychosocialHistory,
-                participantId: createCaseDto.participantId,
+                caseId: savedCase.id,
               },
             );
 
@@ -320,7 +320,7 @@ export class CasesService {
    * Método auxiliar para crear situaciones identificadas
    */
   private async createIdentifiedSituations(
-    manager: any,
+    manager: import('typeorm').EntityManager,
     caseId: number,
     situationIds: number[],
   ): Promise<number> {
@@ -357,21 +357,34 @@ export class CasesService {
    * Método auxiliar para obtener caso con todas sus relaciones
    */
   private async findCaseWithRelations(
-    manager: any,
+    manager: import('typeorm').EntityManager,
     caseId: number,
   ): Promise<Case> {
     const completeCase = await manager.findOne(Case, {
       where: { id: caseId },
       relations: [
         'participant',
-        'participant.familyMembers',
-        'participant.bioPsychosocialHistory',
+        'participant.documentType',
+        'participant.gender',
+        'participant.maritalStatus',
+        'participant.healthInsurance',
+        'participant.registeredBy',
+        'familyMembers',
+        'familyMembers.familyRelationship',
+        'familyMembers.academicLevel',
+        'bioPsychosocialHistory',
+        'bioPsychosocialHistory.academicLevel',
+        'bioPsychosocialHistory.incomeSource',
+        'bioPsychosocialHistory.incomeLevel',
+        'bioPsychosocialHistory.housingType',
         'followUpPlans',
         'physicalHealthHistories',
         'mentalHealthHistories',
         'weighing',
         'interventionPlans',
         'progressNotes',
+        'progressNotes.approachType',
+        'progressNotes.processType',
         'closingNote',
         'participantIdentifiedSituations',
         'participantIdentifiedSituations.identifiedSituation',
@@ -406,7 +419,33 @@ export class CasesService {
   async findOne(caseId: number): Promise<Case> {
     const caseEntity = await this.caseRepository.findOne({
       where: { id: caseId },
-      relations: ['participant'],
+      relations: [
+        'participant',
+        'participant.documentType',
+        'participant.gender',
+        'participant.maritalStatus',
+        'participant.healthInsurance',
+        'participant.registeredBy',
+        'familyMembers',
+        'familyMembers.familyRelationship',
+        'familyMembers.academicLevel',
+        'bioPsychosocialHistory',
+        'bioPsychosocialHistory.academicLevel',
+        'bioPsychosocialHistory.incomeSource',
+        'bioPsychosocialHistory.incomeLevel',
+        'bioPsychosocialHistory.housingType',
+        'followUpPlans',
+        'physicalHealthHistories',
+        'mentalHealthHistories',
+        'weighing',
+        'interventionPlans',
+        'progressNotes',
+        'progressNotes.approachType',
+        'progressNotes.processType',
+        'closingNote',
+        'participantIdentifiedSituations',
+        'participantIdentifiedSituations.identifiedSituation',
+      ],
     });
 
     if (!caseEntity) {

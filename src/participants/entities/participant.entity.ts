@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
-  OneToOne,
   OneToMany,
   JoinColumn,
 } from 'typeorm';
@@ -14,10 +13,8 @@ import { Gender } from '../../genders/entities';
 import { MaritalStatus } from '../../marital-status/entities';
 import { HealthInsurance } from '../../health-insurance/entities';
 import { DocumentType } from '../../document-types/entities';
-import { FamilyMember } from './family-member.entity';
 import { Case } from './case.entity';
 import { User } from '../../users/entities/user.entity';
-import { BioPsychosocialHistory } from './bio-psychosocial-history.entity';
 import { ParticipantEmergencyContact } from './participant-emergency-contact.entity';
 
 @Entity('participants')
@@ -144,18 +141,6 @@ export class Participant {
   @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'registered_by_id' })
   registeredBy!: User;
-
-  // INFORMACIÓN FAMILIAR BÁSICA (permanece en Participant)
-  @OneToMany(() => FamilyMember, (familyMember) => familyMember.participant, {
-    cascade: true,
-  })
-  familyMembers!: FamilyMember[];
-
-  // HISTORIAL BIOPSICOSOCIAL (información personal del participante)
-  @OneToOne(() => BioPsychosocialHistory, (history) => history.participant, {
-    cascade: true,
-  })
-  bioPsychosocialHistory!: BioPsychosocialHistory;
 
   // CONTACTOS DE EMERGENCIA (M:N - un contacto puede ser para varios participantes)
   @OneToMany(() => ParticipantEmergencyContact, (pivot) => pivot.participant, {

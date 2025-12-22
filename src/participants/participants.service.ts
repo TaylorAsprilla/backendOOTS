@@ -150,8 +150,6 @@ export class ParticipantsService {
         const result = await transactionalEntityManager.findOne(Participant, {
           where: { id: savedParticipant.id },
           relations: [
-            'familyMembers',
-            'bioPsychosocialHistory',
             'cases',
             'emergencyContacts',
             'emergencyContacts.emergencyContact',
@@ -204,13 +202,6 @@ export class ParticipantsService {
     const participant = await this.participantRepository.findOne({
       where: { id },
       relations: [
-        'familyMembers',
-        'familyMembers.familyRelationship',
-        'bioPsychosocialHistory',
-        'bioPsychosocialHistory.academicLevel',
-        'bioPsychosocialHistory.incomeSource',
-        'bioPsychosocialHistory.incomeLevel',
-        'bioPsychosocialHistory.housingType',
         'emergencyContacts',
         'emergencyContacts.emergencyContact',
         'emergencyContacts.relationship',
