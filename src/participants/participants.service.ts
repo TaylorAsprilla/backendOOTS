@@ -238,34 +238,78 @@ export class ParticipantsService {
 
         // Si se enviaron emergency contacts, reemplazar los existentes
         if (emergencyContacts !== undefined) {
+          // Obtener contactos actuales del participante
+          const currentContacts = await transactionalEntityManager.find(
+            ParticipantEmergencyContact,
+            {
+              where: { participantId: id },
+              relations: ['emergencyContact'],
+            },
+          );
+
           // Eliminar relaciones existentes
           await transactionalEntityManager.delete(ParticipantEmergencyContact, {
             participantId: id,
           });
 
-          // Crear nuevas relaciones
+          // Crear o actualizar contactos
           if (emergencyContacts.length > 0) {
             for (const contactData of emergencyContacts) {
               const { relationshipId, ...emergencyContactInfo } = contactData;
 
-              // Buscar o crear el contacto
-              let emergencyContact = await transactionalEntityManager.findOne(
-                EmergencyContact,
-                {
-                  where: [
-                    { email: emergencyContactInfo.email },
-                    { phone: emergencyContactInfo.phone },
-                  ],
-                },
+              // Buscar si este participante ya tenía este contacto (por email o phone)
+              const existingContact = currentContacts.find(
+                (pc) =>
+                  pc.emergencyContact.email === emergencyContactInfo.email ||
+                  pc.emergencyContact.phone === emergencyContactInfo.phone,
               );
 
-              if (!emergencyContact) {
-                emergencyContact = transactionalEntityManager.create(
+              let emergencyContact: EmergencyContact;
+
+              if (existingContact) {
+                // Actualizar el contacto existente con los nuevos datos
+                await transactionalEntityManager.update(
                   EmergencyContact,
+                  { id: existingContact.emergencyContact.id },
                   emergencyContactInfo,
                 );
-                emergencyContact =
-                  await transactionalEntityManager.save(emergencyContact);
+                const updatedContact = await transactionalEntityManager.findOne(
+                  EmergencyContact,
+                  {
+                    where: { id: existingContact.emergencyContact.id },
+                  },
+                );
+
+                if (!updatedContact) {
+                  throw new NotFoundException(
+                    `Emergency contact with ID ${existingContact.emergencyContact.id} not found after update`,
+                  );
+                }
+
+                emergencyContact = updatedContact;
+              } else {
+                // Buscar si existe un contacto con este email/phone en el sistema
+                const foundContact = await transactionalEntityManager.findOne(
+                  EmergencyContact,
+                  {
+                    where: [
+                      { email: emergencyContactInfo.email },
+                      { phone: emergencyContactInfo.phone },
+                    ],
+                  },
+                );
+
+                if (foundContact) {
+                  emergencyContact = foundContact;
+                } else {
+                  // Crear nuevo contacto
+                  emergencyContact = transactionalEntityManager.create(
+                    EmergencyContact,
+                    emergencyContactInfo,
+                  );
+                  emergencyContact =
+                    await transactionalEntityManager.save(emergencyContact);
+                }
               }
 
               // Crear la relación pivot
