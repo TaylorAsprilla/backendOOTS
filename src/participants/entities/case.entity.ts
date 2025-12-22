@@ -106,9 +106,10 @@ export class Case {
   referrals?: string;
 
   // 12. NOTA DE CIERRE
-  @OneToOne(() => ClosingNote, { cascade: true })
-  @JoinColumn()
-  closingNote!: ClosingNote;
+  @OneToOne(() => ClosingNote, (closingNote) => closingNote.case, {
+    cascade: true,
+  })
+  closingNote?: ClosingNote;
 
   // 3. SITUACIONES IDENTIFICADAS
   @OneToMany(() => ParticipantIdentifiedSituation, (pis) => pis.case, {

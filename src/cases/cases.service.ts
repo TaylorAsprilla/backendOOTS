@@ -31,22 +31,6 @@ export class CasesService {
     private readonly caseRepository: Repository<Case>,
     @InjectRepository(Participant)
     private readonly participantRepository: Repository<Participant>,
-    @InjectRepository(PhysicalHealthHistory)
-    private readonly physicalHealthHistoryRepository: Repository<PhysicalHealthHistory>,
-    @InjectRepository(MentalHealthHistory)
-    private readonly mentalHealthHistoryRepository: Repository<MentalHealthHistory>,
-    @InjectRepository(InterventionPlan)
-    private readonly interventionPlanRepository: Repository<InterventionPlan>,
-    @InjectRepository(ProgressNote)
-    private readonly progressNoteRepository: Repository<ProgressNote>,
-    @InjectRepository(ClosingNote)
-    private readonly closingNoteRepository: Repository<ClosingNote>,
-    @InjectRepository(ParticipantIdentifiedSituation)
-    private readonly participantIdentifiedSituationRepository: Repository<ParticipantIdentifiedSituation>,
-    @InjectRepository(IdentifiedSituation)
-    private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
-    @InjectRepository(FollowUpPlan)
-    private readonly followUpPlanRepository: Repository<FollowUpPlan>,
     private readonly dataSource: DataSource,
   ) {}
 

@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Case } from './case.entity';
 
 @Entity('closing_notes')
 export class ClosingNote {
@@ -28,6 +31,10 @@ export class ClosingNote {
 
   @Column({ name: 'case_id', type: 'int', unsigned: true })
   caseId!: number;
+
+  @OneToOne(() => Case, (caseEntity) => caseEntity.closingNote)
+  @JoinColumn({ name: 'case_id' })
+  case!: Case;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
