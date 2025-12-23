@@ -17,7 +17,7 @@ export class ClosingNote {
   @Column({ name: 'closing_date', type: 'date', nullable: true })
   closingDate?: Date;
 
-  @Column({ name: 'reason', type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'reason', type: 'text', nullable: true })
   reason?: string;
 
   @Column({ name: 'achievements', type: 'text', nullable: true })
