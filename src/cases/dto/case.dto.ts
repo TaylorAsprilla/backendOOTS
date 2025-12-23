@@ -14,7 +14,140 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CaseStatus } from '../../common/enums';
 import { CreateFollowUpPlanDto } from '../../participants/dto/create-follow-up-plan.dto';
 
-// DTOs para las entidades médicas relacionadas con Case
+// ============================================================================
+// DTOs PARA INFORMACIÓN FAMILIAR Y BIOPSICOSOCIAL
+// ============================================================================
+
+export class CreateFamilyMemberDto {
+  @ApiProperty({
+    description: 'Nombre completo del miembro familiar',
+    example: 'Carlos Alberto González Martínez',
+  })
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiProperty({
+    description: 'Fecha de nacimiento del familiar',
+    example: '1980-07-20',
+  })
+  @IsDateString()
+  birthDate!: string;
+
+  @ApiProperty({
+    description: 'Ocupación o actividad principal del familiar',
+    example: 'Ingeniero de Sistemas Senior',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  occupation: string;
+
+  @ApiProperty({
+    description:
+      'ID del tipo de relación familiar (catálogo family_relationships)',
+    example: 2,
+  })
+  @IsNumber()
+  familyRelationshipId!: number;
+
+  @ApiProperty({
+    description: 'ID del nivel académico (catálogo academic_levels)',
+    example: 6,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  academicLevelId: number;
+}
+
+export class CreateBioPsychosocialHistoryDto {
+  @ApiProperty({
+    description: 'Grado académico completado',
+    example: 'Profesional Completo',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  completedGrade?: string;
+
+  @ApiProperty({
+    description: 'Institución educativa',
+    example: 'Universidad Nacional de Colombia',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  institution?: string;
+
+  @ApiProperty({
+    description: 'Profesión u oficio',
+    example: 'Psicóloga Clínica',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  profession?: string;
+
+  @ApiProperty({
+    description: 'Historia ocupacional detallada',
+    example: '5 años como psicóloga clínica en hospital público',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  occupationalHistory?: string;
+
+  @ApiProperty({
+    description: 'ID del tipo de vivienda (catálogo housing_types)',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  housingTypeId?: number;
+
+  @ApiProperty({
+    description: 'ID del nivel académico (catálogo academic_levels)',
+    example: 3,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  academicLevelId?: number;
+
+  @ApiProperty({
+    description: 'ID de la fuente de ingresos (catálogo income_sources)',
+    example: 2,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  incomeSourceId?: number;
+
+  @ApiProperty({
+    description: 'ID del nivel de ingresos (catálogo income_levels)',
+    example: 4,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  incomeLevelId?: number;
+
+  @ApiProperty({
+    description: 'Descripción detallada de la vivienda',
+    example: 'Casa de 3 habitaciones, 2 baños, sala, comedor',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  housing?: string;
+}
+
+// ============================================================================
+// DTOs PARA INFORMACIÓN MÉDICA DEL CASO
+// ============================================================================
+
 export class CreatePhysicalHealthHistoryDto {
   @ApiProperty({
     description: 'Condiciones médicas actuales que presenta el participante',
@@ -164,6 +297,24 @@ export class CreateProgressNoteDto {
   @IsOptional()
   @IsString()
   sessionType?: string;
+
+  @ApiProperty({
+    description: 'ID del tipo de abordaje (catálogo approach_types)',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  approachTypeId?: number;
+
+  @ApiProperty({
+    description: 'ID del tipo de proceso (catálogo process_types)',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  processTypeId?: number;
 
   @ApiProperty({
     description: 'Resumen de la sesión',
@@ -439,6 +590,63 @@ export class CreateCaseDto {
   @ValidateNested()
   @Type(() => CreateClosingNoteDto)
   closingNote?: CreateClosingNoteDto;
+
+  // ============================================================================
+  // INFORMACIÓN FAMILIAR Y BIOPSICOSOCIAL (del participante)
+  // ============================================================================
+
+  @ApiProperty({
+    description:
+      'Miembros del grupo familiar del participante. Se registran al crear el primer caso.',
+    required: false,
+    type: [CreateFamilyMemberDto],
+    example: [
+      {
+        name: 'Carlos Alberto González Martínez',
+        birthDate: '1980-07-20',
+        occupation: 'Ingeniero de Sistemas Senior',
+        familyRelationshipId: 2,
+        academicLevelId: 6,
+      },
+      {
+        name: 'Ana Sofía González Rodríguez',
+        birthDate: '2010-12-05',
+        occupation: 'Estudiante de Primaria',
+        familyRelationshipId: 1,
+        academicLevelId: 2,
+      },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateFamilyMemberDto)
+  familyMembers?: CreateFamilyMemberDto[];
+
+  @ApiProperty({
+    description:
+      'Historia biopsicosocial del participante. Se registra al crear el primer caso.',
+    required: false,
+    type: CreateBioPsychosocialHistoryDto,
+    example: {
+      completedGrade: 'Profesional Completo',
+      institution: 'Universidad Nacional de Colombia',
+      profession: 'Psicóloga Clínica',
+      occupationalHistory:
+        '5 años como psicóloga clínica en hospital público, 3 años en consulta privada',
+      housingTypeId: 1,
+      academicLevelId: 3,
+      incomeSourceId: 2,
+      incomeLevelId: 4,
+      housing:
+        'Casa de 3 habitaciones, 2 baños, sala, comedor, cocina integral y patio trasero',
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => CreateBioPsychosocialHistoryDto)
+  bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
 }
 
 export class UpdateCaseStatusDto {

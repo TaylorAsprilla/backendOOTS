@@ -11,6 +11,8 @@ import {
 } from 'typeorm';
 import { CaseStatus } from '../../common/enums';
 import { Participant } from './participant.entity';
+import { FamilyMember } from './family-member.entity';
+import { BioPsychosocialHistory } from './bio-psychosocial-history.entity';
 import { PhysicalHealthHistory } from './physical-health-history.entity';
 import { MentalHealthHistory } from './mental-health-history.entity';
 import { InterventionPlan } from './intervention-plan.entity';
@@ -42,6 +44,18 @@ export class Case {
   @ManyToOne(() => Participant, (participant) => participant.cases)
   @JoinColumn({ name: 'participant_id' })
   participant!: Participant;
+
+  // INFORMACIÓN FAMILIAR (ahora pertenece al caso)
+  @OneToMany(() => FamilyMember, (familyMember) => familyMember.case, {
+    cascade: true,
+  })
+  familyMembers!: FamilyMember[];
+
+  // HISTORIAL BIOPSICOSOCIAL (ahora pertenece al caso)
+  @OneToOne(() => BioPsychosocialHistory, (history) => history.case, {
+    cascade: true,
+  })
+  bioPsychosocialHistory!: BioPsychosocialHistory;
 
   // 2. MOTIVO DE LA CONSULTA - ahora es string simple
   @Column({ name: 'consultation_reason', type: 'text', nullable: true })
@@ -92,9 +106,10 @@ export class Case {
   referrals?: string;
 
   // 12. NOTA DE CIERRE
-  @OneToOne(() => ClosingNote, { cascade: true })
-  @JoinColumn()
-  closingNote!: ClosingNote;
+  @OneToOne(() => ClosingNote, (closingNote) => closingNote.case, {
+    cascade: true,
+  })
+  closingNote?: ClosingNote;
 
   // 3. SITUACIONES IDENTIFICADAS
   @OneToMany(() => ParticipantIdentifiedSituation, (pis) => pis.case, {

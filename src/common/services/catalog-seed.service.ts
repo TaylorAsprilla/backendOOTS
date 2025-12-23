@@ -11,9 +11,9 @@ import { IncomeSource } from '../../income-source/entities';
 import { IncomeLevel } from '../../income-level/entities';
 import { AcademicLevel } from 'src/academic-levels/entities/academic-level.entity';
 import { IdentifiedSituation } from 'src/identified-situations/entities';
-import { ProcessType } from 'src/process-types/entities/process-type.entity';
 import { TreatmentStatus } from 'src/treatment-statuses/entities/treatment-status.entity';
-import { TypeProgress } from 'src/type-progress/entities/type-progress.entity';
+import { ApproachType } from 'src/catalogs/entities/approach-type.entity';
+import { ProcessType } from 'src/catalogs/entities/process-type.entity';
 
 @Injectable()
 export class CatalogSeedService implements OnModuleInit {
@@ -48,14 +48,14 @@ export class CatalogSeedService implements OnModuleInit {
     @InjectRepository(IdentifiedSituation)
     private readonly identifiedSituationRepository: Repository<IdentifiedSituation>,
 
-    @InjectRepository(ProcessType)
-    private readonly processTypeRepository: Repository<ProcessType>,
-
     @InjectRepository(TreatmentStatus)
     private readonly treatmentStatusRepository: Repository<TreatmentStatus>,
 
-    @InjectRepository(TypeProgress)
-    private readonly typeProgressRepository: Repository<TypeProgress>,
+    @InjectRepository(ApproachType)
+    private readonly approachTypeRepository: Repository<ApproachType>,
+
+    @InjectRepository(ProcessType)
+    private readonly processTypeRepository: Repository<ProcessType>,
   ) {}
 
   async onModuleInit() {
@@ -75,9 +75,9 @@ export class CatalogSeedService implements OnModuleInit {
     await this.seedIncomeSources();
     await this.seedIncomeLevels();
     await this.seedIdentifiedSituations();
-    await this.seedTypeProgress();
-    await this.seedProcessTypes();
     await this.seedTreatmentStatuses();
+    await this.seedApproachTypes();
+    await this.seedProcessTypes();
 
     console.log('✅ Catalog seeding completed!');
   }
@@ -467,55 +467,53 @@ export class CatalogSeedService implements OnModuleInit {
     console.log('🎯 Identified situations seeded');
   }
 
-  private async seedTypeProgress() {
-    const count = await this.typeProgressRepository.count();
+  private async seedApproachTypes() {
+    const count = await this.approachTypeRepository.count();
     if (count > 0) return;
 
-    const typeProgress = [
+    const approachTypes = [
       {
-        name: 'Consulta Presencial',
-        code: 'CP',
-        description: 'Atención presencial en las instalaciones',
+        name: 'Terapia Cognitivo-Conductual',
+        description:
+          'Enfoque terapéutico que trabaja en la modificación de pensamientos y conductas disfuncionales',
       },
       {
-        name: 'Email',
-        code: 'E',
-        description: 'Comunicación por correo electrónico',
+        name: 'Terapia Psicodinámica',
+        description:
+          'Enfoque basado en la exploración del inconsciente y experiencias tempranas',
       },
       {
-        name: 'Encuentro Casual',
-        code: 'EC',
-        description: 'Encuentro no programado',
+        name: 'Terapia Humanista',
+        description:
+          'Enfoque centrado en la persona y su potencial de crecimiento',
       },
       {
-        name: 'Llamada telefónica',
-        code: 'LL',
-        description: 'Comunicación telefónica',
+        name: 'Terapia Sistémica',
+        description:
+          'Enfoque que considera al individuo dentro de su sistema familiar y social',
       },
       {
-        name: 'Tele consulta',
-        code: 'TC',
-        description: 'Consulta por videollamada',
+        name: 'Terapia Gestalt',
+        description: 'Enfoque experiencial centrado en el aquí y ahora',
       },
       {
-        name: 'Seguimiento',
-        code: 'S',
-        description: 'Proceso de seguimiento continuo',
+        name: 'Terapia de Aceptación y Compromiso (ACT)',
+        description: 'Enfoque basado en mindfulness y valores personales',
       },
       {
-        name: 'Cierre',
-        code: 'C',
-        description: 'Finalización del proceso',
+        name: 'Terapia Narrativa',
+        description:
+          'Enfoque que explora las historias personales y su reescritura',
       },
       {
-        name: 'Transferencia',
-        code: 'T',
-        description: 'Transferencia a otro profesional o institución',
+        name: 'Intervención en Crisis',
+        description:
+          'Abordaje inmediato para situaciones de emergencia psicológica',
       },
     ];
 
-    await this.typeProgressRepository.save(typeProgress);
-    console.log('📊 Type progress seeded');
+    await this.approachTypeRepository.save(approachTypes);
+    console.log('🎯 Approach types seeded');
   }
 
   private async seedProcessTypes() {
@@ -524,24 +522,32 @@ export class CatalogSeedService implements OnModuleInit {
 
     const processTypes = [
       {
-        name: 'Seguimiento',
-        code: 'S',
-        description: 'Proceso de seguimiento continuo',
+        name: 'Proceso Individual',
+        description: 'Proceso terapéutico con atención personalizada uno a uno',
       },
       {
-        name: 'Cierre',
-        code: 'C',
-        description: 'Finalización del proceso',
+        name: 'Proceso Grupal',
+        description: 'Proceso terapéutico en formato de grupo',
       },
       {
-        name: 'Transferencia',
-        code: 'T',
-        description: 'Transferencia a otro profesional',
+        name: 'Proceso Familiar',
+        description: 'Proceso terapéutico enfocado en la dinámica familiar',
       },
       {
-        name: 'Derivación',
-        code: 'D',
-        description: 'Derivación a otra institución',
+        name: 'Proceso de Pareja',
+        description: 'Proceso terapéutico para relaciones de pareja',
+      },
+      {
+        name: 'Proceso de Evaluación',
+        description: 'Proceso diagnóstico y valoración psicológica',
+      },
+      {
+        name: 'Proceso Psicoeducativo',
+        description: 'Proceso enfocado en educación sobre salud mental',
+      },
+      {
+        name: 'Proceso de Acompañamiento',
+        description: 'Proceso de seguimiento y apoyo continuo',
       },
     ];
 

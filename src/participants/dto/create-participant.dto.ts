@@ -27,34 +27,42 @@ export class CreateEmergencyContactDto {
   @ApiProperty({
     description: 'Teléfono del contacto de emergencia',
     example: '+57 301 987 6543',
+    required: false,
   })
   @IsString()
-  phone: string;
+  @IsOptional()
+  phone?: string;
 
   @ApiProperty({
     description: 'Email del contacto de emergencia',
     example: 'carlos.gonzalez@email.com',
+    required: false,
   })
   @IsEmail()
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @ApiProperty({
     description: 'Dirección del contacto de emergencia',
     example: 'Calle 45 # 12-34, Casa 101',
+    required: false,
   })
   @IsString()
+  @IsOptional()
   @MinLength(10)
   @MaxLength(200)
-  address: string;
+  address?: string;
 
   @ApiProperty({
     description: 'Ciudad del contacto de emergencia',
     example: 'Bogotá',
+    required: false,
   })
   @IsString()
+  @IsOptional()
   @MinLength(3)
   @MaxLength(50)
-  city: string;
+  city?: string;
 
   @ApiProperty({
     description:

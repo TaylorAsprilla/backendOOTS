@@ -8,7 +8,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Case } from './case.entity';
-import { TypeProgress } from '../../type-progress/entities/type-progress.entity';
+import { ApproachType } from '../../catalogs/entities/approach-type.entity';
+import { ProcessType } from '../../catalogs/entities/process-type.entity';
 
 @Entity('progress_notes')
 export class ProgressNote {
@@ -19,12 +20,18 @@ export class ProgressNote {
   sessionDate!: Date;
 
   @Column({
-    name: 'type_progress_id',
+    name: 'approach_type_id',
     type: 'int',
-    unsigned: true,
     nullable: true,
   })
-  typeProgressId?: number;
+  approachTypeId?: number;
+
+  @Column({
+    name: 'process_type_id',
+    type: 'int',
+    nullable: true,
+  })
+  processTypeId?: number;
 
   @Column({ name: 'process', type: 'text', nullable: true })
   process?: string;
@@ -60,7 +67,11 @@ export class ProgressNote {
   @JoinColumn({ name: 'case_id' })
   case!: Case;
 
-  @ManyToOne(() => TypeProgress, (typeProgress) => typeProgress.progressNotes)
-  @JoinColumn({ name: 'type_progress_id' })
-  typeProgress?: TypeProgress;
+  @ManyToOne(() => ApproachType, (approachType) => approachType.progressNotes)
+  @JoinColumn({ name: 'approach_type_id' })
+  approachType?: ApproachType;
+
+  @ManyToOne(() => ProcessType, (processType) => processType.progressNotes)
+  @JoinColumn({ name: 'process_type_id' })
+  processType?: ProcessType;
 }
