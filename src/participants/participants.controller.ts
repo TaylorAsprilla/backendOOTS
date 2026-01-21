@@ -827,4 +827,76 @@ export class ParticipantsController {
   getStats() {
     return this.participantsService.getDemographicStats();
   }
+
+  @Get('check-email/:email')
+  @ApiOperation({
+    summary: 'Verificar si un email ya está registrado',
+    description:
+      'Verifica si un email ya está registrado en la base de datos de participantes. ' +
+      'Retorna si el email existe y, en caso afirmativo, el ID del participante asociado.',
+  })
+  @ApiParam({
+    name: 'email',
+    description: 'Email a verificar',
+    example: 'maria.gonzalez@email.com',
+    type: String,
+  })
+  @ApiOkResponse({
+    description: 'Resultado de la verificación del email',
+    schema: {
+      type: 'object',
+      properties: {
+        exists: {
+          type: 'boolean',
+          example: true,
+          description: 'Indica si el email ya está registrado',
+        },
+        participantId: {
+          type: 'number',
+          example: 123,
+          description: 'ID del participante (solo si exists es true)',
+        },
+      },
+    },
+    examples: {
+      emailExiste: {
+        summary: 'Email ya registrado',
+        value: {
+          exists: true,
+          participantId: 123,
+        },
+      },
+      emailNoExiste: {
+        summary: 'Email disponible',
+        value: {
+          exists: false,
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Email inválido o no proporcionado',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Email inválido' },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Error interno del servidor al verificar el email',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 500 },
+        message: { type: 'string', example: 'Error al verificar el email' },
+        error: { type: 'string', example: 'Internal Server Error' },
+      },
+    },
+  })
+  async checkEmail(@Param('email') email: string) {
+    return this.participantsService.checkEmailExists(email);
+  }
 }

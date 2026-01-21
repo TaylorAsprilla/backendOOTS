@@ -439,4 +439,24 @@ export class ParticipantsService {
       })),
     };
   }
+
+  async checkEmailExists(
+    email: string,
+  ): Promise<{ exists: boolean; participantId?: number }> {
+    const participant = await this.participantRepository.findOne({
+      where: { email },
+      select: ['id', 'email'],
+    });
+
+    if (participant) {
+      return {
+        exists: true,
+        participantId: participant.id,
+      };
+    }
+
+    return {
+      exists: false,
+    };
+  }
 }
