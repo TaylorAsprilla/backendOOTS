@@ -232,6 +232,25 @@ export class ParticipantsService {
         // Extraer emergency contacts si vienen en el DTO
         const { emergencyContacts, ...participantData } = updateParticipantDto;
 
+        // Validar si el email ya existe (solo si se proporciona y es diferente al actual)
+        if (
+          participantData.email &&
+          participantData.email !== participant.email
+        ) {
+          const existingByEmail = await transactionalEntityManager.findOne(
+            Participant,
+            {
+              where: { email: participantData.email },
+            },
+          );
+
+          if (existingByEmail) {
+            throw new ConflictException(
+              `El email ${participantData.email} ya está registrado`,
+            );
+          }
+        }
+
         // Actualizar datos básicos del participante
         Object.assign(participant, participantData);
         await transactionalEntityManager.save(participant);
