@@ -156,6 +156,11 @@ export class CreateParticipantDto {
   @IsString()
   phoneNumber: string;
 
+  @ApiProperty({
+    description: 'Correo electrónico del participante',
+    example: 'ejemplo@correo.com',
+    required: false,
+  })
   @IsOptional()
   @IsEmail()
   email?: string;
