@@ -8,7 +8,9 @@ import {
   ParseIntPipe,
   HttpStatus,
   HttpCode,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -17,6 +19,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
+import { PdfService } from './pdf.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import {
@@ -29,7 +32,10 @@ import {
 @ApiTags('Casos')
 @Controller('cases')
 export class CasesController {
-  constructor(private readonly casesService: CasesService) {}
+  constructor(
+    private readonly casesService: CasesService,
+    private readonly pdfService: PdfService,
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -607,6 +613,42 @@ export class CasesController {
   })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.casesService.findOne(id);
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({
+    summary: 'Descargar PDF completo del caso',
+    description:
+      'Genera y descarga un PDF con todos los datos del caso y del participante.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del caso',
+    type: Number,
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF generado exitosamente',
+    content: { 'application/pdf': {} },
+  })
+  @ApiResponse({ status: 404, description: 'Caso no encontrado' })
+  async downloadPdf(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+    @CurrentUser() currentUser: User,
+  ) {
+    const caseEntity = await this.casesService.findOne(id);
+    const pdfBuffer = await this.pdfService.generateCasePdf(
+      caseEntity,
+      currentUser,
+    );
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="caso-${caseEntity.id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
   }
 
   @Patch(':id')

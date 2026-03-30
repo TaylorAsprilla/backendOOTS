@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CasesController } from './cases.controller';
 import { CasesService } from './cases.service';
+import { PdfService } from './pdf.service';
 import { Case } from '../participants/entities/case.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
@@ -31,7 +32,7 @@ import { Weighing } from '../participants/entities/weighing.entity';
     ]),
   ],
   controllers: [CasesController],
-  providers: [CasesService],
+  providers: [CasesService, PdfService],
   exports: [CasesService],
 })
 export class CasesModule {}
