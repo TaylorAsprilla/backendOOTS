@@ -28,6 +28,8 @@ async function bootstrap() {
         'http://127.0.0.1:4200',
         'https://congregacionmitacol.org',
         'https://www.congregacionmitacol.org',
+        'https://mioots.org',
+        'https://www.mioots.org',
       ];
 
   console.log('🌐 CORS enabled for origins:', corsOrigins);
