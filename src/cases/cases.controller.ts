@@ -8,7 +8,9 @@ import {
   ParseIntPipe,
   HttpStatus,
   HttpCode,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -17,8 +19,12 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
+import { PdfService } from './pdf.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 import {
   CreateCaseDto,
+  UpdateCaseDto,
   UpdateCaseStatusDto,
   CaseResponseDto,
 } from './dto/case.dto';
@@ -26,7 +32,10 @@ import {
 @ApiTags('Casos')
 @Controller('cases')
 export class CasesController {
-  constructor(private readonly casesService: CasesService) {}
+  constructor(
+    private readonly casesService: CasesService,
+    private readonly pdfService: PdfService,
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -233,8 +242,11 @@ export class CasesController {
     },
   })
   @HttpCode(HttpStatus.CREATED)
-  async createCase(@Body() createCaseDto: CreateCaseDto) {
-    return await this.casesService.createCase(createCaseDto);
+  async createCase(
+    @Body() createCaseDto: CreateCaseDto,
+    @CurrentUser() user: User,
+  ) {
+    return await this.casesService.createCase(createCaseDto, user?.id);
   }
 
   @Get('participants/:participantId/cases')
@@ -601,6 +613,67 @@ export class CasesController {
   })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.casesService.findOne(id);
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({
+    summary: 'Descargar PDF completo del caso',
+    description:
+      'Genera y descarga un PDF con todos los datos del caso y del participante.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del caso',
+    type: Number,
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF generado exitosamente',
+    content: { 'application/pdf': {} },
+  })
+  @ApiResponse({ status: 404, description: 'Caso no encontrado' })
+  async downloadPdf(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+    @CurrentUser() currentUser: User,
+  ) {
+    const caseEntity = await this.casesService.findOne(id);
+    const pdfBuffer = await this.pdfService.generateCasePdf(
+      caseEntity,
+      currentUser,
+    );
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="caso-${caseEntity.id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Actualizar datos de un caso',
+    description: 'Actualiza los campos editables de un caso existente.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del caso',
+    type: Number,
+    example: 1,
+  })
+  @ApiBody({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    type: UpdateCaseDto,
+    description: 'Campos del caso a actualizar',
+  })
+  @ApiResponse({ status: 200, description: 'Caso actualizado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Caso no encontrado' })
+  async updateCase(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCaseDto: UpdateCaseDto,
+  ) {
+    return await this.casesService.updateCase(id, updateCaseDto);
   }
 
   @Patch(':id/status')

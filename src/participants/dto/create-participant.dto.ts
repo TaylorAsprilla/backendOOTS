@@ -10,7 +10,7 @@ import {
   IsNumber,
   IsObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 // DTOs para las relaciones anidadas (definidas primero)
@@ -38,6 +38,9 @@ export class CreateEmergencyContactDto {
     example: 'carlos.gonzalez@email.com',
     required: false,
   })
+  @Transform(({ value }: { value: string | undefined }) =>
+    value === '' ? undefined : value,
+  )
   @IsEmail()
   @IsOptional()
   email?: string;
@@ -47,6 +50,9 @@ export class CreateEmergencyContactDto {
     example: 'Calle 45 # 12-34, Casa 101',
     required: false,
   })
+  @Transform(({ value }: { value: string | undefined }) =>
+    value === '' ? undefined : value,
+  )
   @IsString()
   @IsOptional()
   @MinLength(10)
@@ -58,11 +64,41 @@ export class CreateEmergencyContactDto {
     example: 'Bogotá',
     required: false,
   })
+  @Transform(({ value }: { value: string | undefined }) =>
+    value === '' ? undefined : value,
+  )
   @IsString()
   @IsOptional()
   @MinLength(3)
   @MaxLength(50)
   city?: string;
+
+  @ApiProperty({
+    description: 'Estado o departamento del contacto de emergencia',
+    example: 'Cundinamarca',
+    required: false,
+  })
+  @Transform(({ value }: { value: string | undefined }) =>
+    value === '' ? undefined : value,
+  )
+  @IsString()
+  @IsOptional()
+  @MinLength(3)
+  @MaxLength(50)
+  state?: string;
+
+  @ApiProperty({
+    description: 'Código postal del contacto de emergencia',
+    example: '110111',
+    required: false,
+  })
+  @Transform(({ value }: { value: string | undefined }) =>
+    value === '' ? undefined : value,
+  )
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  zipCode?: string;
 
   @ApiProperty({
     description:

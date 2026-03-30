@@ -19,7 +19,11 @@ import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { Weighing } from '../participants/entities/weighing.entity';
 import { FamilyMember } from '../participants/entities/family-member.entity';
 import { BioPsychosocialHistory } from '../participants/entities/bio-psychosocial-history.entity';
-import { CreateCaseDto, UpdateCaseStatusDto } from './dto/case.dto';
+import {
+  CreateCaseDto,
+  UpdateCaseDto,
+  UpdateCaseStatusDto,
+} from './dto/case.dto';
 import { CaseStatus } from '../common/enums';
 
 @Injectable()
@@ -41,7 +45,10 @@ export class CasesService {
    * @throws NotFoundException - Si el participante no existe
    * @throws BadRequestException - Si hay errores de validación
    */
-  async createCase(createCaseDto: CreateCaseDto): Promise<Case> {
+  async createCase(
+    createCaseDto: CreateCaseDto,
+    createdById?: number,
+  ): Promise<Case> {
     this.logger.log(
       `Iniciando creación de caso para participante ID: ${createCaseDto.participantId}`,
     );
@@ -75,6 +82,7 @@ export class CasesService {
           consultationReason: createCaseDto.consultationReason,
           intervention: createCaseDto.intervention,
           referrals: createCaseDto.referrals,
+          createdById,
         });
 
         const savedCase = await manager.save(newCase);
@@ -439,6 +447,26 @@ export class CasesService {
     return caseEntity;
   }
 
+  async updateCase(
+    caseId: number,
+    updateCaseDto: UpdateCaseDto,
+  ): Promise<Case> {
+    const caseEntity = await this.findOne(caseId);
+
+    if (updateCaseDto.consultationReason !== undefined) {
+      caseEntity.consultationReason =
+        updateCaseDto.consultationReason as string;
+    }
+    if (updateCaseDto.intervention !== undefined) {
+      caseEntity.intervention = updateCaseDto.intervention as string;
+    }
+    if (updateCaseDto.referrals !== undefined) {
+      caseEntity.referrals = updateCaseDto.referrals as string;
+    }
+
+    return await this.caseRepository.save(caseEntity);
+  }
+
   async updateStatus(
     caseId: number,
     updateCaseStatusDto: UpdateCaseStatusDto,
@@ -522,7 +550,7 @@ export class CasesService {
     const cases = await this.caseRepository
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
-      .where('participant.registeredById = :userId', { userId })
+      .where('case.createdById = :userId', { userId })
       .orderBy('case.createdAt', 'DESC')
       .getMany();
 
