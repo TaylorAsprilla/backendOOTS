@@ -30,6 +30,8 @@ async function bootstrap() {
         'https://www.congregacionmitacol.org',
         'https://mioots.org',
         'https://www.mioots.org',
+        'https://taylorasprilla.dev',
+        'https://www.taylorasprilla.dev',
       ];
 
   console.log('🌐 CORS enabled for origins:', corsOrigins);
