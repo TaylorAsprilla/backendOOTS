@@ -62,6 +62,26 @@ export class AuthController {
   }
 
   @Public()
+  @Get('check-phone')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar disponibilidad de número telefónico' })
+  @ApiResponse({
+    status: 200,
+    description: 'Indica si el número telefónico está disponible para registro',
+    schema: {
+      type: 'object',
+      properties: {
+        available: { type: 'boolean', example: true },
+      },
+    },
+  })
+  async checkPhone(
+    @Query('phoneNumber') phoneNumber: string,
+  ): Promise<{ available: boolean }> {
+    return await this.authService.checkPhoneNumberAvailability(phoneNumber);
+  }
+
+  @Public()
   @Post('register')
   @ApiOperation({ summary: 'Registrar nuevo usuario' })
   @ApiBody({ type: RegisterDto })
