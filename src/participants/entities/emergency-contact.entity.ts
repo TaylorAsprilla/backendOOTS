@@ -28,6 +28,12 @@ export class EmergencyContact {
   @Column({ name: 'city', type: 'varchar', length: 50, nullable: true })
   city?: string;
 
+  @Column({ name: 'state', type: 'varchar', length: 50, nullable: true })
+  state?: string;
+
+  @Column({ name: 'zip_code', type: 'varchar', length: 20, nullable: true })
+  zipCode?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
