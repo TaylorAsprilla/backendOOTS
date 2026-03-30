@@ -526,7 +526,7 @@ export class CasesService {
     const cases = await this.caseRepository
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
-      .where('participant.registeredById = :userId', { userId })
+      .where('case.createdById = :userId', { userId })
       .orderBy('case.createdAt', 'DESC')
       .getMany();
 
