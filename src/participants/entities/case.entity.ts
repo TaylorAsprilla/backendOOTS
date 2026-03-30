@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { CaseStatus } from '../../common/enums';
 import { Participant } from './participant.entity';
+import { User } from '../../users/entities/user.entity';
 import { FamilyMember } from './family-member.entity';
 import { BioPsychosocialHistory } from './bio-psychosocial-history.entity';
 import { PhysicalHealthHistory } from './physical-health-history.entity';
@@ -44,6 +45,18 @@ export class Case {
   @ManyToOne(() => Participant, (participant) => participant.cases)
   @JoinColumn({ name: 'participant_id' })
   participant!: Participant;
+
+  @Column({
+    name: 'created_by_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
+  createdById?: number;
+
+  @ManyToOne(() => User, { nullable: true, eager: false })
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy?: User;
 
   // INFORMACIÓN FAMILIAR (ahora pertenece al caso)
   @OneToMany(() => FamilyMember, (familyMember) => familyMember.case, {

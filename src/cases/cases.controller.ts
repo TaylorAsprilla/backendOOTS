@@ -17,6 +17,8 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 import {
   CreateCaseDto,
   UpdateCaseStatusDto,
@@ -233,8 +235,11 @@ export class CasesController {
     },
   })
   @HttpCode(HttpStatus.CREATED)
-  async createCase(@Body() createCaseDto: CreateCaseDto) {
-    return await this.casesService.createCase(createCaseDto);
+  async createCase(
+    @Body() createCaseDto: CreateCaseDto,
+    @CurrentUser() user: User,
+  ) {
+    return await this.casesService.createCase(createCaseDto, user?.id);
   }
 
   @Get('participants/:participantId/cases')

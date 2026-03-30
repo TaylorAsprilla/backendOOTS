@@ -41,7 +41,10 @@ export class CasesService {
    * @throws NotFoundException - Si el participante no existe
    * @throws BadRequestException - Si hay errores de validación
    */
-  async createCase(createCaseDto: CreateCaseDto): Promise<Case> {
+  async createCase(
+    createCaseDto: CreateCaseDto,
+    createdById?: number,
+  ): Promise<Case> {
     this.logger.log(
       `Iniciando creación de caso para participante ID: ${createCaseDto.participantId}`,
     );
@@ -75,6 +78,7 @@ export class CasesService {
           consultationReason: createCaseDto.consultationReason,
           intervention: createCaseDto.intervention,
           referrals: createCaseDto.referrals,
+          createdById,
         });
 
         const savedCase = await manager.save(newCase);
