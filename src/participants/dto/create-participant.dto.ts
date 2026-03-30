@@ -10,7 +10,7 @@ import {
   IsNumber,
   IsObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 // DTOs para las relaciones anidadas (definidas primero)
@@ -38,6 +38,7 @@ export class CreateEmergencyContactDto {
     example: 'carlos.gonzalez@email.com',
     required: false,
   })
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEmail()
   @IsOptional()
   email?: string;
@@ -47,6 +48,7 @@ export class CreateEmergencyContactDto {
     example: 'Calle 45 # 12-34, Casa 101',
     required: false,
   })
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   @IsOptional()
   @MinLength(10)
@@ -58,6 +60,7 @@ export class CreateEmergencyContactDto {
     example: 'Bogotá',
     required: false,
   })
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
   @IsOptional()
   @MinLength(3)
