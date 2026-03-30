@@ -649,6 +649,46 @@ export class CreateCaseDto {
   bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
 }
 
+export class UpdateCaseDto {
+  @ApiProperty({
+    description: 'Motivo de consulta del caso',
+    required: false,
+    example: 'El participante presenta mejora en síntomas de ansiedad',
+  })
+  @IsOptional()
+  @IsString()
+  consultationReason?: string;
+
+  @ApiProperty({
+    description: 'Intervención del caso',
+    required: false,
+    example: 'Se realizó seguimiento y ajuste del plan de intervención',
+  })
+  @IsOptional()
+  @IsString()
+  intervention?: string;
+
+  @ApiProperty({
+    description: 'Referidos del caso',
+    required: false,
+    example: 'Se refiere a psiquiatría para evaluación',
+  })
+  @IsOptional()
+  @IsString()
+  referrals?: string;
+
+  @ApiProperty({
+    description: 'IDs de situaciones identificadas del catálogo',
+    required: false,
+    type: [Number],
+    example: [1, 3, 5],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  identifiedSituations?: number[];
+}
+
 export class UpdateCaseStatusDto {
   @ApiProperty({
     description: 'Nuevo estado del caso',

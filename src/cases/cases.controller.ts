@@ -21,6 +21,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import {
   CreateCaseDto,
+  UpdateCaseDto,
   UpdateCaseStatusDto,
   CaseResponseDto,
 } from './dto/case.dto';
@@ -606,6 +607,31 @@ export class CasesController {
   })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.casesService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Actualizar datos de un caso',
+    description: 'Actualiza los campos editables de un caso existente.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del caso',
+    type: Number,
+    example: 1,
+  })
+  @ApiBody({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    type: UpdateCaseDto,
+    description: 'Campos del caso a actualizar',
+  })
+  @ApiResponse({ status: 200, description: 'Caso actualizado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Caso no encontrado' })
+  async updateCase(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCaseDto: UpdateCaseDto,
+  ) {
+    return await this.casesService.updateCase(id, updateCaseDto);
   }
 
   @Patch(':id/status')
