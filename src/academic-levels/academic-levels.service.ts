@@ -58,7 +58,7 @@ export class AcademicLevelsService {
    */
   async findAll(): Promise<AcademicLevel[]> {
     return this.academicLevelRepository.find({
-      order: { name: 'ASC' },
+      order: { id: 'ASC' },
     });
   }
 
