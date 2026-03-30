@@ -241,6 +241,14 @@ export class AuthService {
     });
   }
 
+  async checkEmailAvailability(email: string): Promise<{ available: boolean }> {
+    const existing = await this.userRepository.findOne({
+      where: { email },
+      select: ['id'],
+    });
+    return { available: !existing };
+  }
+
   async validateUserCredentials(
     email: string,
     password: string,

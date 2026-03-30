@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Req,
   Patch,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,6 +40,26 @@ import {
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Public()
+  @Get('check-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar disponibilidad de email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Indica si el email está disponible para registro',
+    schema: {
+      type: 'object',
+      properties: {
+        available: { type: 'boolean', example: true },
+      },
+    },
+  })
+  async checkEmail(
+    @Query('email') email: string,
+  ): Promise<{ available: boolean }> {
+    return await this.authService.checkEmailAvailability(email);
+  }
 
   @Public()
   @Post('register')
