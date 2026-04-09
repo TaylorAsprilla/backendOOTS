@@ -22,6 +22,7 @@ import { ClosingNote } from './closing-note.entity';
 import { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
 import { FollowUpPlan } from './follow-up-plan.entity';
 import { Weighing } from './weighing.entity';
+import { FamilyHealthHistory } from './family-health-history.entity';
 
 @Entity('cases')
 export class Case {
@@ -89,6 +90,12 @@ export class Case {
     cascade: true,
   })
   physicalHealthHistories!: PhysicalHealthHistory[];
+
+  // ANTECEDENTES FAMILIARES (física y mental unificados)
+  @OneToMany(() => FamilyHealthHistory, (fhh) => fhh.case, {
+    cascade: true,
+  })
+  familyHealthHistories!: FamilyHealthHistory[];
 
   // 7. HISTORIA DE SALUD MENTAL - ahora es OneToMany
   @OneToMany(() => MentalHealthHistory, (history) => history.case, {

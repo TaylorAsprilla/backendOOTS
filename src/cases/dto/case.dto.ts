@@ -8,10 +8,11 @@ import {
   IsArray,
   IsNumber,
   IsDateString,
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { CaseStatus } from '../../common/enums';
+import { CaseStatus, HealthHistoryType } from '../../common/enums';
 import { CreateFollowUpPlanDto } from '../../participants/dto/create-follow-up-plan.dto';
 
 // ============================================================================
@@ -166,22 +167,6 @@ export class CreatePhysicalHealthHistoryDto {
   medications?: string;
 
   @ApiProperty({
-    description: 'Antecedentes familiares del padre',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  familyHistoryFather?: string;
-
-  @ApiProperty({
-    description: 'Antecedentes familiares de la madre',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  familyHistoryMother?: string;
-
-  @ApiProperty({
     description: 'Observaciones sobre salud física',
     required: false,
   })
@@ -208,6 +193,23 @@ export class CreateMentalHealthHistoryDto {
   medications?: string;
 
   @ApiProperty({
+    description: 'Observaciones sobre salud mental',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  observations?: string;
+}
+
+export class CreateFamilyHealthHistoryDto {
+  @ApiProperty({
+    description: 'Tipo de historial: physical o mental',
+    enum: HealthHistoryType,
+  })
+  @IsEnum(HealthHistoryType)
+  history_type!: HealthHistoryType;
+
+  @ApiProperty({
     description: 'Antecedentes familiares del padre',
     required: false,
   })
@@ -222,14 +224,6 @@ export class CreateMentalHealthHistoryDto {
   @IsOptional()
   @IsString()
   familyHistoryMother?: string;
-
-  @ApiProperty({
-    description: 'Observaciones sobre salud mental',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  observations?: string;
 }
 
 export class CreateInterventionPlanDto {
@@ -436,28 +430,28 @@ export class CreateCaseDto {
   @IsNotEmpty()
   participantId!: number;
 
-  // 2. MOTIVO DE LA CONSULTA - ahora es string simple
+  // 2. MOTIVO DE LA CONSULTA - obligatorio
   @ApiProperty({
     description: 'Motivo de consulta del caso',
-    required: false,
     example:
       'El participante presenta síntomas de ansiedad y estrés post-separación matrimonial',
   })
-  @IsOptional()
   @IsString()
-  consultationReason?: string;
+  @IsNotEmpty()
+  consultationReason!: string;
 
-  // 3. SITUACIONES IDENTIFICADAS
+  // 3. SITUACIONES IDENTIFICADAS - obligatorio (mínimo 1)
   @ApiProperty({
     description: 'IDs de situaciones identificadas del catálogo',
-    required: false,
     type: [Number],
     example: [1, 3, 5, 8],
   })
-  @IsOptional()
   @IsArray()
+  @ArrayMinSize(1, {
+    message: 'Debe indicar al menos una situación identificada',
+  })
   @IsNumber({}, { each: true })
-  identifiedSituations?: number[];
+  identifiedSituations!: number[];
 
   // 4. INTERVENCIÓN INICIAL - ahora es string simple
   @ApiProperty({
@@ -501,8 +495,6 @@ export class CreateCaseDto {
       {
         currentConditions: 'Diabetes tipo 2',
         medications: 'Metformina 500mg',
-        familyHistoryFather: 'Hipertensión',
-        familyHistoryMother: 'Diabetes',
         observations: 'Control cada 3 meses',
       },
     ],
@@ -522,8 +514,6 @@ export class CreateCaseDto {
       {
         currentConditions: 'Ansiedad generalizada',
         medications: 'Sertralina 50mg',
-        familyHistoryFather: 'Depresión',
-        familyHistoryMother: 'Ninguna',
         observations: 'Seguimiento psicológico mensual',
       },
     ],
@@ -533,6 +523,30 @@ export class CreateCaseDto {
   @ValidateNested({ each: true })
   @Type(() => CreateMentalHealthHistoryDto)
   mentalHealthHistory?: CreateMentalHealthHistoryDto[];
+
+  // 7b. ANTECEDENTES FAMILIARES (físicos y mentales unificados)
+  @ApiProperty({
+    description: 'Antecedentes familiares de salud física y mental',
+    required: false,
+    type: [CreateFamilyHealthHistoryDto],
+    example: [
+      {
+        history_type: 'physical',
+        familyHistoryFather: 'Padre con diabetes tipo 2',
+        familyHistoryMother: 'Madre con hipertensión',
+      },
+      {
+        history_type: 'mental',
+        familyHistoryFather: 'Padre con tendencia al aislamiento',
+        familyHistoryMother: 'Madre con episodios de depresión',
+      },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateFamilyHealthHistoryDto)
+  family_health_history?: CreateFamilyHealthHistoryDto[];
 
   // 8. PONDERACIÓN (WEIGHING)
   @ApiProperty({
@@ -596,9 +610,7 @@ export class CreateCaseDto {
   // ============================================================================
 
   @ApiProperty({
-    description:
-      'Miembros del grupo familiar del participante. Se registran al crear el primer caso.',
-    required: false,
+    description: 'Miembros del grupo familiar del participante.',
     type: [CreateFamilyMemberDto],
     example: [
       {
@@ -608,25 +620,16 @@ export class CreateCaseDto {
         familyRelationshipId: 2,
         academicLevelId: 6,
       },
-      {
-        name: 'Ana Sofía González Rodríguez',
-        birthDate: '2010-12-05',
-        occupation: 'Estudiante de Primaria',
-        familyRelationshipId: 1,
-        academicLevelId: 2,
-      },
     ],
   })
-  @IsOptional()
   @IsArray()
+  @ArrayMinSize(1, { message: 'Debe registrar al menos un miembro familiar' })
   @ValidateNested({ each: true })
   @Type(() => CreateFamilyMemberDto)
-  familyMembers?: CreateFamilyMemberDto[];
+  familyMembers!: CreateFamilyMemberDto[];
 
   @ApiProperty({
-    description:
-      'Historia biopsicosocial del participante. Se registra al crear el primer caso.',
-    required: false,
+    description: 'Historia biopsicosocial del participante.',
     type: CreateBioPsychosocialHistoryDto,
     example: {
       completedGrade: 'Profesional Completo',
@@ -642,14 +645,23 @@ export class CreateCaseDto {
         'Casa de 3 habitaciones, 2 baños, sala, comedor, cocina integral y patio trasero',
     },
   })
-  @IsOptional()
   @IsObject()
+  @IsNotEmpty()
   @ValidateNested()
   @Type(() => CreateBioPsychosocialHistoryDto)
-  bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
+  bioPsychosocialHistory!: CreateBioPsychosocialHistoryDto;
 }
 
 export class UpdateCaseDto {
+  @ApiProperty({
+    description: 'ID del participante (solo lectura, no modifica la relación)',
+    required: false,
+    example: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  participantId?: number;
+
   @ApiProperty({
     description: 'Motivo de consulta del caso',
     required: false,
@@ -687,6 +699,113 @@ export class UpdateCaseDto {
   @IsArray()
   @IsNumber({}, { each: true })
   identifiedSituations?: number[];
+
+  @ApiProperty({
+    description: 'Planes de seguimiento del caso',
+    required: false,
+    type: [CreateFollowUpPlanDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateFollowUpPlanDto)
+  followUpPlan?: CreateFollowUpPlanDto[];
+
+  @ApiProperty({
+    description: 'Historial de salud física del participante',
+    required: false,
+    type: [CreatePhysicalHealthHistoryDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePhysicalHealthHistoryDto)
+  physicalHealthHistory?: CreatePhysicalHealthHistoryDto[];
+
+  @ApiProperty({
+    description: 'Historial de salud mental del participante',
+    required: false,
+    type: [CreateMentalHealthHistoryDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateMentalHealthHistoryDto)
+  mentalHealthHistory?: CreateMentalHealthHistoryDto[];
+
+  @ApiProperty({
+    description: 'Historial de salud familiar (físico y/o mental)',
+    required: false,
+    type: [CreateFamilyHealthHistoryDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateFamilyHealthHistoryDto)
+  family_health_history?: CreateFamilyHealthHistoryDto[];
+
+  @ApiProperty({
+    description: 'Ponderación del caso',
+    required: false,
+    type: CreateWeighingDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateWeighingDto)
+  weighing?: CreateWeighingDto;
+
+  @ApiProperty({
+    description: 'Planes de intervención del caso',
+    required: false,
+    type: [CreateInterventionPlanDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateInterventionPlanDto)
+  interventionPlans?: CreateInterventionPlanDto[];
+
+  @ApiProperty({
+    description: 'Notas de progreso del caso',
+    required: false,
+    type: [CreateProgressNoteDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateProgressNoteDto)
+  progressNotes?: CreateProgressNoteDto[];
+
+  @ApiProperty({
+    description: 'Nota de cierre del caso',
+    required: false,
+    type: CreateClosingNoteDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateClosingNoteDto)
+  closingNote?: CreateClosingNoteDto;
+
+  @ApiProperty({
+    description: 'Historia biopsicosocial del participante',
+    required: false,
+    type: CreateBioPsychosocialHistoryDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateBioPsychosocialHistoryDto)
+  bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
+
+  @ApiProperty({
+    description: 'Miembros del grupo familiar del participante',
+    required: false,
+    type: [CreateFamilyMemberDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateFamilyMemberDto)
+  familyMembers?: CreateFamilyMemberDto[];
 }
 
 export class UpdateCaseStatusDto {

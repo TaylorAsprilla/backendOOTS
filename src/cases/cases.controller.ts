@@ -80,10 +80,6 @@ export class CasesController {
             currentConditions:
               'Hipertensión arterial controlada diagnosticada hace 3 años',
             medications: 'Losartán 50mg una vez al día en ayunas',
-            familyHistoryFather:
-              'Padre fallecido a los 65 años por infarto agudo de miocardio',
-            familyHistoryMother:
-              'Madre viva de 68 años con hipertensión arterial',
             observations:
               'Se recomienda continuar con controles médicos regulares',
           },
@@ -91,8 +87,6 @@ export class CasesController {
             currentConditions:
               'Episodios de ansiedad generalizada desde hace 2 años',
             medications: 'Ninguno actualmente',
-            familyHistoryFather: 'Padre tenía tendencia al aislamiento social',
-            familyHistoryMother: 'Madre con episodios de depresión postparto',
             observations:
               'Se sugiere evaluación psicológica especializada complementaria',
           },
@@ -457,10 +451,6 @@ export class CasesController {
           currentConditions:
             'Hipertensión arterial controlada diagnosticada hace 3 años',
           medications: 'Losartán 50mg una vez al día en ayunas',
-          familyHistoryFather:
-            'Padre fallecido a los 65 años por infarto agudo de miocardio',
-          familyHistoryMother:
-            'Madre viva de 68 años con hipertensión arterial',
           allergies: 'Alergia a penicilina',
           observations:
             'Se recomienda continuar con controles médicos regulares cada 6 meses',
@@ -471,8 +461,6 @@ export class CasesController {
           currentConditions:
             'Episodios de ansiedad generalizada desde hace 2 años',
           medications: 'Ninguno actualmente',
-          familyHistoryFather: 'Padre tenía tendencia al aislamiento social',
-          familyHistoryMother: 'Madre con episodios de depresión postparto',
           previousTreatments:
             'Terapia breve hace 1 año (6 sesiones), sin seguimiento posterior',
           observations:

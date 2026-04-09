@@ -359,11 +359,103 @@ export class ParticipantsService {
   async getDemographicStats() {
     const totalParticipants = await this.participantRepository.count();
 
+    // Por género
+    const genderRaw: { gender: string; count: string }[] =
+      await this.participantRepository
+        .createQueryBuilder('p')
+        .leftJoin('p.gender', 'g')
+        .select('g.name', 'gender')
+        .addSelect('COUNT(p.id)', 'count')
+        .groupBy('g.name')
+        .orderBy('count', 'DESC')
+        .getRawMany();
+
+    const byGender = genderRaw.map((row) => ({
+      gender: row.gender ?? 'Sin especificar',
+      count: Number(row.count),
+      percentage:
+        totalParticipants > 0
+          ? Math.round((Number(row.count) / totalParticipants) * 1000) / 10
+          : 0,
+    }));
+
+    // Por ciudad (top 10)
+    const cityRaw: { city: string; count: string }[] =
+      await this.participantRepository
+        .createQueryBuilder('p')
+        .select('p.city', 'city')
+        .addSelect('COUNT(p.id)', 'count')
+        .groupBy('p.city')
+        .orderBy('count', 'DESC')
+        .limit(10)
+        .getRawMany();
+
+    const byCity = cityRaw.map((row) => ({
+      city: row.city ?? 'Sin especificar',
+      count: Number(row.count),
+      percentage:
+        totalParticipants > 0
+          ? Math.round((Number(row.count) / totalParticipants) * 1000) / 10
+          : 0,
+    }));
+
+    // Por rango de edad (calculado en base a birthDate)
+    const ageRanges = [
+      { label: '0-17', min: 0, max: 17 },
+      { label: '18-25', min: 18, max: 25 },
+      { label: '26-35', min: 26, max: 35 },
+      { label: '36-45', min: 36, max: 45 },
+      { label: '46-60', min: 46, max: 60 },
+      { label: '60+', min: 61, max: 999 },
+    ];
+
+    const byAgeRange = await Promise.all(
+      ageRanges.map(async ({ label, min, max }) => {
+        const count = await this.participantRepository
+          .createQueryBuilder('p')
+          .where(
+            'TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) BETWEEN :min AND :max',
+            { min, max },
+          )
+          .getCount();
+
+        return {
+          range: label,
+          count,
+          percentage:
+            totalParticipants > 0
+              ? Math.round((count / totalParticipants) * 1000) / 10
+              : 0,
+        };
+      }),
+    );
+
+    // Por estado civil
+    const maritalRaw: { maritalStatus: string; count: string }[] =
+      await this.participantRepository
+        .createQueryBuilder('p')
+        .leftJoin('p.maritalStatus', 'ms')
+        .select('ms.name', 'maritalStatus')
+        .addSelect('COUNT(p.id)', 'count')
+        .groupBy('ms.name')
+        .orderBy('count', 'DESC')
+        .getRawMany();
+
+    const byMaritalStatus = maritalRaw.map((row) => ({
+      maritalStatus: row.maritalStatus ?? 'Sin especificar',
+      count: Number(row.count),
+      percentage:
+        totalParticipants > 0
+          ? Math.round((Number(row.count) / totalParticipants) * 1000) / 10
+          : 0,
+    }));
+
     return {
       totalParticipants,
-      byGender: [],
-      byCity: [],
-      byAgeRange: [],
+      byGender,
+      byCity,
+      byAgeRange,
+      byMaritalStatus,
     };
   }
 

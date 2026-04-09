@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -396,8 +397,8 @@ export class ParticipantsController {
       },
     },
   })
-  findOne(@Param('id') id: string) {
-    return this.participantsService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.participantsService.findOne(id);
   }
 
   @Patch(':id')
@@ -516,8 +517,11 @@ export class ParticipantsController {
       },
     },
   })
-  update(@Param('id') id: string, @Body() updateDto: UpdateParticipantDto) {
-    return this.participantsService.update(+id, updateDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDto: UpdateParticipantDto,
+  ) {
+    return this.participantsService.update(id, updateDto);
   }
 
   @Delete(':id')
@@ -583,8 +587,8 @@ export class ParticipantsController {
       },
     },
   })
-  remove(@Param('id') id: string) {
-    return this.participantsService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.participantsService.remove(id);
   }
 
   @Get('check-exists/:documentNumber')
@@ -804,9 +808,20 @@ export class ParticipantsController {
           items: {
             type: 'object',
             properties: {
-              range: { type: 'string', example: '25-35' },
+              range: { type: 'string', example: '26-35' },
               count: { type: 'number', example: 40 },
               percentage: { type: 'number', example: 26.7 },
+            },
+          },
+        },
+        byMaritalStatus: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              maritalStatus: { type: 'string', example: 'Soltero/a' },
+              count: { type: 'number', example: 60 },
+              percentage: { type: 'number', example: 40.0 },
             },
           },
         },

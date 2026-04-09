@@ -187,6 +187,12 @@ export class PdfService {
     const bio = caseEntity.bioPsychosocialHistory;
     const phys = caseEntity.physicalHealthHistories?.[0];
     const mental = caseEntity.mentalHealthHistories?.[0];
+    const physFamily = caseEntity.familyHealthHistories?.find(
+      (f) => f.historyType === 'physical',
+    );
+    const mentalFamily = caseEntity.familyHealthHistories?.find(
+      (f) => f.historyType === 'mental',
+    );
     const closing = caseEntity.closingNote;
     const weigh = caseEntity.weighing;
 
@@ -485,9 +491,18 @@ export class PdfService {
               dataTable([
                 ['Condiciones actuales', phys.currentConditions],
                 ['Medicamentos', phys.medications],
-                ['Antecedentes (padre)', phys.familyHistoryFather],
-                ['Antecedentes (madre)', phys.familyHistoryMother],
                 ['Observaciones', phys.observations],
+              ]),
+            ]
+          : []),
+
+        // 4b. Antecedentes familiares físicos
+        ...(physFamily
+          ? [
+              sectionTitle('4b. Antecedentes Familiares (Salud Física)'),
+              dataTable([
+                ['Antecedentes (padre)', physFamily.familyHistoryFather],
+                ['Antecedentes (madre)', physFamily.familyHistoryMother],
               ]),
             ]
           : []),
@@ -499,9 +514,18 @@ export class PdfService {
               dataTable([
                 ['Condiciones actuales', mental.currentConditions],
                 ['Medicamentos', mental.medications],
-                ['Antecedentes (padre)', mental.familyHistoryFather],
-                ['Antecedentes (madre)', mental.familyHistoryMother],
                 ['Observaciones', mental.observations],
+              ]),
+            ]
+          : []),
+
+        // 5b. Antecedentes familiares mentales
+        ...(mentalFamily
+          ? [
+              sectionTitle('5b. Antecedentes Familiares (Salud Mental)'),
+              dataTable([
+                ['Antecedentes (padre)', mentalFamily.familyHistoryFather],
+                ['Antecedentes (madre)', mentalFamily.familyHistoryMother],
               ]),
             ]
           : []),
