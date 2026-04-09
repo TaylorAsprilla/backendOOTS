@@ -9,6 +9,8 @@ import {
   Req,
   Patch,
   Query,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -119,24 +121,22 @@ export class AuthController {
     status: 401,
     description: 'Credenciales inválidas',
   })
-  login(@CurrentUser() user: User, @Req() request: Request): AuthResponseDto {
-    // El usuario ya viene validado por LocalAuthGuard
-    // Capturar la IP del cliente
+  login(@CurrentUser() user: User, @Req() request: Request) {
     const ipAddress =
       (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      request.headers['x-real-ip'] ||
+      (request.headers['x-real-ip'] as string) ||
       request.socket.remoteAddress ||
       request.ip ||
       '0.0.0.0';
 
-    // Guardar geolocalización de forma asíncrona (no bloquea la respuesta)
-    this.authService
-      .saveLoginGeolocation(user.id, ipAddress as string)
-      .catch((error) => {
-        console.error('Error guardando geolocalización:', error);
-      });
+    const userAgent = request.get('user-agent') ?? '';
 
-    return this.authService.generateAuthResponse(user);
+    // Full session flow: tokens + session + history + geo alert
+    return this.authService.loginWithSession(
+      user,
+      ipAddress as string,
+      userAgent,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -310,5 +310,108 @@ export class AuthController {
       updateProfileDto,
     );
     return updatedUser.toResponseObject();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // REFRESH TOKEN
+  // ─────────────────────────────────────────────────────────────
+
+  @Public()
+  @Post('refresh-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Renovar access token',
+    description:
+      'Intercambia un refresh token válido por un nuevo access token y un nuevo refresh token (rotación). ' +
+      'El refresh token antiguo queda revocado inmediatamente.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      example: {
+        access_token: 'eyJhbGc...',
+        refresh_token: 'uuid-uuid',
+        expires_in: 3600,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh token inválido o expirado',
+  })
+  async refreshToken(
+    @Body('refresh_token') refreshToken: string,
+    @Req() request: Request,
+  ) {
+    const ipAddress =
+      (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      request.socket?.remoteAddress ||
+      '0.0.0.0';
+    const userAgent = request.headers['user-agent'] ?? '';
+    return this.authService.refreshAccessToken(
+      refreshToken,
+      ipAddress,
+      userAgent,
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // LOGOUT
+  // ─────────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Cerrar sesión',
+    description: 'Revoca la sesión activa y el refresh token del usuario.',
+  })
+  @ApiResponse({
+    status: 200,
+    schema: { example: { message: 'Sesión cerrada correctamente' } },
+  })
+  async logout(
+    @CurrentUser() user: User,
+    @Body('refresh_token') refreshToken?: string,
+  ) {
+    return this.authService.logout(user.id, refreshToken);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SESSIONS
+  // ─────────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard)
+  @Get('sessions')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Ver sesiones activas del usuario',
+    description: 'Retorna las sesiones activas del usuario autenticado.',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de sesiones activas' })
+  getSessions(@CurrentUser() user: User) {
+    return this.authService.getSessions(user.id);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // LOGIN HISTORY
+  // ─────────────────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard)
+  @Get('login-history')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Historial de inicios de sesión',
+    description:
+      'Retorna el historial paginado de accesos del usuario con geolocalización y nivel de riesgo.',
+  })
+  @ApiResponse({ status: 200, description: 'Historial de accesos' })
+  getLoginHistory(
+    @CurrentUser() user: User,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.authService.getLoginHistory(user.id, page, limit);
   }
 }

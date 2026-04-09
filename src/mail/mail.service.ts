@@ -171,6 +171,82 @@ export class MailService {
   }
 
   /**
+   * Envía alerta de seguridad por nuevo inicio de sesión desde ubicación desconocida
+   */
+  async sendSecurityAlertEmail(
+    user: User,
+    loginInfo: {
+      ip: string;
+      city?: string;
+      country?: string;
+      device?: string;
+      browser?: string;
+      os?: string;
+      risk: string;
+      date: Date;
+    },
+  ): Promise<void> {
+    try {
+      const appUrl =
+        this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+      const riskLabel =
+        loginInfo.risk === 'HIGH'
+          ? '🚨 ALTO'
+          : loginInfo.risk === 'MEDIUM'
+            ? '⚠️ MEDIO'
+            : '✅ BAJO';
+
+      const location =
+        [loginInfo.city, loginInfo.country].filter(Boolean).join(', ') ||
+        loginInfo.ip;
+
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: `Alerta de seguridad: nuevo inicio de sesión - OOTS`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fafafa;">
+            <div style="background-color: #c0392b; color: white; padding: 20px; text-align: center; border-radius: 4px 4px 0 0;">
+              <h1 style="margin: 0; font-size: 22px;">🔐 Alerta de Seguridad</h1>
+              <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">Nuevo inicio de sesión detectado</p>
+            </div>
+            <div style="background: white; padding: 24px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 4px 4px;">
+              <p style="margin: 0 0 16px; font-size: 15px; color: #333;">
+                Hola <strong>${user.firstName} ${user.firstLastName}</strong>,
+              </p>
+              <p style="margin: 0 0 16px; color: #555;">
+                Se detectó un inicio de sesión desde una <strong>ubicación nueva</strong>:
+              </p>
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr style="background:#f8f8f8;"><td style="padding:8px 12px; color:#555; font-size:13px;">📍 Ubicación</td><td style="padding:8px 12px; font-size:13px; font-weight:bold;">${location}</td></tr>
+                <tr><td style="padding:8px 12px; color:#555; font-size:13px;">🌐 IP</td><td style="padding:8px 12px; font-size:13px;">${loginInfo.ip}</td></tr>
+                <tr style="background:#f8f8f8;"><td style="padding:8px 12px; color:#555; font-size:13px;">💻 Dispositivo</td><td style="padding:8px 12px; font-size:13px;">${loginInfo.device || 'Desconocido'}</td></tr>
+                <tr><td style="padding:8px 12px; color:#555; font-size:13px;">🔎 Navegador</td><td style="padding:8px 12px; font-size:13px;">${loginInfo.browser || 'Desconocido'}</td></tr>
+                <tr style="background:#f8f8f8;"><td style="padding:8px 12px; color:#555; font-size:13px;">🖥️ Sistema</td><td style="padding:8px 12px; font-size:13px;">${loginInfo.os || 'Desconocido'}</td></tr>
+                <tr><td style="padding:8px 12px; color:#555; font-size:13px;">📅 Fecha y hora</td><td style="padding:8px 12px; font-size:13px;">${loginInfo.date.toLocaleString('es-CO')}</td></tr>
+                <tr style="background:#f8f8f8;"><td style="padding:8px 12px; color:#555; font-size:13px;">⚠️ Nivel de riesgo</td><td style="padding:8px 12px; font-size:13px; font-weight:bold;">${riskLabel}</td></tr>
+              </table>
+              <p style="margin: 0 0 8px; color:#555; font-size:14px;">
+                ¿No fuiste tú? Cambia tu contraseña inmediatamente:
+              </p>
+              <a href="${appUrl}/auth/change-password"
+                 style="display:inline-block; background:#c0392b; color:white; text-decoration:none; padding:10px 22px; border-radius:4px; font-size:14px;">
+                Cambiar contraseña
+              </a>
+            </div>
+          </div>`,
+      });
+
+      this.logger.log(`Alerta de seguridad enviada a: ${user.email}`);
+    } catch (error) {
+      this.logger.error(
+        `Error enviando alerta de seguridad a ${user.email}:`,
+        error,
+      );
+      // Never block login due to email failure
+    }
+  }
+
+  /**
    * Método para pruebas de envío de correo
    */
   async sendTestEmail(to: string): Promise<void> {

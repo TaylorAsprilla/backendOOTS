@@ -9,15 +9,19 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { UserStatus } from '../../common/enums';
+import { Role } from '../../common/enums/role.enum';
 import { DocumentType } from '../../document-types/entities';
 import { Geolocation } from '../../geolocation/entities/geolocation.entity';
 // import { Participant } from '../../participants/entities/participant.entity';
 
 @Entity('users')
+@Index('IDX_users_status', ['status'])
+@Index('IDX_users_password_reset_token', ['passwordResetToken'])
 export class User {
   @PrimaryGeneratedColumn('increment', {
     name: 'id',
@@ -134,6 +138,14 @@ export class User {
     default: UserStatus.ACTIVE,
   })
   status: UserStatus;
+
+  @Column({
+    name: 'role',
+    type: 'enum',
+    enum: Role,
+    default: Role.ORIENTADOR,
+  })
+  role: Role;
 
   @Column({
     name: 'password_reset_token',

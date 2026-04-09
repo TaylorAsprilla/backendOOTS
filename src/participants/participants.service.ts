@@ -357,13 +357,106 @@ export class ParticipantsService {
   }
 
   async getDemographicStats() {
-    const totalParticipants = await this.participantRepository.count();
+    const totalParticipants = await this.participantRepository.count({
+      where: { deletedAt: undefined as any },
+    });
+
+    const base = () =>
+      this.participantRepository
+        .createQueryBuilder('p')
+        .where('p.deletedAt IS NULL');
+
+    // Por género — 1 query
+    const genderRaw: { gender: string; count: string }[] = await base()
+      .leftJoin('p.gender', 'g')
+      .select("COALESCE(g.name, 'Sin especificar')", 'gender')
+      .addSelect('COUNT(p.id)', 'count')
+      .groupBy('g.name')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    const byGender = genderRaw.map((row) => ({
+      gender: row.gender,
+      count: Number(row.count),
+      percentage:
+        totalParticipants > 0
+          ? Math.round((Number(row.count) / totalParticipants) * 1000) / 10
+          : 0,
+    }));
+
+    // Por ciudad (top 10) — 1 query
+    const cityRaw: { city: string; count: string }[] = await base()
+      .select("COALESCE(p.city, 'Sin especificar')", 'city')
+      .addSelect('COUNT(p.id)', 'count')
+      .groupBy('p.city')
+      .orderBy('count', 'DESC')
+      .limit(10)
+      .getRawMany();
+
+    const byCity = cityRaw.map((row) => ({
+      city: row.city,
+      count: Number(row.count),
+      percentage:
+        totalParticipants > 0
+          ? Math.round((Number(row.count) / totalParticipants) * 1000) / 10
+          : 0,
+    }));
+
+    // Por rango de edad — 1 sola query con CASE WHEN (antes eran 6 queries seriales)
+    const ageRaw: { range_label: string; count: string }[] = await base()
+      .select(
+        `CASE
+          WHEN TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) <= 17  THEN '0-17'
+          WHEN TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) <= 25  THEN '18-25'
+          WHEN TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) <= 35  THEN '26-35'
+          WHEN TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) <= 45  THEN '36-45'
+          WHEN TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) <= 60  THEN '46-60'
+          ELSE '60+'
+        END`,
+        'range_label',
+      )
+      .addSelect('COUNT(p.id)', 'count')
+      .groupBy('range_label')
+      .getRawMany();
+
+    const AGE_RANGE_ORDER = ['0-17', '18-25', '26-35', '36-45', '46-60', '60+'];
+    const ageMap = new Map(ageRaw.map((r) => [r.range_label, Number(r.count)]));
+    const byAgeRange = AGE_RANGE_ORDER.map((range) => {
+      const count = ageMap.get(range) ?? 0;
+      return {
+        range,
+        count,
+        percentage:
+          totalParticipants > 0
+            ? Math.round((count / totalParticipants) * 1000) / 10
+            : 0,
+      };
+    });
+
+    // Por estado civil — 1 query
+    const maritalRaw: { maritalStatus: string; count: string }[] = await base()
+      .leftJoin('p.maritalStatus', 'ms')
+      .select("COALESCE(ms.name, 'Sin especificar')", 'maritalStatus')
+      .addSelect('COUNT(p.id)', 'count')
+      .groupBy('ms.name')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    const byMaritalStatus = maritalRaw.map((row) => ({
+      maritalStatus: row.maritalStatus,
+      count: Number(row.count),
+      percentage:
+        totalParticipants > 0
+          ? Math.round((Number(row.count) / totalParticipants) * 1000) / 10
+          : 0,
+    }));
 
     return {
       totalParticipants,
-      byGender: [],
-      byCity: [],
-      byAgeRange: [],
+      byGender,
+      byCity,
+      byAgeRange,
+      byMaritalStatus,
     };
   }
 

@@ -10,3 +10,4 @@ export { ClosingNote } from './closing-note.entity';
 export { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
 export { EmergencyContact } from './emergency-contact.entity';
 export { ParticipantEmergencyContact } from './participant-emergency-contact.entity';
+export { FamilyHealthHistory } from './family-health-history.entity';

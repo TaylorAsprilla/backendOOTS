@@ -29,20 +29,6 @@ export class MentalHealthHistory {
   medications?: string;
 
   @Column({
-    name: 'family_history_father',
-    type: 'text',
-    nullable: true,
-  })
-  familyHistoryFather?: string;
-
-  @Column({
-    name: 'family_history_mother',
-    type: 'text',
-    nullable: true,
-  })
-  familyHistoryMother?: string;
-
-  @Column({
     name: 'observations',
     type: 'text',
     nullable: true,

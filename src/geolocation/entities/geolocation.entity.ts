@@ -5,10 +5,13 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('geolocations')
+@Index('IDX_geolocations_user_created', ['userId', 'createdAt'])
+@Index('IDX_geolocations_action', ['action'])
 export class Geolocation {
   @PrimaryGeneratedColumn()
   id: number;

@@ -8,6 +8,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { CaseStatus } from '../../common/enums';
 import { Participant } from './participant.entity';
@@ -22,8 +23,11 @@ import { ClosingNote } from './closing-note.entity';
 import { ParticipantIdentifiedSituation } from './participant-identified-situation.entity';
 import { FollowUpPlan } from './follow-up-plan.entity';
 import { Weighing } from './weighing.entity';
+import { FamilyHealthHistory } from './family-health-history.entity';
 
 @Entity('cases')
+@Index('IDX_cases_status', ['status'])
+@Index('IDX_cases_participant_status', ['participantId', 'status'])
 export class Case {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
@@ -89,6 +93,12 @@ export class Case {
     cascade: true,
   })
   physicalHealthHistories!: PhysicalHealthHistory[];
+
+  // ANTECEDENTES FAMILIARES (física y mental unificados)
+  @OneToMany(() => FamilyHealthHistory, (fhh) => fhh.case, {
+    cascade: true,
+  })
+  familyHealthHistories!: FamilyHealthHistory[];
 
   // 7. HISTORIA DE SALUD MENTAL - ahora es OneToMany
   @OneToMany(() => MentalHealthHistory, (history) => history.case, {
