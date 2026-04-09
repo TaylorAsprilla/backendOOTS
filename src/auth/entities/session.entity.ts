@@ -11,17 +11,18 @@ import {
 import { User } from '../../users/entities/user.entity';
 
 @Entity('sessions')
-@Index(['userId', 'isActive'])
+@Index('IDX_sessions_user_active', ['userId', 'isActive'])
+@Index('IDX_sessions_token_hash', ['tokenHash'])
 export class Session {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
-  id: number;
+  id!: number;
 
   @Column({ name: 'user_id', type: 'int', unsigned: true })
-  userId: number;
+  userId!: number;
 
   /** SHA-256 hash of the current access token – used to identify this session */
   @Column({ name: 'token_hash', type: 'varchar', length: 64 })
-  tokenHash: string;
+  tokenHash!: string;
 
   @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress?: string;
@@ -45,18 +46,18 @@ export class Session {
   city?: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Column({ name: 'last_activity', type: 'datetime' })
-  lastActivity: Date;
+  lastActivity!: Date;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 }

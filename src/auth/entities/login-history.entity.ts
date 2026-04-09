@@ -16,16 +16,17 @@ export enum LoginRisk {
 }
 
 @Entity('login_history')
-@Index(['userId', 'createdAt'])
+@Index('IDX_login_history_user_created', ['userId', 'createdAt'])
+@Index('IDX_login_history_risk', ['risk'])
 export class LoginHistory {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
-  id: number;
+  id!: number;
 
   @Column({ name: 'user_id', type: 'int', unsigned: true })
-  userId: number;
+  userId!: number;
 
   @Column({ name: 'ip_address', type: 'varchar', length: 45 })
-  ipAddress: string;
+  ipAddress!: string;
 
   @Column({ name: 'country', type: 'varchar', length: 100, nullable: true })
   country?: string;
@@ -76,7 +77,7 @@ export class LoginHistory {
   os?: string;
 
   @Column({ name: 'is_new_location', type: 'boolean', default: false })
-  isNewLocation: boolean;
+  isNewLocation!: boolean;
 
   @Column({
     name: 'risk',
@@ -84,12 +85,12 @@ export class LoginHistory {
     enum: LoginRisk,
     default: LoginRisk.LOW,
   })
-  risk: LoginRisk;
+  risk!: LoginRisk;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 }

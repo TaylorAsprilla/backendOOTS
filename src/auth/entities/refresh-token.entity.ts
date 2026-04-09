@@ -10,20 +10,20 @@ import {
 import { User } from '../../users/entities/user.entity';
 
 @Entity('refresh_tokens')
-@Index(['tokenHash'], { unique: true })
-@Index(['userId', 'revokedAt'])
+@Index('IDX_refresh_tokens_token_hash', ['tokenHash'], { unique: true })
+@Index('IDX_refresh_tokens_user_revoked', ['userId', 'revokedAt'])
 export class RefreshToken {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
-  id: number;
+  id!: number;
 
   @Column({ name: 'token_hash', type: 'varchar', length: 64, unique: true })
-  tokenHash: string;
+  tokenHash!: string;
 
   @Column({ name: 'user_id', type: 'int', unsigned: true })
-  userId: number;
+  userId!: number;
 
   @Column({ name: 'expires_at', type: 'datetime' })
-  expiresAt: Date;
+  expiresAt!: Date;
 
   @Column({ name: 'revoked_at', type: 'datetime', nullable: true })
   revokedAt?: Date;
@@ -35,11 +35,11 @@ export class RefreshToken {
   userAgent?: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 
   get isExpired(): boolean {
     return this.expiresAt < new Date();

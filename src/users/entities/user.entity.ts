@@ -9,6 +9,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
@@ -19,6 +20,8 @@ import { Geolocation } from '../../geolocation/entities/geolocation.entity';
 // import { Participant } from '../../participants/entities/participant.entity';
 
 @Entity('users')
+@Index('IDX_users_status', ['status'])
+@Index('IDX_users_password_reset_token', ['passwordResetToken'])
 export class User {
   @PrimaryGeneratedColumn('increment', {
     name: 'id',

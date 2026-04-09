@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Gender } from '../../genders/entities';
 import { MaritalStatus } from '../../marital-status/entities';
@@ -18,6 +19,9 @@ import { User } from '../../users/entities/user.entity';
 import { ParticipantEmergencyContact } from './participant-emergency-contact.entity';
 
 @Entity('participants')
+@Index('IDX_participants_deleted_at', ['deletedAt'])
+@Index('IDX_participants_city', ['city'])
+@Index('IDX_participants_deleted_city', ['deletedAt', 'city'])
 export class Participant {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;

@@ -23,7 +23,7 @@ export enum AuditAction {
 @Index(['action', 'createdAt'])
 export class AuditLog {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
-  id: number;
+  id!: number;
 
   @Column({ name: 'user_id', type: 'int', unsigned: true, nullable: true })
   @Index()
@@ -38,7 +38,7 @@ export class AuditLog {
   userEmail?: string;
 
   @Column({ name: 'action', type: 'enum', enum: AuditAction })
-  action: AuditAction;
+  action!: AuditAction;
 
   @Column({ name: 'endpoint', type: 'varchar', length: 255, nullable: true })
   endpoint?: string;
@@ -75,5 +75,5 @@ export class AuditLog {
   description?: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 }

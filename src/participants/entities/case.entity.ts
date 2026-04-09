@@ -8,6 +8,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { CaseStatus } from '../../common/enums';
 import { Participant } from './participant.entity';
@@ -25,6 +26,8 @@ import { Weighing } from './weighing.entity';
 import { FamilyHealthHistory } from './family-health-history.entity';
 
 @Entity('cases')
+@Index('IDX_cases_status', ['status'])
+@Index('IDX_cases_participant_status', ['participantId', 'status'])
 export class Case {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
