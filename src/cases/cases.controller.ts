@@ -5,7 +5,9 @@ import {
   Patch,
   Param,
   Body,
+  Query,
   ParseIntPipe,
+  DefaultValuePipe,
   HttpStatus,
   HttpCode,
   Res,
@@ -1063,7 +1065,10 @@ export class CasesController {
       },
     },
   })
-  async findAll() {
-    return await this.casesService.findAll();
+  async findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+  ) {
+    return await this.casesService.findAll(page, Math.min(limit, 100));
   }
 }

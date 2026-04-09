@@ -413,12 +413,12 @@ export class CasesService {
   }
 
   async findAllByParticipant(participantId: number): Promise<Case[]> {
-    // Verificar que el participante existe
-    const participant = await this.participantRepository.findOne({
+    // Verificar que el participante existe (solo necesitamos confirmar existencia, no cargar la entidad completa)
+    const exists = await this.participantRepository.count({
       where: { id: participantId },
     });
 
-    if (!participant) {
+    if (!exists) {
       throw new NotFoundException(
         `Participante con ID ${participantId} no encontrado`,
       );
@@ -670,11 +670,23 @@ export class CasesService {
     }
   }
 
-  async findAll(): Promise<Case[]> {
-    return await this.caseRepository.find({
+  async findAll(
+    page = 1,
+    limit = 50,
+  ): Promise<{
+    data: Case[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const [data, total] = await this.caseRepository.findAndCount({
       relations: ['participant'],
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findCasesByUser(userId: number): Promise<{

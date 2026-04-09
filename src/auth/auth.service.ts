@@ -8,8 +8,11 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, IsNull } from 'typeorm';
 import { User } from '../users/entities/user.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { Session } from './entities/session.entity';
+import { LoginHistory, LoginRisk } from './entities/login-history.entity';
 import { UsersService } from '../users/users.service';
 import {
   LoginDto,
@@ -20,15 +23,18 @@ import {
   UpdateProfileDto,
 } from './dto';
 import { UserStatus } from '../common/enums';
+import { Role } from '../common/enums/role.enum';
 import { MailService } from '../mail/mail.service';
 import { GeolocationService } from '../geolocation/geolocation.service';
 import * as crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface JwtPayload {
   sub: number;
   email: string;
   firstName: string;
   firstLastName: string;
+  role: Role;
 }
 
 export interface RegisterResponse {
@@ -51,6 +57,7 @@ export interface RegisterResponse {
 
 export interface AuthResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
   expires_in: number;
   user: {
@@ -63,6 +70,7 @@ export interface AuthResponse {
     phoneNumber?: string;
     position?: string;
     headquarters?: string;
+    role: string;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -73,9 +81,18 @@ export interface AuthResponse {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
+  // Refresh token expiry: 7 days
+  private readonly REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokenRepository: Repository<RefreshToken>,
+    @InjectRepository(Session)
+    private readonly sessionRepository: Repository<Session>,
+    @InjectRepository(LoginHistory)
+    private readonly loginHistoryRepository: Repository<LoginHistory>,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
@@ -192,12 +209,14 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
+      role: user.role,
     };
 
     const access_token = this.jwtService.sign(payload);
 
     return {
       access_token,
+      refresh_token: '',
       token_type: 'Bearer',
       expires_in: 3600,
       user: user.toResponseObject(),
@@ -223,12 +242,14 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
+      role: user.role,
     };
 
     const access_token = this.jwtService.sign(payload);
 
     return {
       access_token,
+      refresh_token: '',
       token_type: 'Bearer',
       expires_in: 3600,
       user: user.toResponseObject(),
@@ -297,11 +318,341 @@ export class AuthService {
     try {
       await this.geolocationService.saveGeolocation(userId, ipAddress, 'login');
     } catch (error) {
-      // No lanzamos el error para que no afecte el login
       console.error(
         `Error guardando geolocalización para usuario ${userId}:`,
         error,
       );
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SESSION + SECURITY FEATURES
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Full login flow: tokens, single session enforcement, login history + geo alerts.
+   */
+  async loginWithSession(
+    user: User,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<AuthResponse> {
+    // 1. Generate access token
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      firstLastName: user.firstLastName,
+      role: user.role,
+    };
+    const access_token = this.jwtService.sign(payload);
+    const tokenHash = this.hashValue(access_token);
+
+    // 2. Revoke all previous active sessions (single session enforcement)
+    await this.sessionRepository.update(
+      { userId: user.id, isActive: true },
+      { isActive: false },
+    );
+
+    // 3. Revoke all existing refresh tokens
+    await this.refreshTokenRepository.update(
+      { userId: user.id, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    );
+
+    // 4. Generate and store new refresh token
+    const rawRefreshToken = uuidv4() + '-' + uuidv4();
+    const refreshTokenHash = this.hashValue(rawRefreshToken);
+    const expiresAt = new Date(Date.now() + this.REFRESH_TOKEN_TTL_MS);
+
+    await this.refreshTokenRepository.save(
+      this.refreshTokenRepository.create({
+        tokenHash: refreshTokenHash,
+        userId: user.id,
+        expiresAt,
+        ipAddress,
+        userAgent,
+      }),
+    );
+
+    // 5. Detect device info
+    const { deviceType, browser, os } = this.parseUserAgent(userAgent);
+
+    // 6. Create new session
+    await this.sessionRepository.save(
+      this.sessionRepository.create({
+        userId: user.id,
+        tokenHash,
+        ipAddress,
+        userAgent,
+        deviceType,
+        browser,
+        os,
+        isActive: true,
+        lastActivity: new Date(),
+      }),
+    );
+
+    // 7. Geo + login history (non-blocking)
+    this.recordLoginHistory(user, ipAddress, userAgent, {
+      deviceType,
+      browser,
+      os,
+    }).catch((err) => this.logger.error('Login history error', err));
+
+    return {
+      access_token,
+      refresh_token: rawRefreshToken,
+      token_type: 'Bearer',
+      expires_in: 3600,
+      user: user.toResponseObject(),
+    };
+  }
+
+  /**
+   * Exchange a valid refresh token for a new access token + rotated refresh token.
+   */
+  async refreshAccessToken(
+    rawRefreshToken: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<{
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+  }> {
+    const hash = this.hashValue(rawRefreshToken);
+
+    const stored = await this.refreshTokenRepository.findOne({
+      where: { tokenHash: hash },
+      relations: ['user'],
+    });
+
+    if (!stored || !stored.isValid) {
+      throw new UnauthorizedException('Refresh token inválido o expirado');
+    }
+
+    if (stored.user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Usuario inactivo');
+    }
+
+    // Rotate: revoke old token
+    stored.revokedAt = new Date();
+    await this.refreshTokenRepository.save(stored);
+
+    // Issue new access token
+    const user = stored.user;
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      firstLastName: user.firstLastName,
+      role: user.role,
+    };
+    const access_token = this.jwtService.sign(payload);
+    const newTokenHash = this.hashValue(access_token);
+
+    // Update session token hash
+    await this.sessionRepository.update(
+      { userId: user.id, isActive: true },
+      { tokenHash: newTokenHash, lastActivity: new Date() },
+    );
+
+    // Issue new refresh token
+    const newRawRefresh = uuidv4() + '-' + uuidv4();
+    const newRefreshHash = this.hashValue(newRawRefresh);
+    await this.refreshTokenRepository.save(
+      this.refreshTokenRepository.create({
+        tokenHash: newRefreshHash,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + this.REFRESH_TOKEN_TTL_MS),
+        ipAddress,
+        userAgent,
+      }),
+    );
+
+    return { access_token, refresh_token: newRawRefresh, expires_in: 3600 };
+  }
+
+  /**
+   * Invalidate session and revoke refresh token on logout.
+   */
+  async logout(
+    userId: number,
+    rawRefreshToken?: string,
+  ): Promise<{ message: string }> {
+    // Deactivate all sessions
+    await this.sessionRepository.update(
+      { userId, isActive: true },
+      { isActive: false },
+    );
+
+    // Revoke provided refresh token (or all of them)
+    if (rawRefreshToken) {
+      const hash = this.hashValue(rawRefreshToken);
+      await this.refreshTokenRepository.update(
+        { tokenHash: hash, revokedAt: IsNull() },
+        { revokedAt: new Date() },
+      );
+    } else {
+      await this.refreshTokenRepository.update(
+        { userId, revokedAt: IsNull() },
+        { revokedAt: new Date() },
+      );
+    }
+
+    return { message: 'Sesión cerrada correctamente' };
+  }
+
+  /**
+   * Return active sessions for a user.
+   */
+  async getSessions(userId: number) {
+    return this.sessionRepository.find({
+      where: { userId, isActive: true },
+      order: { lastActivity: 'DESC' },
+      select: [
+        'id',
+        'ipAddress',
+        'deviceType',
+        'browser',
+        'os',
+        'country',
+        'city',
+        'lastActivity',
+        'createdAt',
+      ],
+    });
+  }
+
+  /**
+   * Return paginated login history for a user.
+   */
+  async getLoginHistory(userId: number, page = 1, limit = 20) {
+    const [data, total] = await this.loginHistoryRepository.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // PRIVATE HELPERS
+  // ─────────────────────────────────────────────────────────────
+
+  private hashValue(value: string): string {
+    return crypto.createHash('sha256').update(value).digest('hex');
+  }
+
+  private parseUserAgent(ua: string): {
+    deviceType: string;
+    browser: string;
+    os: string;
+  } {
+    const lower = ua.toLowerCase();
+
+    let deviceType = 'Desktop';
+    if (/tablet|ipad/.test(lower)) deviceType = 'Tablet';
+    else if (/mobile|android|iphone/.test(lower)) deviceType = 'Mobile';
+
+    let browser = 'Unknown';
+    if (/edg\//.test(lower)) browser = 'Edge';
+    else if (/opr\/|opera/.test(lower)) browser = 'Opera';
+    else if (/chrome/.test(lower)) browser = 'Chrome';
+    else if (/firefox/.test(lower)) browser = 'Firefox';
+    else if (/safari/.test(lower)) browser = 'Safari';
+
+    let os = 'Unknown';
+    if (/windows/.test(lower)) os = 'Windows';
+    else if (/android/.test(lower)) os = 'Android';
+    else if (/iphone|ipad|ios/.test(lower)) os = 'iOS';
+    else if (/mac os/.test(lower)) os = 'macOS';
+    else if (/linux/.test(lower)) os = 'Linux';
+
+    return { deviceType, browser, os };
+  }
+
+  private async recordLoginHistory(
+    user: User,
+    ipAddress: string,
+    userAgent: string,
+    device: { deviceType: string; browser: string; os: string },
+  ): Promise<void> {
+    try {
+      // Get geo data
+      const geoData =
+        await this.geolocationService.getGeolocationData(ipAddress);
+
+      // Get last login to compare location
+      const lastLogin = await this.loginHistoryRepository.findOne({
+        where: { userId: user.id },
+        order: { createdAt: 'DESC' },
+      });
+
+      let risk = LoginRisk.LOW;
+      let isNewLocation = false;
+
+      if (geoData && lastLogin) {
+        if (geoData.country !== lastLogin.country) {
+          risk = LoginRisk.HIGH;
+          isNewLocation = true;
+        } else if (geoData.city !== lastLogin.city) {
+          risk = LoginRisk.MEDIUM;
+          isNewLocation = true;
+        }
+      } else if (!lastLogin && geoData?.city) {
+        // First login ever — not alarming, just record it
+        isNewLocation = true;
+      }
+
+      // Save login history record
+      await this.loginHistoryRepository.save(
+        this.loginHistoryRepository.create({
+          userId: user.id,
+          ipAddress: geoData?.query ?? ipAddress,
+          country: geoData?.country,
+          countryCode: geoData?.countryCode,
+          city: geoData?.city,
+          region: geoData?.regionName,
+          lat: geoData?.lat,
+          lon: geoData?.lon,
+          isp: geoData?.isp,
+          timezone: geoData?.timezone,
+          userAgent,
+          deviceType: device.deviceType,
+          browser: device.browser,
+          os: device.os,
+          isNewLocation,
+          risk,
+        }),
+      );
+
+      // Send security alert if new location (not first login)
+      if (isNewLocation && lastLogin && risk !== LoginRisk.LOW) {
+        this.mailService
+          .sendSecurityAlertEmail(user, {
+            ip: geoData?.query ?? ipAddress,
+            city: geoData?.city,
+            country: geoData?.country,
+            device: device.deviceType,
+            browser: device.browser,
+            os: device.os,
+            risk,
+            date: new Date(),
+          })
+          .catch((err) => this.logger.error('Security alert email error', err));
+      }
+    } catch (error) {
+      this.logger.error('recordLoginHistory failed', error);
     }
   }
 

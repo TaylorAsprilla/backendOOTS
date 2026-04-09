@@ -23,6 +23,7 @@ import { HousingTypeModule } from './housing-type/housing-type.module';
 import { FamilyRelationshipModule } from './family-relationship/family-relationship.module';
 import { IdentifiedSituationsModule } from './identified-situations/identified-situations.module';
 import { GeolocationModule } from './geolocation/geolocation.module';
+import { AuditModule } from './audit/audit.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -86,6 +87,7 @@ import configuration from './config/configuration';
     FamilyRelationshipModule,
     IdentifiedSituationsModule,
     GeolocationModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [

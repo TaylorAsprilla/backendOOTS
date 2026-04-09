@@ -107,6 +107,10 @@ async function bootstrap() {
       'Gestión de participantes y sus intervenciones sociales',
     )
     .addTag('users', 'Gestión de usuarios del sistema')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
