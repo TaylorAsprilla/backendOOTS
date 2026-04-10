@@ -1,10 +1,18 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Head, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from './auth/decorators/public.decorator';
 
 @Controller('/')
 @ApiTags('root')
 export class AppController {
+  /** Responde 200 a health checks de Railway/load balancers sin body */
+  @Head()
+  @Public()
+  @HttpCode(200)
+  headRoot() {
+    return;
+  }
+
   @Get()
   @Public()
   @ApiOperation({ summary: 'Health check y bienvenida' })
