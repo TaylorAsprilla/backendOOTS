@@ -16,7 +16,7 @@ export class RefreshToken {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
-  @Column({ name: 'token_hash', type: 'varchar', length: 64, unique: true })
+  @Column({ name: 'token_hash', type: 'varchar', length: 64 })
   tokenHash!: string;
 
   @Column({ name: 'user_id', type: 'int', unsigned: true })
