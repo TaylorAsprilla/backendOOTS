@@ -1,0 +1,174 @@
+<html lang='es'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Bienvenido a OOTS</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        background-color: #fafafa;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 0;
+      }
+      .header {
+        background-color: #333;
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0 0 5px 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+      .header p {
+        margin: 0;
+        font-size: 14px;
+        color: #e0e0e0;
+      }
+      .content {
+        padding: 30px 20px;
+      }
+      .content h2 {
+        margin: 0 0 15px 0;
+        font-size: 20px;
+        color: #333;
+        font-weight: 600;
+      }
+      .content p {
+        color: #666;
+        margin: 12px 0;
+      }
+      .welcome-box {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        margin: 20px 0;
+      }
+      .welcome-box h3 {
+        margin: 0 0 15px 0;
+        font-size: 18px;
+        color: #333;
+        font-weight: 600;
+      }
+      .credentials {
+        background-color: #fff;
+        padding: 15px;
+        border: 1px solid #ddd;
+        margin: 15px 0;
+      }
+      .credentials p {
+        margin: 8px 0;
+        font-size: 14px;
+      }
+      .credentials strong {
+        color: #333;
+      }
+      .button {
+        display: inline-block;
+        background-color: #333;
+        color: white;
+        padding: 12px 30px;
+        text-decoration: none;
+        border: none;
+        font-weight: 500;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .button:hover {
+        background-color: #555;
+      }
+      .info-box {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .info-box p {
+        margin: 0;
+        color: #856404;
+        font-size: 14px;
+      }
+      .footer {
+        text-align: center;
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+        color: #666;
+        font-size: 14px;
+      }
+      .footer p {
+        margin: 5px 0;
+      }
+      .footer-note {
+        font-size: 12px;
+        color: #999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class='header'>
+        <h1>¡Bienvenido a OOTS!</h1>
+        <p>Sistema de Gestión - OOTS Colombia</p>
+      </div>
+
+      <div class='content'>
+        <h2>Hola {{nombre}},</h2>
+
+        <p>
+          ¡Te damos la bienvenida a OOTS! Tu cuenta ha sido creada exitosamente
+          el
+          {{fechaRegistro}}.
+        </p>
+
+        <div class='welcome-box'>
+          <h3>Tus Credenciales de Acceso</h3>
+
+          <div class='credentials'>
+            <p><strong>Correo electrónico:</strong> {{email}}</p>
+            <p><strong>Contraseña:</strong> {{password}}</p>
+          </div>
+
+          <div class='info-box'>
+            <p>
+              ⚠️
+              <strong>Importante:</strong>
+              Por tu seguridad, te recomendamos cambiar tu contraseña al iniciar
+              sesión por primera vez.
+            </p>
+          </div>
+        </div>
+
+        <p style='text-align: center;'>
+          <a href='{{url}}' class='button'>Acceder al Sistema</a>
+        </p>
+
+        <p>
+          Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.
+        </p>
+
+        <p>
+          Gracias por confiar en OOTS.
+        </p>
+      </div>
+
+      <div class='footer'>
+        <p><strong>OOTS Colombia</strong></p>
+        <p>Sistema de Gestión</p>
+        <p class='footer-note'>
+          Este es un correo automático, por favor no respondas a este mensaje.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
