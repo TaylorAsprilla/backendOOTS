@@ -18,12 +18,11 @@ export default () => ({
     origins: ['http://localhost:4200', 'http://127.0.0.1:4200'],
   },
   mail: {
-    host: process.env.MAIL_HOST || 'smtp.gmail.com',
+    host: process.env.MAIL_HOST || 'smtp.office365.com',
     port: parseInt(process.env.MAIL_PORT || '587', 10),
     user: process.env.MAIL_USER || '',
     password: process.env.MAIL_PASS || '',
-    from:
-      process.env.MAIL_FROM || '"OOTS Colombia" <no-reply@ootscolombia.com>',
+    from: process.env.MAIL_FROM || '"OOTS Colombia" <mi@ootspr.org>',
   },
   app: {
     url: process.env.APP_URL || 'http://localhost:3000',
