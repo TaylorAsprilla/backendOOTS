@@ -83,7 +83,7 @@ export class CreateEmergencyContactDto {
   )
   @IsString()
   @IsOptional()
-  @MinLength(3)
+  @MinLength(1)
   @MaxLength(50)
   state?: string;
 
