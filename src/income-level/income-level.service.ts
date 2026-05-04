@@ -33,13 +33,13 @@ export class IncomeLevelService {
   }
 
   async findAll(): Promise<IncomeLevel[]> {
-    return this.incomeLevelRepository.find({ order: { name: 'ASC' } });
+    return this.incomeLevelRepository.find({ order: { id: 'ASC' } });
   }
 
   async findActive(): Promise<IncomeLevel[]> {
     return this.incomeLevelRepository.find({
       where: { isActive: true },
-      order: { name: 'ASC' },
+      order: { id: 'ASC' },
     });
   }
 
