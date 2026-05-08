@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ParticipantsModule } from './participants/participants.module';
 import { CasesModule } from './cases/cases.module';
+import { DocumentsModule } from './documents/documents.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { MailModule } from './mail/mail.module';
 import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
@@ -74,6 +75,7 @@ import configuration from './config/configuration';
     AuthModule,
     ParticipantsModule,
     CasesModule,
+    DocumentsModule,
     CatalogsModule,
     MailModule,
     AcademicLevelsModule,
