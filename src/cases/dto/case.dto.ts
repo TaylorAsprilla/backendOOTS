@@ -11,7 +11,7 @@ import {
   ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CaseStatus, HealthHistoryType } from '../../common/enums';
 import { CreateFollowUpPlanDto } from '../../participants/dto/create-follow-up-plan.dto';
 
@@ -42,7 +42,7 @@ export class CreateFamilyMemberDto {
   })
   @IsOptional()
   @IsString()
-  occupation: string;
+  occupation?: string;
 
   @ApiProperty({
     description:
@@ -59,7 +59,7 @@ export class CreateFamilyMemberDto {
   })
   @IsOptional()
   @IsNumber()
-  academicLevelId: number;
+  academicLevelId?: number;
 }
 
 export class CreateBioPsychosocialHistoryDto {
@@ -609,8 +609,9 @@ export class CreateCaseDto {
   // INFORMACIÓN FAMILIAR Y BIOPSICOSOCIAL (del participante)
   // ============================================================================
 
-  @ApiProperty({
-    description: 'Miembros del grupo familiar del participante.',
+  @ApiPropertyOptional({
+    description:
+      'Miembros del grupo familiar del participante. Opcional: puede omitirse o enviarse vacío si el participante vive solo o no aplica.',
     type: [CreateFamilyMemberDto],
     example: [
       {
@@ -622,11 +623,11 @@ export class CreateCaseDto {
       },
     ],
   })
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1, { message: 'Debe registrar al menos un miembro familiar' })
   @ValidateNested({ each: true })
   @Type(() => CreateFamilyMemberDto)
-  familyMembers!: CreateFamilyMemberDto[];
+  familyMembers?: CreateFamilyMemberDto[];
 
   @ApiProperty({
     description: 'Historia biopsicosocial del participante.',
@@ -821,29 +822,29 @@ export class UpdateCaseStatusDto {
 
 export class CaseResponseDto {
   @ApiProperty({ description: 'ID único del caso', example: 1 })
-  id: number;
+  id!: number;
 
   @ApiProperty({ description: 'Número único del caso', example: 'CASE-0001' })
-  caseNumber: string;
+  caseNumber!: string;
 
   @ApiProperty({
     description: 'Título del caso',
     example: 'Consulta por ansiedad post-separación',
   })
-  title: string;
+  title!: string;
 
   @ApiProperty({ description: 'Descripción del caso' })
-  description: string;
+  description!: string;
 
   @ApiProperty({ description: 'Estado del caso', enum: CaseStatus })
-  status: CaseStatus;
+  status!: CaseStatus;
 
   @ApiProperty({ description: 'ID del participante', example: 1 })
-  participantId: number;
+  participantId!: number;
 
   @ApiProperty({ description: 'Fecha de creación' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({ description: 'Fecha de última actualización' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
