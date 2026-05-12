@@ -9,13 +9,35 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { UserStatus } from '../common/enums';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly mailService: MailService,
   ) {}
+
+  private generatePassword(length = 12): string {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const special = '!@#$%&*';
+    const all = upper + lower + digits + special;
+    let password =
+      upper[Math.floor(Math.random() * upper.length)] +
+      lower[Math.floor(Math.random() * lower.length)] +
+      digits[Math.floor(Math.random() * digits.length)] +
+      special[Math.floor(Math.random() * special.length)];
+    for (let i = password.length; i < length; i++) {
+      password += all[Math.floor(Math.random() * all.length)];
+    }
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+  }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     // Verificar si ya existe un usuario con el mismo email
@@ -40,9 +62,13 @@ export class UsersService {
       }
     }
 
+    // Generar contraseña si no se proporcionó
+    const plainPassword = createUserDto.password ?? this.generatePassword();
+
     // Crear el nuevo usuario con conversión de fecha
     const newUser = this.userRepository.create({
       ...createUserDto,
+      password: plainPassword,
       birthDate: createUserDto.birthDate
         ? new Date(createUserDto.birthDate)
         : undefined,
@@ -50,6 +76,11 @@ export class UsersService {
 
     // Guardar el usuario en la base de datos
     const savedUser = await this.userRepository.save(newUser);
+
+    // Enviar email con credenciales
+    this.mailService
+      .sendUserRegistrationEmail(savedUser, plainPassword)
+      .catch(() => {});
 
     // Remover la contraseña de la respuesta por seguridad
     return this.excludePassword(savedUser);

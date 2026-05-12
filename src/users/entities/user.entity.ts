@@ -155,6 +155,15 @@ export class User {
   country?: Country;
 
   @Column({
+    name: 'mita_number',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+    unique: true,
+  })
+  mitaNumber?: number;
+
+  @Column({
     name: 'password_reset_token',
     type: 'varchar',
     length: 255,
