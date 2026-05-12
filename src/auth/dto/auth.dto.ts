@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsDateString,
   IsNumber,
+  IsInt,
   IsPositive,
 } from 'class-validator';
 
@@ -68,17 +69,18 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    description: 'Contraseña del usuario',
+    description: 'Contraseña del usuario (opcional, se genera automáticamente)',
     example: 'password123',
     minLength: 8,
+    required: false,
   })
   @IsString({ message: 'La contraseña debe ser un texto' })
-  @IsNotEmpty({ message: 'La contraseña es requerida' })
+  @IsOptional()
   @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
   @MaxLength(255, {
     message: 'La contraseña no puede exceder 255 caracteres',
   })
-  password: string;
+  password?: string;
 
   @ApiProperty({
     description: 'Número de teléfono del usuario',
@@ -179,6 +181,26 @@ export class RegisterDto {
   @IsPositive({ message: 'El ID del rol debe ser un número positivo' })
   @IsOptional()
   roleId?: number;
+
+  @ApiProperty({
+    description: 'ID del país del usuario',
+    example: 2,
+    required: false,
+  })
+  @IsInt({ message: 'El país debe ser un número entero' })
+  @IsPositive({ message: 'El ID del país debe ser un número positivo' })
+  @IsOptional()
+  countryId?: number;
+
+  @ApiProperty({
+    description: 'Número MITA del usuario',
+    example: 56,
+    required: false,
+  })
+  @IsInt({ message: 'El número MITA debe ser un número entero' })
+  @IsPositive({ message: 'El número MITA debe ser un número positivo' })
+  @IsOptional()
+  mitaNumber?: number;
 }
 
 export class LoginDto {

@@ -270,4 +270,26 @@ export class UsersService {
 
     return this.excludePassword(restoredUser!);
   }
+
+  async adminResetPassword(
+    id: number,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { id, status: UserStatus.ACTIVE },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    user.password = newPassword;
+    await this.userRepository.save(user);
+
+    this.mailService
+      .sendUserRegistrationEmail(user, newPassword)
+      .catch(() => {});
+
+    return { message: 'Contraseña restablecida exitosamente' };
+  }
 }

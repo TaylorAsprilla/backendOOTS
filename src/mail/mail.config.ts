@@ -18,7 +18,7 @@ export const getMailConfig = (configService: ConfigService): MailerOptions => {
       from: `${configService.get('MAILER_FROM_NAME')} <${configService.get('MAILER_FROM')}>`,
     },
     template: {
-      dir: join(__dirname, 'templates'),
+      dir: join(process.cwd(), 'src', 'mail', 'templates'),
       adapter: new HandlebarsAdapter(),
       options: {
         strict: false,

@@ -159,13 +159,14 @@ export class AuthService {
       }
 
       // Crear el nuevo usuario directamente
+      const plainPassword = registerDto.password ?? this.generatePassword();
       const newUser = this.userRepository.create({
         firstName: registerDto.firstName,
         secondName: registerDto.secondName,
         firstLastName: registerDto.firstLastName,
         secondLastName: registerDto.secondLastName,
         email: registerDto.email,
-        password: registerDto.password,
+        password: plainPassword,
         phoneNumber: registerDto.phoneNumber,
         position: registerDto.position,
         headquarters: registerDto.headquarters,
@@ -177,6 +178,8 @@ export class AuthService {
           : undefined,
         documentTypeId: registerDto.documentTypeId,
         roleId: registerDto.roleId,
+        countryId: registerDto.countryId,
+        mitaNumber: registerDto.mitaNumber,
         status: UserStatus.ACTIVE,
       });
 
@@ -186,7 +189,7 @@ export class AuthService {
       // Enviar correo de bienvenida de forma asíncrona (no bloquea la respuesta)
       // Pasar la contraseña original (sin hashear) para mostrarla en el correo
       this.mailService
-        .sendUserRegistrationEmail(savedUser, registerDto.password)
+        .sendUserRegistrationEmail(savedUser, plainPassword)
         .catch((error) => {
           // Solo log del error, no afecta el registro del usuario
           console.error('Error enviando correo de bienvenida:', error);
@@ -1034,5 +1037,20 @@ export class AuthService {
     }
 
     return reloadedUser;
+  }
+
+  private generatePassword(length = 12): string {
+    const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lower = 'abcdefghijklmnopqrstuvwxyz';
+    const digits = '0123456789';
+    const special = '!@#$%&*';
+    const all = upper + lower + digits + special;
+    const rand = (chars: string) =>
+      chars[Math.floor(Math.random() * chars.length)];
+    const password = [rand(upper), rand(lower), rand(digits), rand(special)];
+    for (let i = password.length; i < length; i++) {
+      password.push(rand(all));
+    }
+    return password.sort(() => Math.random() - 0.5).join('');
   }
 }
