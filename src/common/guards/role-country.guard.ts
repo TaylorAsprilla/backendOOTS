@@ -25,10 +25,10 @@ export class RoleCountryGuard implements CanActivate {
     if (!user) throw new ForbiddenException('No autenticado');
 
     // ADMIN ve todo
-    if (user.role === Role.ADMIN) return true;
+    if (user.role?.name === Role.ADMIN) return true;
 
     // ADMIN_COUNTRY solo accede a su país
-    if (user.role === Role.ADMIN_COUNTRY) {
+    if (user.role?.name === Role.ADMIN_COUNTRY) {
       // Si hay parámetro countryId, debe coincidir
       const countryId = this.extractCountryId(request);
       if (countryId && Number(user.countryId) !== Number(countryId)) {
@@ -38,7 +38,7 @@ export class RoleCountryGuard implements CanActivate {
     }
 
     // USER solo accede a lo asignado a él
-    if (user.role === Role.USER) {
+    if (user.role?.name === Role.USER) {
       const userId = this.extractUserId(request);
       if (userId && Number(user.id) !== Number(userId)) {
         throw new ForbiddenException('Solo puede acceder a sus propios datos');

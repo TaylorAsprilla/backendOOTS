@@ -25,6 +25,7 @@ import { FamilyRelationshipModule } from './family-relationship/family-relations
 import { IdentifiedSituationsModule } from './identified-situations/identified-situations.module';
 import { GeolocationModule } from './geolocation/geolocation.module';
 import { AuditModule } from './audit/audit.module';
+import { RolesModule } from './roles/roles.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -90,6 +91,7 @@ import configuration from './config/configuration';
     IdentifiedSituationsModule,
     GeolocationModule,
     AuditModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [

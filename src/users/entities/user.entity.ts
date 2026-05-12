@@ -14,7 +14,7 @@ import {
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { UserStatus } from '../../common/enums';
-import { Role } from '../../common/enums/role.enum';
+import { RoleEntity } from '../../roles/entities/role.entity';
 import { DocumentType } from '../../document-types/entities';
 import { Country } from '../../catalogs/entities/country.entity';
 import { Geolocation } from '../../geolocation/entities/geolocation.entity';
@@ -140,13 +140,12 @@ export class User {
   })
   status!: UserStatus;
 
-  @Column({
-    name: 'role',
-    type: 'enum',
-    enum: Role,
-    default: Role.ORIENTADOR,
-  })
-  role!: Role;
+  @Column({ name: 'role_id', type: 'int', unsigned: true, nullable: true })
+  roleId?: number;
+
+  @ManyToOne(() => RoleEntity, { eager: true, nullable: true })
+  @JoinColumn({ name: 'role_id' })
+  role?: RoleEntity;
 
   @Column({ name: 'country_id', type: 'int', unsigned: true, nullable: true })
   countryId?: number;

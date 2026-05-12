@@ -88,4 +88,9 @@ export class CreateUserDto {
   @IsPositive()
   @IsNotEmpty()
   documentTypeId: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  roleId?: number;
 }

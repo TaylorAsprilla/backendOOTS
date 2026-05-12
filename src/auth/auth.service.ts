@@ -23,7 +23,6 @@ import {
   UpdateProfileDto,
 } from './dto';
 import { UserStatus } from '../common/enums';
-import { Role } from '../common/enums/role.enum';
 import { MailService } from '../mail/mail.service';
 import { GeolocationService } from '../geolocation/geolocation.service';
 import * as crypto from 'crypto';
@@ -34,7 +33,7 @@ export interface JwtPayload {
   email: string;
   firstName: string;
   firstLastName: string;
-  role: Role;
+  role: string;
 }
 
 export interface RegisterResponse {
@@ -141,6 +140,7 @@ export class AuthService {
           ? new Date(registerDto.birthDate)
           : undefined,
         documentTypeId: registerDto.documentTypeId,
+        roleId: registerDto.roleId,
         status: UserStatus.ACTIVE,
       });
 
@@ -176,21 +176,7 @@ export class AuthService {
     // Buscar usuario por email (solo usuarios activos)
     const user = await this.userRepository.findOne({
       where: { email, status: UserStatus.ACTIVE },
-      select: [
-        'id',
-        'email',
-        'password',
-        'firstName',
-        'secondName',
-        'firstLastName',
-        'secondLastName',
-        'phoneNumber',
-        'position',
-        'headquarters',
-        'status',
-        'createdAt',
-        'updatedAt',
-      ],
+      relations: ['role'],
     });
 
     if (!user) {
@@ -209,7 +195,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
 
     const access_token = this.jwtService.sign(payload);
@@ -242,7 +228,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
 
     const access_token = this.jwtService.sign(payload);
@@ -343,7 +329,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
     const access_token = this.jwtService.sign(payload);
     const tokenHash = this.hashValue(access_token);
@@ -425,7 +411,7 @@ export class AuthService {
 
     const stored = await this.refreshTokenRepository.findOne({
       where: { tokenHash: hash },
-      relations: ['user'],
+      relations: ['user', 'user.role'],
     });
 
     if (!stored || !stored.isValid) {
@@ -447,7 +433,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
     const access_token = this.jwtService.sign(payload);
     const newTokenHash = this.hashValue(access_token);
