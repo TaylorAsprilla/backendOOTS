@@ -11,6 +11,7 @@ import {
   HttpStatus,
   HttpCode,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -19,6 +20,8 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
 import { PdfService } from './pdf.service';
@@ -30,6 +33,9 @@ import {
   UpdateCaseStatusDto,
   CaseResponseDto,
 } from './dto/case.dto';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Role, CaseStatus } from '../common/enums';
 
 @ApiTags('Casos')
 @Controller('cases')
@@ -360,6 +366,88 @@ export class CasesController {
     @Param('participantId', ParseIntPipe) participantId: number,
   ) {
     return await this.casesService.findAllByParticipant(participantId);
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // SUPERVISIÓN: listar todos los casos del sistema
+  // ────────────────────────────────────────────────────────────────────────────
+  @Get('supervision')
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Listar todos los casos (vista de supervisión)',
+    description:
+      'Retorna todos los casos del sistema con datos del participante y del profesional responsable. ' +
+      'Restringido a roles SUPERVISOR, COORDINADOR y ADMIN. Soporta paginación y filtros opcionales.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    example: 1,
+    description: 'Página (1-based). Por defecto: 1',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 50,
+    description: 'Elementos por página (máx. 100). Por defecto: 50',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: CaseStatus,
+    description: 'Filtrar por estado del caso',
+  })
+  @ApiQuery({
+    name: 'professionalId',
+    required: false,
+    type: Number,
+    description: 'Filtrar por ID del profesional responsable (createdById)',
+  })
+  @ApiQuery({
+    name: 'participantId',
+    required: false,
+    type: Number,
+    description: 'Filtrar por ID del participante',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description:
+      'Búsqueda por número de caso, documento o nombre/apellidos del participante',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Listado paginado de casos para supervisión',
+  })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  async findAllForSupervision(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @Query('status') status?: CaseStatus,
+    @Query('professionalId') professionalIdRaw?: string,
+    @Query('participantId') participantIdRaw?: string,
+    @Query('search') search?: string,
+  ) {
+    const professionalId = professionalIdRaw
+      ? parseInt(professionalIdRaw, 10)
+      : undefined;
+    const participantId = participantIdRaw
+      ? parseInt(participantIdRaw, 10)
+      : undefined;
+
+    return await this.casesService.findAllForSupervision({
+      page,
+      limit,
+      status,
+      professionalId: Number.isFinite(professionalId) ? professionalId : undefined,
+      participantId: Number.isFinite(participantId) ? participantId : undefined,
+      search,
+    });
   }
 
   @Get(':id')
