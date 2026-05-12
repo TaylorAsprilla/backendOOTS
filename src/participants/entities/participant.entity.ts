@@ -16,6 +16,7 @@ import { HealthInsurance } from '../../health-insurance/entities';
 import { DocumentType } from '../../document-types/entities';
 import { Case } from './case.entity';
 import { User } from '../../users/entities/user.entity';
+import { Country } from '../../catalogs/entities/country.entity';
 import { ParticipantEmergencyContact } from './participant-emergency-contact.entity';
 
 @Entity('participants')
@@ -79,6 +80,13 @@ export class Participant {
 
   @Column({ name: 'city', type: 'varchar', length: 50 })
   city!: string;
+
+  @Column({ name: 'country_id', type: 'int', unsigned: true, nullable: true })
+  countryId?: number;
+
+  @ManyToOne(() => Country, { eager: true, nullable: true })
+  @JoinColumn({ name: 'country_id' })
+  country?: Country;
 
   @Column({ name: 'state', type: 'varchar', length: 50, nullable: true })
   state?: string;

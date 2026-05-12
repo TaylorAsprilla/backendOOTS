@@ -35,10 +35,13 @@ import {
 } from './dto/case.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoleCountryGuard } from '../common/guards/role-country.guard';
 import { Role, CaseStatus } from '../common/enums';
 
 @ApiTags('Casos')
 @Controller('cases')
+@UseGuards(JwtAuthGuard, RoleCountryGuard)
 export class CasesController {
   constructor(
     private readonly casesService: CasesService,
@@ -444,7 +447,9 @@ export class CasesController {
       page,
       limit,
       status,
-      professionalId: Number.isFinite(professionalId) ? professionalId : undefined,
+      professionalId: Number.isFinite(professionalId)
+        ? professionalId
+        : undefined,
       participantId: Number.isFinite(participantId) ? participantId : undefined,
       search,
     });
