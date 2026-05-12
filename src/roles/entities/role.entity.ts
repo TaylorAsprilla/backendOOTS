@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity('roles')
 export class RoleEntity {
@@ -18,12 +19,15 @@ export class RoleEntity {
   @Column({ name: 'description', type: 'varchar', length: 255, nullable: true })
   description?: string;
 
+  @Exclude()
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Exclude()
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
+  @Exclude()
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 }

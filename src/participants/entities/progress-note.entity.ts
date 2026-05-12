@@ -29,6 +29,7 @@ export class ProgressNote {
   @Column({
     name: 'process_type_id',
     type: 'int',
+    unsigned: true,
     nullable: true,
   })
   processTypeId?: number;

@@ -23,7 +23,6 @@ import {
   UpdateProfileDto,
 } from './dto';
 import { UserStatus } from '../common/enums';
-import { RoleEntity } from '../roles/entities/role.entity';
 import { MailService } from '../mail/mail.service';
 import { GeolocationService } from '../geolocation/geolocation.service';
 import * as crypto from 'crypto';
@@ -58,8 +57,6 @@ export interface RegisterResponse {
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
-  token_type: string;
-  expires_in: number;
   user: {
     id: number;
     email: string;
@@ -70,7 +67,12 @@ export interface AuthResponse {
     phoneNumber?: string;
     position?: string;
     headquarters?: string;
-    role?: RoleEntity;
+    role?: {
+      id: number;
+      name: string;
+      description?: string;
+    };
+    country?: { id: number; name: string; iso?: string; locale?: string };
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -98,6 +100,39 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly geolocationService: GeolocationService,
   ) {}
+
+  private buildAuthUser(user: User): AuthResponse['user'] {
+    const base = user.toResponseObject();
+    return {
+      id: base.id,
+      email: base.email,
+      firstName: base.firstName,
+      secondName: base.secondName,
+      firstLastName: base.firstLastName,
+      secondLastName: base.secondLastName,
+      phoneNumber: base.phoneNumber,
+      position: base.position,
+      headquarters: base.headquarters,
+      status: base.status,
+      createdAt: base.createdAt,
+      updatedAt: base.updatedAt,
+      ...(user.role && {
+        role: {
+          id: user.role.id,
+          name: user.role.name,
+          description: user.role.description,
+        },
+      }),
+      ...(user.country && {
+        country: {
+          id: user.country.id,
+          name: user.country.name,
+          iso: user.country.iso,
+          locale: user.country.locale,
+        },
+      }),
+    };
+  }
 
   async register(registerDto: RegisterDto): Promise<RegisterResponse> {
     try {
@@ -204,9 +239,7 @@ export class AuthService {
     return {
       access_token,
       refresh_token: '',
-      token_type: 'Bearer',
-      expires_in: 3600,
-      user: user.toResponseObject(),
+      user: this.buildAuthUser(user),
     };
   }
 
@@ -237,9 +270,7 @@ export class AuthService {
     return {
       access_token,
       refresh_token: '',
-      token_type: 'Bearer',
-      expires_in: 3600,
-      user: user.toResponseObject(),
+      user: this.buildAuthUser(user),
     };
   }
 
@@ -324,6 +355,7 @@ export class AuthService {
     ipAddress: string,
     userAgent: string,
   ): Promise<AuthResponse> {
+    console.log('Entrooooooooooooo');
     // 1. Generate access token
     const payload: JwtPayload = {
       sub: user.id,
@@ -387,13 +419,13 @@ export class AuthService {
       os,
     }).catch((err) => this.logger.error('Login history error', err));
 
-    return {
+    const response = {
       access_token,
       refresh_token: rawRefreshToken,
-      token_type: 'Bearer',
-      expires_in: 3600,
-      user: user.toResponseObject(),
+      user: this.buildAuthUser(user),
     };
+    console.log('LOGIN RESPONSE:', response);
+    return response;
   }
 
   /**
@@ -977,50 +1009,6 @@ export class AuthService {
       user.documentTypeId = updateProfileDto.documentTypeId;
     }
 
-    // Actualizar redes sociales
-    if (
-      updateProfileDto.facebook !== undefined &&
-      updateProfileDto.facebook !== user.facebook
-    ) {
-      changes.facebook = { old: user.facebook, new: updateProfileDto.facebook };
-      user.facebook = updateProfileDto.facebook;
-    }
-
-    if (
-      updateProfileDto.twitter !== undefined &&
-      updateProfileDto.twitter !== user.twitter
-    ) {
-      changes.twitter = { old: user.twitter, new: updateProfileDto.twitter };
-      user.twitter = updateProfileDto.twitter;
-    }
-
-    if (
-      updateProfileDto.instagram !== undefined &&
-      updateProfileDto.instagram !== user.instagram
-    ) {
-      changes.instagram = {
-        old: user.instagram,
-        new: updateProfileDto.instagram,
-      };
-      user.instagram = updateProfileDto.instagram;
-    }
-
-    if (
-      updateProfileDto.linkedin !== undefined &&
-      updateProfileDto.linkedin !== user.linkedin
-    ) {
-      changes.linkedin = { old: user.linkedin, new: updateProfileDto.linkedin };
-      user.linkedin = updateProfileDto.linkedin;
-    }
-
-    if (
-      updateProfileDto.github !== undefined &&
-      updateProfileDto.github !== user.github
-    ) {
-      changes.github = { old: user.github, new: updateProfileDto.github };
-      user.github = updateProfileDto.github;
-    }
-
     // Registrar cambios en log de auditoría
     if (Object.keys(changes).length > 0) {
       this.logger.log(
@@ -1038,7 +1026,7 @@ export class AuthService {
     // Recargar con relaciones para retornar completo
     const reloadedUser = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['documentType'],
+      relations: ['documentType', 'country'],
     });
 
     if (!reloadedUser) {

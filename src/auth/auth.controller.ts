@@ -412,6 +412,10 @@ export class AuthController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
+    console.log(
+      `Obteniendo historial de login para usuario ${user.email}, página ${page}, límite ${limit}`,
+    );
+
     return this.authService.getLoginHistory(user.id, page, limit);
   }
 }
