@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity('countries')
 export class Country {
@@ -32,9 +33,50 @@ export class Country {
   })
   locale?: string;
 
+  @Column({
+    name: 'currency',
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+  })
+  currency?: string;
+
+  @Column({
+    name: 'phone_prefix',
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+  })
+  phonePrefix?: string;
+
+  @Column({
+    name: 'flag_url',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  flagUrl?: string;
+
+  @Column({
+    name: 'default_language',
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+  })
+  defaultLanguage?: string;
+
+  @Column({
+    name: 'is_active',
+    type: 'boolean',
+    default: true,
+  })
+  isActive!: boolean;
+
+  @Exclude()
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
+  @Exclude()
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 }
