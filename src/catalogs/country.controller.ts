@@ -42,7 +42,9 @@ export class CountryController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Crear país' })
   @ApiResponse({ status: 201, type: Country })
-  async create(@Body() body: { name: string; code: string }): Promise<Country> {
+  async create(
+    @Body() body: { name: string; iso?: string; locale?: string },
+  ): Promise<Country> {
     const country = this.countryRepo.create(body);
     return this.countryRepo.save(country);
   }
@@ -53,7 +55,7 @@ export class CountryController {
   @ApiResponse({ status: 200, type: Country })
   async update(
     @Param('id') id: number,
-    @Body() body: { name?: string; code?: string },
+    @Body() body: { name?: string; iso?: string; locale?: string },
   ): Promise<Country> {
     await this.countryRepo.update(id, body);
     return this.countryRepo.findOneByOrFail({ id });

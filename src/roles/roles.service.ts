@@ -21,7 +21,9 @@ export class RolesService {
       where: { name: createRoleDto.name },
     });
     if (existing) {
-      throw new ConflictException(`Ya existe un rol con el nombre "${createRoleDto.name}"`);
+      throw new ConflictException(
+        `Ya existe un rol con el nombre "${createRoleDto.name}"`,
+      );
     }
     const role = this.roleRepository.create(createRoleDto);
     return this.roleRepository.save(role);
@@ -53,7 +55,9 @@ export class RolesService {
         where: { name: updateRoleDto.name },
       });
       if (existing) {
-        throw new ConflictException(`Ya existe un rol con el nombre "${updateRoleDto.name}"`);
+        throw new ConflictException(
+          `Ya existe un rol con el nombre "${updateRoleDto.name}"`,
+        );
       }
     }
     Object.assign(role, updateRoleDto);

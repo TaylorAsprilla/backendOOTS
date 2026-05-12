@@ -23,6 +23,7 @@ import {
   UpdateProfileDto,
 } from './dto';
 import { UserStatus } from '../common/enums';
+import { RoleEntity } from '../roles/entities/role.entity';
 import { MailService } from '../mail/mail.service';
 import { GeolocationService } from '../geolocation/geolocation.service';
 import * as crypto from 'crypto';
@@ -69,7 +70,7 @@ export interface AuthResponse {
     phoneNumber?: string;
     position?: string;
     headquarters?: string;
-    role: string;
+    role?: RoleEntity;
     status: string;
     createdAt: Date;
     updatedAt: Date;

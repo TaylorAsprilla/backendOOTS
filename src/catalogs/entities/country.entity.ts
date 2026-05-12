@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('countries')
 export class Country {
@@ -8,8 +14,27 @@ export class Country {
   @Column({ name: 'name', type: 'varchar', length: 100, unique: true })
   name!: string;
 
-  @Column({ name: 'code', type: 'varchar', length: 10, unique: true })
-  code!: string; // Ejemplo: es-CO, es-PR, en
+  @Column({
+    name: 'iso',
+    type: 'varchar',
+    length: 2,
+    unique: true,
+    nullable: true,
+  })
+  iso?: string;
 
-  // Relations can be added later if needed
+  @Column({
+    name: 'locale',
+    type: 'varchar',
+    length: 10,
+    unique: true,
+    nullable: true,
+  })
+  locale?: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 }
