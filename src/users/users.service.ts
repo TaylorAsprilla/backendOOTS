@@ -146,14 +146,37 @@ export class UsersService {
     return result as User;
   }
 
-  async findAll(): Promise<User[]> {
-    const users = await this.userRepository.find({
-      where: { status: UserStatus.ACTIVE },
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(): Promise<any[]> {
+    const { entities, raw } = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.country', 'country')
+      .leftJoinAndSelect('user.role', 'role')
+      .addSelect(
+        (sub) =>
+          sub
+            .select('COUNT(p.id)', 'cnt')
+            .from('participants', 'p')
+            .where('p.registered_by_id = user.id'),
+        'participantCount',
+      )
+      .addSelect(
+        (sub) =>
+          sub
+            .select('COUNT(c.id)', 'cnt')
+            .from('cases', 'c')
+            .innerJoin('participants', 'p', 'p.id = c.participant_id')
+            .where('p.registered_by_id = user.id'),
+        'caseCount',
+      )
+      .where('user.status = :status', { status: UserStatus.ACTIVE })
+      .orderBy('user.createdAt', 'DESC')
+      .getRawAndEntities();
 
-    // Remover contraseñas de todos los usuarios
-    return users.map((user) => this.excludePassword(user));
+    return entities.map((user, i) => ({
+      ...this.excludePassword(user),
+      participantCount: parseInt(raw[i]?.participantCount ?? '0', 10),
+      caseCount: parseInt(raw[i]?.caseCount ?? '0', 10),
+    }));
   }
 
   async findOne(id: number): Promise<User> {
