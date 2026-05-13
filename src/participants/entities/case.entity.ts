@@ -32,8 +32,14 @@ export class Case {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
-  @Column({ name: 'case_number', type: 'varchar', length: 20, unique: true })
-  caseNumber!: string;
+  @Column({
+    name: 'case_number',
+    type: 'varchar',
+    length: 20,
+    unique: true,
+    nullable: true,
+  })
+  caseNumber?: string;
 
   @Column({
     name: 'status',

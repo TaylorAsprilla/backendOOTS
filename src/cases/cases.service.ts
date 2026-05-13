@@ -71,13 +71,8 @@ export class CasesService {
     // Usar transacción para garantizar atomicidad
     return await this.dataSource.transaction(async (manager) => {
       try {
-        // 1. Generar número de caso único
-        const caseNumber = await this.generateCaseNumber();
-        this.logger.debug(`Número de caso generado: ${caseNumber}`);
-
-        // 2. Crear el caso principal
+        // 1. Crear el caso principal
         const newCase = manager.create(Case, {
-          caseNumber,
           participantId: createCaseDto.participantId,
           status: CaseStatus.OPEN,
           consultationReason: createCaseDto.consultationReason,
@@ -314,9 +309,7 @@ export class CasesService {
           savedCase.id,
         );
 
-        this.logger.log(
-          `Caso ${caseNumber} creado exitosamente con ID: ${savedCase.id}`,
-        );
+        this.logger.log(`Caso creado exitosamente con ID: ${savedCase.id}`);
 
         return completeCase;
       } catch (error) {
@@ -704,7 +697,6 @@ export class CasesService {
   }): Promise<{
     data: Array<{
       id: number;
-      caseNumber: string;
       status: CaseStatus;
       consultationReason?: string;
       createdAt: Date;
@@ -753,8 +745,7 @@ export class CasesService {
     if (params.search && params.search.trim().length > 0) {
       const term = `%${params.search.trim()}%`;
       qb.andWhere(
-        `(case.caseNumber LIKE :term
-          OR participant.documentNumber LIKE :term
+        `(participant.documentNumber LIKE :term
           OR participant.firstName LIKE :term
           OR participant.secondName LIKE :term
           OR participant.firstLastName LIKE :term
@@ -770,7 +761,6 @@ export class CasesService {
       const u = c.createdBy;
       return {
         id: c.id,
-        caseNumber: c.caseNumber,
         status: c.status,
         consultationReason: c.consultationReason,
         createdAt: c.createdAt,
@@ -814,7 +804,6 @@ export class CasesService {
     total: number;
     cases: Array<{
       id: number;
-      caseNumber: string;
       status: CaseStatus;
       consultationReason?: string;
       intervention?: string;
@@ -838,7 +827,6 @@ export class CasesService {
       .filter((caseEntity) => caseEntity.participant != null)
       .map((caseEntity) => ({
         id: caseEntity.id,
-        caseNumber: caseEntity.caseNumber,
         status: caseEntity.status,
         consultationReason: caseEntity.consultationReason,
         intervention: caseEntity.intervention,
