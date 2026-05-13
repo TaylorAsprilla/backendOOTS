@@ -46,7 +46,7 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  @Matches(/^[+]?[1-9][\d]{0,15}$/, {
+  @Matches(/^[+]?[\d\s\-().]{7,20}$/, {
     message: 'phoneNumber must be a valid phone number',
   })
   phoneNumber?: string;
@@ -99,4 +99,9 @@ export class CreateUserDto {
   @IsPositive()
   @IsOptional()
   mitaNumber?: number;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  countryId?: number;
 }
