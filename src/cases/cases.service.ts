@@ -834,10 +834,9 @@ export class CasesService {
       .orderBy('case.createdAt', 'DESC')
       .getMany();
 
-    return {
-      userId,
-      total: cases.length,
-      cases: cases.map((caseEntity) => ({
+    const mappedCases = cases
+      .filter((caseEntity) => caseEntity.participant != null)
+      .map((caseEntity) => ({
         id: caseEntity.id,
         caseNumber: caseEntity.caseNumber,
         status: caseEntity.status,
@@ -851,7 +850,12 @@ export class CasesService {
             `${caseEntity.participant.firstName} ${caseEntity.participant.secondName || ''} ${caseEntity.participant.firstLastName} ${caseEntity.participant.secondLastName || ''}`.trim(),
           documentNumber: caseEntity.participant.documentNumber,
         },
-      })),
+      }));
+
+    return {
+      userId,
+      total: mappedCases.length,
+      cases: mappedCases,
     };
   }
 }
