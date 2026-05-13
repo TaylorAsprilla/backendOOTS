@@ -358,7 +358,6 @@ export class AuthService {
     ipAddress: string,
     userAgent: string,
   ): Promise<AuthResponse> {
-    console.log('Entrooooooooooooo');
     // 1. Generate access token
     const payload: JwtPayload = {
       sub: user.id,
@@ -427,7 +426,7 @@ export class AuthService {
       refresh_token: rawRefreshToken,
       user: this.buildAuthUser(user),
     };
-    console.log('LOGIN RESPONSE:', response);
+
     return response;
   }
 
