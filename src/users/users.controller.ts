@@ -60,6 +60,24 @@ export class UsersController {
     return await this.usersService.checkDocumentNumber(documentNumber);
   }
 
+  @Get('check-mita')
+  @ApiOperation({ summary: 'Verificar si existe un número MITA' })
+  @ApiQuery({
+    name: 'mitaNumber',
+    required: true,
+    description: 'Número MITA a verificar',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado de la verificación',
+    schema: {
+      example: { exists: true, message: 'Mita number already exists' },
+    },
+  })
+  async checkMita(@Query('mitaNumber') mitaNumber: string) {
+    return await this.usersService.checkMitaNumber(Number(mitaNumber));
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener usuario por ID' })
   @ApiResponse({

@@ -140,6 +140,33 @@ export class UsersService {
     };
   }
 
+  async checkMitaNumber(
+    mitaNumber: number,
+  ): Promise<{ exists: boolean; message: string }> {
+    if (!mitaNumber) {
+      return {
+        exists: false,
+        message: 'Mita number is required',
+      };
+    }
+
+    const existingUser = await this.userRepository.findOne({
+      where: { mitaNumber, status: UserStatus.ACTIVE },
+    });
+
+    if (existingUser) {
+      return {
+        exists: true,
+        message: 'Mita number already exists',
+      };
+    }
+
+    return {
+      exists: false,
+      message: 'Mita number is available',
+    };
+  }
+
   private excludePassword(user: User): User {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
