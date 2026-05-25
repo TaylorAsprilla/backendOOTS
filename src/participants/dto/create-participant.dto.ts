@@ -8,6 +8,8 @@ import {
   IsArray,
   ValidateNested,
   IsNumber,
+  IsInt,
+  IsPositive,
   IsObject,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
@@ -237,6 +239,16 @@ export class CreateParticipantDto {
   @IsString()
   @MaxLength(20)
   zipCode?: string;
+
+  @ApiProperty({
+    description: 'ID del país del participante',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  countryId?: number;
 
   @IsDateString()
   birthDate: string;

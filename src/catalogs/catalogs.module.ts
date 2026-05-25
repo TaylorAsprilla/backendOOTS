@@ -6,6 +6,8 @@ import { IdentifiedSituation } from '../identified-situations/entities/identifie
 import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { ApproachType } from './entities/approach-type.entity';
 import { ProcessType } from './entities/process-type.entity';
+import { Country } from './entities/country.entity';
+import { CountryController } from './country.controller';
 import { ApproachTypesService } from './approach-types.service';
 import { ProcessTypesService } from './process-types.service';
 import { ApproachTypesController } from './approach-types.controller';
@@ -18,12 +20,14 @@ import { ProcessTypesController } from './process-types.controller';
       FollowUpPlan,
       ApproachType,
       ProcessType,
+      Country,
     ]),
   ],
   controllers: [
     CatalogsController,
     ApproachTypesController,
     ProcessTypesController,
+    CountryController,
   ],
   providers: [CatalogsService, ApproachTypesService, ProcessTypesService],
   exports: [CatalogsService, ApproachTypesService, ProcessTypesService],

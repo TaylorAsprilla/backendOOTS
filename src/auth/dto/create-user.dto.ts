@@ -5,6 +5,9 @@ import {
   MaxLength,
   Matches,
   IsOptional,
+  IsInt,
+  IsPositive,
+  IsDateString,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -33,6 +36,7 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(8)
   @MaxLength(50)
@@ -40,7 +44,7 @@ export class CreateUserDto {
     message:
       'Password must contain at least one uppercase letter, one lowercase letter, and one number or special character',
   })
-  password: string;
+  password?: string;
 
   @IsOptional()
   @IsString()
@@ -56,4 +60,43 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(200)
   headquarters?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  documentNumber?: string;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  documentTypeId?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
+  @IsOptional()
+  @IsDateString()
+  birthDate?: string;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  countryId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  roleId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  mitaNumber?: number;
 }

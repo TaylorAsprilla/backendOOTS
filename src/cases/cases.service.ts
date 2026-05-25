@@ -71,13 +71,8 @@ export class CasesService {
     // Usar transacción para garantizar atomicidad
     return await this.dataSource.transaction(async (manager) => {
       try {
-        // 1. Generar número de caso único
-        const caseNumber = await this.generateCaseNumber();
-        this.logger.debug(`Número de caso generado: ${caseNumber}`);
-
-        // 2. Crear el caso principal
+        // 1. Crear el caso principal
         const newCase = manager.create(Case, {
-          caseNumber,
           participantId: createCaseDto.participantId,
           status: CaseStatus.OPEN,
           consultationReason: createCaseDto.consultationReason,
@@ -314,9 +309,7 @@ export class CasesService {
           savedCase.id,
         );
 
-        this.logger.log(
-          `Caso ${caseNumber} creado exitosamente con ID: ${savedCase.id}`,
-        );
+        this.logger.log(`Caso creado exitosamente con ID: ${savedCase.id}`);
 
         return completeCase;
       } catch (error) {
@@ -689,12 +682,128 @@ export class CasesService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  /**
+   * Listado de casos pensado para supervisión.
+   * Retorna todos los casos del sistema con datos del participante y del
+   * profesional responsable, soporta filtros y paginación.
+   */
+  async findAllForSupervision(params: {
+    page?: number;
+    limit?: number;
+    status?: CaseStatus;
+    professionalId?: number;
+    participantId?: number;
+    search?: string;
+  }): Promise<{
+    data: Array<{
+      id: number;
+      status: CaseStatus;
+      consultationReason?: string;
+      createdAt: Date;
+      updatedAt: Date;
+      participant: {
+        id: number;
+        fullName: string;
+        documentNumber?: string;
+      };
+      professional: {
+        id?: number;
+        fullName: string;
+        email?: string;
+      } | null;
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const limit =
+      params.limit && params.limit > 0 ? Math.min(params.limit, 100) : 50;
+
+    const qb = this.caseRepository
+      .createQueryBuilder('case')
+      .leftJoinAndSelect('case.participant', 'participant')
+      .leftJoinAndSelect('case.createdBy', 'createdBy')
+      .orderBy('case.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (params.status) {
+      qb.andWhere('case.status = :status', { status: params.status });
+    }
+    if (params.professionalId) {
+      qb.andWhere('case.createdById = :professionalId', {
+        professionalId: params.professionalId,
+      });
+    }
+    if (params.participantId) {
+      qb.andWhere('case.participantId = :participantId', {
+        participantId: params.participantId,
+      });
+    }
+    if (params.search && params.search.trim().length > 0) {
+      const term = `%${params.search.trim()}%`;
+      qb.andWhere(
+        `(participant.documentNumber LIKE :term
+          OR participant.firstName LIKE :term
+          OR participant.secondName LIKE :term
+          OR participant.firstLastName LIKE :term
+          OR participant.secondLastName LIKE :term)`,
+        { term },
+      );
+    }
+
+    const [cases, total] = await qb.getManyAndCount();
+
+    const data = cases.map((c) => {
+      const p = c.participant;
+      const u = c.createdBy;
+      return {
+        id: c.id,
+        status: c.status,
+        consultationReason: c.consultationReason,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        participant: {
+          id: p?.id,
+          fullName:
+            [p?.firstName, p?.secondName, p?.firstLastName, p?.secondLastName]
+              .filter(Boolean)
+              .join(' ') || '—',
+          documentNumber: p?.documentNumber,
+        } as {
+          id: number;
+          fullName: string;
+          documentNumber?: string;
+        },
+        professional: u
+          ? {
+              id: u.id,
+              fullName:
+                [u.firstName, u.secondName, u.firstLastName, u.secondLastName]
+                  .filter(Boolean)
+                  .join(' ') || '—',
+              email: u.email,
+            }
+          : null,
+      };
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
+  }
+
   async findCasesByUser(userId: number): Promise<{
     userId: number;
     total: number;
     cases: Array<{
       id: number;
-      caseNumber: string;
       status: CaseStatus;
       consultationReason?: string;
       intervention?: string;
@@ -714,12 +823,10 @@ export class CasesService {
       .orderBy('case.createdAt', 'DESC')
       .getMany();
 
-    return {
-      userId,
-      total: cases.length,
-      cases: cases.map((caseEntity) => ({
+    const mappedCases = cases
+      .filter((caseEntity) => caseEntity.participant != null)
+      .map((caseEntity) => ({
         id: caseEntity.id,
-        caseNumber: caseEntity.caseNumber,
         status: caseEntity.status,
         consultationReason: caseEntity.consultationReason,
         intervention: caseEntity.intervention,
@@ -731,7 +838,12 @@ export class CasesService {
             `${caseEntity.participant.firstName} ${caseEntity.participant.secondName || ''} ${caseEntity.participant.firstLastName} ${caseEntity.participant.secondLastName || ''}`.trim(),
           documentNumber: caseEntity.participant.documentNumber,
         },
-      })),
+      }));
+
+    return {
+      userId,
+      total: mappedCases.length,
+      cases: mappedCases,
     };
   }
 }

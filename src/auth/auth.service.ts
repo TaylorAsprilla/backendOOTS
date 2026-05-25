@@ -23,7 +23,6 @@ import {
   UpdateProfileDto,
 } from './dto';
 import { UserStatus } from '../common/enums';
-import { Role } from '../common/enums/role.enum';
 import { MailService } from '../mail/mail.service';
 import { GeolocationService } from '../geolocation/geolocation.service';
 import * as crypto from 'crypto';
@@ -34,7 +33,7 @@ export interface JwtPayload {
   email: string;
   firstName: string;
   firstLastName: string;
-  role: Role;
+  role: string;
 }
 
 export interface RegisterResponse {
@@ -58,8 +57,6 @@ export interface RegisterResponse {
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
-  token_type: string;
-  expires_in: number;
   user: {
     id: number;
     email: string;
@@ -70,7 +67,12 @@ export interface AuthResponse {
     phoneNumber?: string;
     position?: string;
     headquarters?: string;
-    role: string;
+    role?: {
+      id: number;
+      name: string;
+      description?: string;
+    };
+    country?: { id: number; name: string; iso?: string; locale?: string };
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -99,6 +101,39 @@ export class AuthService {
     private readonly geolocationService: GeolocationService,
   ) {}
 
+  private buildAuthUser(user: User): AuthResponse['user'] {
+    const base = user.toResponseObject();
+    return {
+      id: base.id,
+      email: base.email,
+      firstName: base.firstName,
+      secondName: base.secondName,
+      firstLastName: base.firstLastName,
+      secondLastName: base.secondLastName,
+      phoneNumber: base.phoneNumber,
+      position: base.position,
+      headquarters: base.headquarters,
+      status: base.status,
+      createdAt: base.createdAt,
+      updatedAt: base.updatedAt,
+      ...(user.role && {
+        role: {
+          id: user.role.id,
+          name: user.role.name,
+          description: user.role.description,
+        },
+      }),
+      ...(user.country && {
+        country: {
+          id: user.country.id,
+          name: user.country.name,
+          iso: user.country.iso,
+          locale: user.country.locale,
+        },
+      }),
+    };
+  }
+
   async register(registerDto: RegisterDto): Promise<RegisterResponse> {
     try {
       // Verificar si ya existe un usuario con el mismo email
@@ -124,13 +159,14 @@ export class AuthService {
       }
 
       // Crear el nuevo usuario directamente
+      const plainPassword = registerDto.password ?? this.generatePassword();
       const newUser = this.userRepository.create({
         firstName: registerDto.firstName,
         secondName: registerDto.secondName,
         firstLastName: registerDto.firstLastName,
         secondLastName: registerDto.secondLastName,
         email: registerDto.email,
-        password: registerDto.password,
+        password: plainPassword,
         phoneNumber: registerDto.phoneNumber,
         position: registerDto.position,
         headquarters: registerDto.headquarters,
@@ -141,6 +177,9 @@ export class AuthService {
           ? new Date(registerDto.birthDate)
           : undefined,
         documentTypeId: registerDto.documentTypeId,
+        roleId: registerDto.roleId,
+        countryId: registerDto.countryId,
+        mitaNumber: registerDto.mitaNumber,
         status: UserStatus.ACTIVE,
       });
 
@@ -150,7 +189,7 @@ export class AuthService {
       // Enviar correo de bienvenida de forma asíncrona (no bloquea la respuesta)
       // Pasar la contraseña original (sin hashear) para mostrarla en el correo
       this.mailService
-        .sendUserRegistrationEmail(savedUser, registerDto.password)
+        .sendUserRegistrationEmail(savedUser, plainPassword)
         .catch((error) => {
           // Solo log del error, no afecta el registro del usuario
           console.error('Error enviando correo de bienvenida:', error);
@@ -176,21 +215,7 @@ export class AuthService {
     // Buscar usuario por email (solo usuarios activos)
     const user = await this.userRepository.findOne({
       where: { email, status: UserStatus.ACTIVE },
-      select: [
-        'id',
-        'email',
-        'password',
-        'firstName',
-        'secondName',
-        'firstLastName',
-        'secondLastName',
-        'phoneNumber',
-        'position',
-        'headquarters',
-        'status',
-        'createdAt',
-        'updatedAt',
-      ],
+      relations: ['role'],
     });
 
     if (!user) {
@@ -209,7 +234,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
 
     const access_token = this.jwtService.sign(payload);
@@ -217,9 +242,7 @@ export class AuthService {
     return {
       access_token,
       refresh_token: '',
-      token_type: 'Bearer',
-      expires_in: 3600,
-      user: user.toResponseObject(),
+      user: this.buildAuthUser(user),
     };
   }
 
@@ -242,7 +265,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
 
     const access_token = this.jwtService.sign(payload);
@@ -250,9 +273,7 @@ export class AuthService {
     return {
       access_token,
       refresh_token: '',
-      token_type: 'Bearer',
-      expires_in: 3600,
-      user: user.toResponseObject(),
+      user: this.buildAuthUser(user),
     };
   }
 
@@ -343,7 +364,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
     const access_token = this.jwtService.sign(payload);
     const tokenHash = this.hashValue(access_token);
@@ -400,13 +421,13 @@ export class AuthService {
       os,
     }).catch((err) => this.logger.error('Login history error', err));
 
-    return {
+    const response = {
       access_token,
       refresh_token: rawRefreshToken,
-      token_type: 'Bearer',
-      expires_in: 3600,
-      user: user.toResponseObject(),
+      user: this.buildAuthUser(user),
     };
+
+    return response;
   }
 
   /**
@@ -425,7 +446,7 @@ export class AuthService {
 
     const stored = await this.refreshTokenRepository.findOne({
       where: { tokenHash: hash },
-      relations: ['user'],
+      relations: ['user', 'user.role'],
     });
 
     if (!stored || !stored.isValid) {
@@ -447,7 +468,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       firstLastName: user.firstLastName,
-      role: user.role,
+      role: user.role?.name ?? '',
     };
     const access_token = this.jwtService.sign(payload);
     const newTokenHash = this.hashValue(access_token);
@@ -990,50 +1011,6 @@ export class AuthService {
       user.documentTypeId = updateProfileDto.documentTypeId;
     }
 
-    // Actualizar redes sociales
-    if (
-      updateProfileDto.facebook !== undefined &&
-      updateProfileDto.facebook !== user.facebook
-    ) {
-      changes.facebook = { old: user.facebook, new: updateProfileDto.facebook };
-      user.facebook = updateProfileDto.facebook;
-    }
-
-    if (
-      updateProfileDto.twitter !== undefined &&
-      updateProfileDto.twitter !== user.twitter
-    ) {
-      changes.twitter = { old: user.twitter, new: updateProfileDto.twitter };
-      user.twitter = updateProfileDto.twitter;
-    }
-
-    if (
-      updateProfileDto.instagram !== undefined &&
-      updateProfileDto.instagram !== user.instagram
-    ) {
-      changes.instagram = {
-        old: user.instagram,
-        new: updateProfileDto.instagram,
-      };
-      user.instagram = updateProfileDto.instagram;
-    }
-
-    if (
-      updateProfileDto.linkedin !== undefined &&
-      updateProfileDto.linkedin !== user.linkedin
-    ) {
-      changes.linkedin = { old: user.linkedin, new: updateProfileDto.linkedin };
-      user.linkedin = updateProfileDto.linkedin;
-    }
-
-    if (
-      updateProfileDto.github !== undefined &&
-      updateProfileDto.github !== user.github
-    ) {
-      changes.github = { old: user.github, new: updateProfileDto.github };
-      user.github = updateProfileDto.github;
-    }
-
     // Registrar cambios en log de auditoría
     if (Object.keys(changes).length > 0) {
       this.logger.log(
@@ -1051,7 +1028,7 @@ export class AuthService {
     // Recargar con relaciones para retornar completo
     const reloadedUser = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['documentType'],
+      relations: ['documentType', 'country'],
     });
 
     if (!reloadedUser) {
@@ -1059,5 +1036,20 @@ export class AuthService {
     }
 
     return reloadedUser;
+  }
+
+  private generatePassword(length = 12): string {
+    const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lower = 'abcdefghijklmnopqrstuvwxyz';
+    const digits = '0123456789';
+    const special = '!@#$%&*';
+    const all = upper + lower + digits + special;
+    const rand = (chars: string) =>
+      chars[Math.floor(Math.random() * chars.length)];
+    const password = [rand(upper), rand(lower), rand(digits), rand(special)];
+    for (let i = password.length; i < length; i++) {
+      password.push(rand(all));
+    }
+    return password.sort(() => Math.random() - 0.5).join('');
   }
 }

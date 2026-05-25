@@ -9,13 +9,35 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { UserStatus } from '../common/enums';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly mailService: MailService,
   ) {}
+
+  private generatePassword(length = 12): string {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const special = '!@#$%&*';
+    const all = upper + lower + digits + special;
+    let password =
+      upper[Math.floor(Math.random() * upper.length)] +
+      lower[Math.floor(Math.random() * lower.length)] +
+      digits[Math.floor(Math.random() * digits.length)] +
+      special[Math.floor(Math.random() * special.length)];
+    for (let i = password.length; i < length; i++) {
+      password += all[Math.floor(Math.random() * all.length)];
+    }
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+  }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     // Verificar si ya existe un usuario con el mismo email
@@ -40,9 +62,13 @@ export class UsersService {
       }
     }
 
+    // Generar contraseña si no se proporcionó
+    const plainPassword = createUserDto.password ?? this.generatePassword();
+
     // Crear el nuevo usuario con conversión de fecha
     const newUser = this.userRepository.create({
       ...createUserDto,
+      password: plainPassword,
       birthDate: createUserDto.birthDate
         ? new Date(createUserDto.birthDate)
         : undefined,
@@ -50,6 +76,11 @@ export class UsersService {
 
     // Guardar el usuario en la base de datos
     const savedUser = await this.userRepository.save(newUser);
+
+    // Enviar email con credenciales
+    this.mailService
+      .sendUserRegistrationEmail(savedUser, plainPassword)
+      .catch(() => {});
 
     // Remover la contraseña de la respuesta por seguridad
     return this.excludePassword(savedUser);
@@ -115,14 +146,37 @@ export class UsersService {
     return result as User;
   }
 
-  async findAll(): Promise<User[]> {
-    const users = await this.userRepository.find({
-      where: { status: UserStatus.ACTIVE },
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(): Promise<any[]> {
+    const { entities, raw } = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.country', 'country')
+      .leftJoinAndSelect('user.role', 'role')
+      .addSelect(
+        (sub) =>
+          sub
+            .select('COUNT(p.id)', 'cnt')
+            .from('participants', 'p')
+            .where('p.registered_by_id = user.id'),
+        'participantCount',
+      )
+      .addSelect(
+        (sub) =>
+          sub
+            .select('COUNT(c.id)', 'cnt')
+            .from('cases', 'c')
+            .innerJoin('participants', 'p', 'p.id = c.participant_id')
+            .where('p.registered_by_id = user.id'),
+        'caseCount',
+      )
+      .where('user.status = :status', { status: UserStatus.ACTIVE })
+      .orderBy('user.createdAt', 'DESC')
+      .getRawAndEntities();
 
-    // Remover contraseñas de todos los usuarios
-    return users.map((user) => this.excludePassword(user));
+    return entities.map((user, i) => ({
+      ...this.excludePassword(user),
+      participantCount: parseInt(raw[i]?.participantCount ?? '0', 10),
+      caseCount: parseInt(raw[i]?.caseCount ?? '0', 10),
+    }));
   }
 
   async findOne(id: number): Promise<User> {
@@ -238,5 +292,27 @@ export class UsersService {
     });
 
     return this.excludePassword(restoredUser!);
+  }
+
+  async adminResetPassword(
+    id: number,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { id, status: UserStatus.ACTIVE },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    user.password = newPassword;
+    await this.userRepository.save(user);
+
+    this.mailService
+      .sendUserRegistrationEmail(user, newPassword)
+      .catch(() => {});
+
+    return { message: 'Contraseña restablecida exitosamente' };
   }
 }

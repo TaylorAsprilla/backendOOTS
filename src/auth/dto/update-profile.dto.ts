@@ -7,7 +7,6 @@ import {
   MaxLength,
   IsDateString,
   IsInt,
-  Matches,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -166,84 +165,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsInt({ message: 'El ID del tipo de documento debe ser un número entero' })
   documentTypeId?: number;
-
-  @ApiProperty({
-    description: 'URL del perfil de Facebook',
-    example: 'https://facebook.com/usuario',
-    required: false,
-    maxLength: 255,
-  })
-  @IsOptional()
-  @IsString({ message: 'Facebook debe ser una cadena de texto' })
-  @MaxLength(255, {
-    message: 'La URL de Facebook no debe exceder 255 caracteres',
-  })
-  @Matches(/^https?:\/\/(www\.)?facebook\.com\/.*$|^$/, {
-    message: 'Debe proporcionar una URL válida de Facebook',
-  })
-  facebook?: string;
-
-  @ApiProperty({
-    description: 'URL del perfil de Twitter/X',
-    example: 'https://twitter.com/usuario',
-    required: false,
-    maxLength: 255,
-  })
-  @IsOptional()
-  @IsString({ message: 'Twitter debe ser una cadena de texto' })
-  @MaxLength(255, {
-    message: 'La URL de Twitter no debe exceder 255 caracteres',
-  })
-  @Matches(/^https?:\/\/(www\.)?(twitter|x)\.com\/.*$|^$/, {
-    message: 'Debe proporcionar una URL válida de Twitter/X',
-  })
-  twitter?: string;
-
-  @ApiProperty({
-    description: 'URL del perfil de Instagram',
-    example: 'https://instagram.com/usuario',
-    required: false,
-    maxLength: 255,
-  })
-  @IsOptional()
-  @IsString({ message: 'Instagram debe ser una cadena de texto' })
-  @MaxLength(255, {
-    message: 'La URL de Instagram no debe exceder 255 caracteres',
-  })
-  @Matches(/^https?:\/\/(www\.)?instagram\.com\/.*$|^$/, {
-    message: 'Debe proporcionar una URL válida de Instagram',
-  })
-  instagram?: string;
-
-  @ApiProperty({
-    description: 'URL del perfil de LinkedIn',
-    example: 'https://linkedin.com/in/usuario',
-    required: false,
-    maxLength: 255,
-  })
-  @IsOptional()
-  @IsString({ message: 'LinkedIn debe ser una cadena de texto' })
-  @MaxLength(255, {
-    message: 'La URL de LinkedIn no debe exceder 255 caracteres',
-  })
-  @Matches(/^https?:\/\/(www\.)?linkedin\.com\/(in|company)\/.*$|^$/, {
-    message: 'Debe proporcionar una URL válida de LinkedIn',
-  })
-  linkedin?: string;
-
-  @ApiProperty({
-    description: 'URL del perfil de GitHub',
-    example: 'https://github.com/usuario',
-    required: false,
-    maxLength: 255,
-  })
-  @IsOptional()
-  @IsString({ message: 'GitHub debe ser una cadena de texto' })
-  @MaxLength(255, {
-    message: 'La URL de GitHub no debe exceder 255 caracteres',
-  })
-  @Matches(/^https?:\/\/(www\.)?github\.com\/.*$|^$/, {
-    message: 'Debe proporcionar una URL válida de GitHub',
-  })
-  github?: string;
 }

@@ -14,8 +14,9 @@ import {
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { UserStatus } from '../../common/enums';
-import { Role } from '../../common/enums/role.enum';
+import { RoleEntity } from '../../roles/entities/role.entity';
 import { DocumentType } from '../../document-types/entities';
+import { Country } from '../../catalogs/entities/country.entity';
 import { Geolocation } from '../../geolocation/entities/geolocation.entity';
 // import { Participant } from '../../participants/entities/participant.entity';
 
@@ -28,10 +29,10 @@ export class User {
     type: 'int',
     unsigned: true,
   })
-  id: number;
+  id!: number;
 
   @Column({ name: 'first_name', type: 'varchar', length: 50 })
-  firstName: string;
+  firstName!: string;
 
   @Column({
     name: 'second_name',
@@ -42,7 +43,7 @@ export class User {
   secondName?: string;
 
   @Column({ name: 'first_last_name', type: 'varchar', length: 50 })
-  firstLastName: string;
+  firstLastName!: string;
 
   @Column({
     name: 'second_last_name',
@@ -58,7 +59,7 @@ export class User {
     length: 100,
     unique: true,
   })
-  email: string;
+  email!: string;
 
   @Column({
     name: 'password',
@@ -66,7 +67,7 @@ export class User {
     length: 255,
   })
   @Exclude()
-  password: string;
+  password!: string;
 
   @Column({
     name: 'phone_number',
@@ -137,15 +138,30 @@ export class User {
     enum: UserStatus,
     default: UserStatus.ACTIVE,
   })
-  status: UserStatus;
+  status!: UserStatus;
+
+  @Column({ name: 'role_id', type: 'int', unsigned: true, nullable: true })
+  roleId?: number;
+
+  @ManyToOne(() => RoleEntity, { eager: true, nullable: true })
+  @JoinColumn({ name: 'role_id' })
+  role?: RoleEntity;
+
+  @Column({ name: 'country_id', type: 'int', unsigned: true, nullable: true })
+  countryId?: number;
+
+  @ManyToOne(() => Country, { eager: true, nullable: true })
+  @JoinColumn({ name: 'country_id' })
+  country?: Country;
 
   @Column({
-    name: 'role',
-    type: 'enum',
-    enum: Role,
-    default: Role.ORIENTADOR,
+    name: 'mita_number',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+    unique: true,
   })
-  role: Role;
+  mitaNumber?: number;
 
   @Column({
     name: 'password_reset_token',
@@ -164,51 +180,11 @@ export class User {
   @Exclude()
   passwordResetExpires?: Date;
 
-  @Column({
-    name: 'facebook',
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
-  facebook?: string;
-
-  @Column({
-    name: 'twitter',
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
-  twitter?: string;
-
-  @Column({
-    name: 'instagram',
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
-  instagram?: string;
-
-  @Column({
-    name: 'linkedin',
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
-  linkedin?: string;
-
-  @Column({
-    name: 'github',
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
-  github?: string;
-
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // RELACIONES
   @ManyToOne(() => DocumentType, { nullable: true })
@@ -216,7 +192,7 @@ export class User {
   documentType?: DocumentType;
 
   @OneToMany(() => Geolocation, (geolocation) => geolocation.user)
-  geolocations: Geolocation[];
+  geolocations!: Geolocation[];
 
   // RELACIONES - Comentado temporalmente para evitar errores de compilación
   // @OneToMany(() => Participant, (participant) => participant.registeredBy)

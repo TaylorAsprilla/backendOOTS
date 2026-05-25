@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  Post,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,11 +18,16 @@ import {
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoleCountryGuard } from '../common/guards/role-country.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
 
 @ApiTags('Usuarios')
 @Controller('users')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RoleCountryGuard)
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -118,5 +124,20 @@ export class UsersController {
   })
   restore(@Param('id') id: string) {
     return this.usersService.restore(+id);
+  }
+
+  @Post(':id/reset-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Restablecer contraseña de usuario (solo ADMIN)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Contraseña restablecida y enviada al correo del usuario',
+    schema: { example: { message: 'Contraseña restablecida exitosamente' } },
+  })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  resetPassword(@Param('id') id: string, @Body() dto: AdminResetPasswordDto) {
+    return this.usersService.adminResetPassword(+id, dto.newPassword);
   }
 }

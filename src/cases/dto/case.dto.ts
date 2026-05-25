@@ -430,28 +430,28 @@ export class CreateCaseDto {
   @IsNotEmpty()
   participantId!: number;
 
-  // 2. MOTIVO DE LA CONSULTA - obligatorio
+  // 2. MOTIVO DE LA CONSULTA - opcional
   @ApiProperty({
     description: 'Motivo de consulta del caso',
+    required: false,
     example:
       'El participante presenta síntomas de ansiedad y estrés post-separación matrimonial',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  consultationReason!: string;
+  consultationReason?: string;
 
-  // 3. SITUACIONES IDENTIFICADAS - obligatorio (mínimo 1)
+  // 3. SITUACIONES IDENTIFICADAS - opcional
   @ApiProperty({
     description: 'IDs de situaciones identificadas del catálogo',
+    required: false,
     type: [Number],
     example: [1, 3, 5, 8],
   })
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1, {
-    message: 'Debe indicar al menos una situación identificada',
-  })
   @IsNumber({}, { each: true })
-  identifiedSituations!: number[];
+  identifiedSituations?: number[];
 
   // 4. INTERVENCIÓN INICIAL - ahora es string simple
   @ApiProperty({
@@ -823,9 +823,6 @@ export class UpdateCaseStatusDto {
 export class CaseResponseDto {
   @ApiProperty({ description: 'ID único del caso', example: 1 })
   id!: number;
-
-  @ApiProperty({ description: 'Número único del caso', example: 'CASE-0001' })
-  caseNumber!: string;
 
   @ApiProperty({
     description: 'Título del caso',

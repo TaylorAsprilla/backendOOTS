@@ -23,12 +23,16 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { CreateParticipantDto } from './dto/create-participant.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RoleCountryGuard } from '../common/guards/role-country.guard';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { SearchParticipantsDto } from './dto/search-participants.dto';
 import { ParticipantsService } from './participants.service';
 
 @ApiTags('participants')
 @Controller('participants')
+@UseGuards(JwtAuthGuard, RoleCountryGuard)
 export class ParticipantsController {
   constructor(private readonly participantsService: ParticipantsService) {}
 

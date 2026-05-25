@@ -8,6 +8,7 @@ import {
   Matches,
   IsDateString,
   IsNumber,
+  IsInt,
   IsPositive,
 } from 'class-validator';
 
@@ -38,14 +39,14 @@ export class CreateUserDto {
   email: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MinLength(8)
   @MaxLength(255)
-  password: string;
+  password?: string;
 
   @IsString()
   @IsOptional()
-  @Matches(/^[+]?[1-9][\d]{0,15}$/, {
+  @Matches(/^[+]?[\d\s\-().]{7,20}$/, {
     message: 'phoneNumber must be a valid phone number',
   })
   phoneNumber?: string;
@@ -88,4 +89,19 @@ export class CreateUserDto {
   @IsPositive()
   @IsNotEmpty()
   documentTypeId: number;
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  roleId?: number;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  mitaNumber?: number;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  countryId?: number;
 }
