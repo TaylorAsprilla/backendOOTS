@@ -1,0 +1,2 @@
+ALTER TABLE participants
+  ADD COLUMN mita_number INT UNSIGNED NULL DEFAULT NULL;
