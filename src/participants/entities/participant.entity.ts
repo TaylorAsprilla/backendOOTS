@@ -137,6 +137,14 @@ export class Participant {
   })
   referralSource?: string;
 
+  @Column({
+    name: 'mita_number',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
+  mitaNumber?: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

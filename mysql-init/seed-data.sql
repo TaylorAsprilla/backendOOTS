@@ -303,6 +303,24 @@ INSERT INTO type_progress (name, code, is_active) VALUES
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
+-- CATÁLOGO: COUNTRIES (Países)
+-- ============================================================================
+-- Datos iniciales para Colombia, Puerto Rico y Estados Unidos
+-- ============================================================================
+
+INSERT INTO countries (name, iso, locale, currency, phone_prefix, flag_url, default_language, is_active) VALUES
+('Colombia',        'CO', 'es-CO', 'COP', '+57',  'https://flagcdn.com/w20/co.png', 'es-CO', TRUE),
+('Puerto Rico',     'PR', 'es-PR', 'USD', '+1',   'https://flagcdn.com/w20/pr.png', 'es-PR', TRUE),
+('Estados Unidos',  'US', 'en-US', 'USD', '+1',   'https://flagcdn.com/w20/us.png', 'en-US', TRUE)
+ON DUPLICATE KEY UPDATE
+  locale           = VALUES(locale),
+  currency         = VALUES(currency),
+  phone_prefix     = VALUES(phone_prefix),
+  flag_url         = VALUES(flag_url),
+  default_language = VALUES(default_language),
+  is_active        = VALUES(is_active);
+
+-- ============================================================================
 -- MENSAJE DE CONFIRMACIÓN
 -- ============================================================================
 

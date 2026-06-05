@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+  pre_build:
+    commands:
+      - echo Instalando dependencias...
+      - npm ci
+  build:
+    commands:
+      - echo Compilando NestJS...
+      - npm run build
+  post_build:
+    commands:
+      - echo Build completado exitosamente
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: '.'
+  exclude-paths:
+    - 'src/**'
+    - 'test/**'

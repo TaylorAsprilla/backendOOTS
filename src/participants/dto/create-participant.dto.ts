@@ -277,6 +277,16 @@ export class CreateParticipantDto {
   @MaxLength(100)
   referralSource?: string;
 
+  @ApiProperty({
+    description: 'Número MITA del participante',
+    example: 57,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  mitaNumber?: number;
+
   // CONTACTOS DE EMERGENCIA (array - puede tener múltiples contactos)
   @ApiProperty({
     description:
