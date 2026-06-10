@@ -3,7 +3,7 @@
  * Aplica cambios de esquema que TypeORM synchronize no puede hacer
  * en producción (synchronize: false).
  *
- * Ejecutado por: render.yaml buildCommand → node dist/migrate.js
+ * Ejecutado por: render.yaml buildCommand → node dist/src/migrate.js
  */
 import * as mysql from 'mysql2/promise';
 import type { RowDataPacket } from 'mysql2';

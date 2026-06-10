@@ -26,6 +26,7 @@ import { IdentifiedSituationsModule } from './identified-situations/identified-s
 import { GeolocationModule } from './geolocation/geolocation.module';
 import { AuditModule } from './audit/audit.module';
 import { RolesModule } from './roles/roles.module';
+import { CaseDiscussionsModule } from './case-discussions/case-discussions.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -92,6 +93,7 @@ import configuration from './config/configuration';
     GeolocationModule,
     AuditModule,
     RolesModule,
+    CaseDiscussionsModule,
   ],
   controllers: [AppController],
   providers: [
