@@ -12,6 +12,7 @@ import {
   HttpCode,
   Res,
   UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -36,7 +37,10 @@ import {
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RoleCountryGuard } from '../common/guards/role-country.guard';
+import {
+  RoleCountryGuard,
+  SKIP_ROLE_COUNTRY_GUARD,
+} from '../common/guards/role-country.guard';
 import { Role, CaseStatus } from '../common/enums';
 
 @ApiTags('Casos')
@@ -978,6 +982,7 @@ export class CasesController {
 
   @Get('by-user/:userId')
   @UseGuards(JwtAuthGuard)
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
   @ApiOperation({
     summary: 'Obtener casos de participantes creados por un usuario específico',
     description:

@@ -7,6 +7,8 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Role } from '../enums/role.enum';
 
+export const SKIP_ROLE_COUNTRY_GUARD = 'skipRoleCountryGuard';
+
 /**
  * Permite acceso a:
  * - ADMIN: todo
@@ -20,6 +22,15 @@ export class RoleCountryGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    const skipGuard = this.reflector.getAllAndOverride<boolean>(
+      SKIP_ROLE_COUNTRY_GUARD,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (skipGuard) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     if (!user) throw new ForbiddenException('No autenticado');
