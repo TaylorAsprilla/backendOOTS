@@ -330,6 +330,31 @@ export class ParticipantsController {
     return this.participantsService.findAll(searchDto);
   }
 
+  @Get('all')
+  @ApiOperation({
+    summary: 'Obtener todos los participantes sin paginación',
+    description:
+      'Retorna la lista completa de participantes registrados en el sistema, sin paginación ni filtros. ' +
+      'Ordenados por fecha de creación descendente. Útil para exportaciones, selectores y vistas globales. ' +
+      'Incluye relaciones eager (gender, maritalStatus, healthInsurance, documentType, country, registeredBy).',
+  })
+  @ApiOkResponse({
+    description: 'Lista completa de participantes obtenida exitosamente.',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { type: 'object' },
+        },
+        total: { type: 'number', example: 120 },
+      },
+    },
+  })
+  findAllNoPagination() {
+    return this.participantsService.findAllNoPagination();
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener participante completo por ID',
