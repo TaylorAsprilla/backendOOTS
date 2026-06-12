@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  SetMetadata,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,7 +26,10 @@ import {
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RoleCountryGuard } from '../common/guards/role-country.guard';
+import {
+  RoleCountryGuard,
+  SKIP_ROLE_COUNTRY_GUARD,
+} from '../common/guards/role-country.guard';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { SearchParticipantsDto } from './dto/search-participants.dto';
 import { ParticipantsService } from './participants.service';
@@ -717,6 +721,7 @@ export class ParticipantsController {
 
   @Get('by-user/:userId')
   @UseGuards(JwtAuthGuard)
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
   @ApiOperation({
     summary: 'Obtener participantes creados por un usuario específico',
     description:
