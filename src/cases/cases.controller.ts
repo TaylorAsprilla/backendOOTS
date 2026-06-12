@@ -977,6 +977,7 @@ export class CasesController {
   }
 
   @Get('by-user/:userId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Obtener casos de participantes creados por un usuario específico',
     description:
@@ -989,7 +990,8 @@ export class CasesController {
       '### Características:\n' +
       '- ✅ Solo casos de participantes creados por el usuario especificado\n' +
       '- 📊 Incluye contador total de casos\n' +
-      '- ⬇️ Ordenados por fecha de creación (más recientes primero)\n\n' +
+      '- ⬇️ Ordenados por fecha de creación (más recientes primero)\n' +
+      '- 🔓 Accesible para cualquier usuario autenticado (todos los roles)\n\n' +
       '### Casos de uso:\n' +
       '- Ver mis casos como profesional\n' +
       '- Reportes por usuario\n' +

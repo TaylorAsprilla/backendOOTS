@@ -716,12 +716,14 @@ export class ParticipantsController {
   }
 
   @Get('by-user/:userId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Obtener participantes creados por un usuario específico',
     description:
       'Obtiene una lista de todos los participantes que fueron registrados por un usuario específico. ' +
       'Útil para que cada usuario vea solo los participantes que ha creado, o para reportes por usuario. ' +
-      'Incluye información básica del participante y fecha de creación.',
+      'Incluye información básica del participante y fecha de creación. ' +
+      'Accesible para cualquier usuario autenticado (todos los roles).',
   })
   @ApiParam({
     name: 'userId',
