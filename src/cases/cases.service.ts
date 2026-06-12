@@ -682,6 +682,17 @@ export class CasesService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
+  async findAllNoPagination(): Promise<{
+    data: Case[];
+    total: number;
+  }> {
+    const data = await this.caseRepository.find({
+      relations: ['participant', 'createdBy'],
+      order: { createdAt: 'DESC' },
+    });
+    return { data, total: data.length };
+  }
+
   /**
    * Listado de casos pensado para supervisión.
    * Retorna todos los casos del sistema con datos del participante y del
