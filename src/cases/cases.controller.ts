@@ -455,6 +455,47 @@ export class CasesController {
     });
   }
 
+  @Get('all')
+  @ApiOperation({
+    summary: 'Obtener todos los casos sin paginación',
+    description:
+      'Retorna la lista completa de casos del sistema, sin paginación ni filtros. ' +
+      'Ordenados por fecha de creación descendente. Incluye el participante y el profesional asignado.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista completa de casos obtenida exitosamente.',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 1,
+            caseNumber: 'CASE-0001',
+            status: 'open',
+            consultationReason: 'Consulta por ansiedad',
+            intervention: null,
+            referrals: null,
+            createdAt: '2026-06-10T10:30:00.000Z',
+            updatedAt: '2026-06-10T10:30:00.000Z',
+            closedAt: null,
+            participantId: 9,
+            participant: {
+              id: 9,
+              firstName: 'María',
+              firstLastName: 'González',
+            },
+            professionalId: 3,
+            professional: { id: 3, firstName: 'Carmen', firstLastName: 'Vega' },
+          },
+        ],
+        total: 25,
+      },
+    },
+  })
+  async findAllNoPagination() {
+    return await this.casesService.findAllNoPagination();
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener detalles completos de un caso médico',
