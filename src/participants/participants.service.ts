@@ -198,6 +198,20 @@ export class ParticipantsService {
     };
   }
 
+  async findAllNoPagination(): Promise<{
+    data: Participant[];
+    total: number;
+  }> {
+    const participants = await this.participantRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      data: participants,
+      total: participants.length,
+    };
+  }
+
   async findOne(id: number): Promise<Participant> {
     const participant = await this.participantRepository.findOne({
       where: { id },
