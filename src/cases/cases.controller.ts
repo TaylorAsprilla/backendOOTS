@@ -53,6 +53,9 @@ export class CasesController {
   ) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY, Role.TRABAJO_SOCIAL)
   @ApiOperation({
     summary: 'Crear nuevo caso para un participante',
     description:
