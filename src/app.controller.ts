@@ -19,7 +19,7 @@ export class AppController {
   @ApiResponse({ status: 200, description: 'API funcionando correctamente' })
   getRoot() {
     const baseUrl = process.env.APP_URL || 'http://localhost:3000';
-    const apiPath = '/api/v1';
+    const apiPath = 'api/v1';
 
     return {
       status: 'ok',

@@ -30,6 +30,9 @@ import {
   RoleCountryGuard,
   SKIP_ROLE_COUNTRY_GUARD,
 } from '../common/guards/role-country.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { SearchParticipantsDto } from './dto/search-participants.dto';
 import { ParticipantsService } from './participants.service';
@@ -41,6 +44,9 @@ export class ParticipantsController {
   constructor(private readonly participantsService: ParticipantsService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY, Role.TRABAJO_SOCIAL)
   @ApiOperation({
     summary: 'Crear nuevo participante en el sistema',
     description:

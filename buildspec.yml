@@ -3,16 +3,39 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 20
+      nodejs: 22
     commands:
+      - echo "Installing dependencies..."
       - npm ci
+
   build:
     commands:
-      - node --max-old-space-size=1024 ./node_modules/@nestjs/cli/bin/nest.js build
-      - echo "Verificando dist generado..."
-      - ls -la dist/
+      - echo "Building NestJS application..."
+      - npm run build
+
+  post_build:
+    commands:
+      - echo "Validating Elastic Beanstalk bundle..."
+      - test -f package.json
+      - test -f package-lock.json
+      - test -f Procfile
+      - |
+        if [ -f "dist/src/main.js" ]; then
+          echo "Found dist/src/main.js"
+        elif [ -f "dist/main.js" ]; then
+          echo "Found dist/main.js"
+        else
+          echo "main.js not found"
+          find dist -maxdepth 3 -type f
+          exit 1
+        fi
 
 artifacts:
   files:
-    - '**/*'
-  base-directory: '.'
+    - dist/**/*
+    - package.json
+    - package-lock.json
+    - Procfile
+    - .ebextensions/**/*
+    - .platform/**/*
+  discard-paths: no
