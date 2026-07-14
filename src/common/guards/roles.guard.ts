@@ -15,6 +15,18 @@ export class RolesGuard implements CanActivate {
 
   constructor(private readonly reflector: Reflector) {}
 
+  private buildAccessLog(context: ExecutionContext, user?: any): string {
+    const request = context.switchToHttp().getRequest();
+    return [
+      `method=${request.method}`,
+      `path=${request.originalUrl ?? request.url}`,
+      `userId=${user?.id ?? 'undefined'}`,
+      `email=${user?.email ?? 'undefined'}`,
+      `roleId=${user?.role?.id ?? user?.roleId ?? 'undefined'}`,
+      `roleName=${user?.role?.name ?? 'undefined'}`,
+    ].join(' ');
+  }
+
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
@@ -28,20 +40,22 @@ export class RolesGuard implements CanActivate {
     const { user } = context.switchToHttp().getRequest();
 
     if (!user) {
+      this.logger.warn(
+        `[roles-guard] denied because request.user is empty ${this.buildAccessLog(context)}`,
+      );
       throw new ForbiddenException('Acceso denegado');
     }
 
     const hasRole = requiredRoles.some((role) => user.role?.name === role);
 
+    this.logger.log(
+      `[roles-guard] evaluating roles ${this.buildAccessLog(context, user)} requiredRoles=${requiredRoles.join(',')}`,
+    );
+
     if (!hasRole) {
-      this.logger.warn({
-        message: 'Role validation failed',
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        roleName: user.role?.name,
-        requiredRoles,
-      });
+      this.logger.warn(
+        `[roles-guard] denied because role does not match ${this.buildAccessLog(context, user)} requiredRoles=${requiredRoles.join(',')}`,
+      );
 
       throw new ForbiddenException(
         `Acceso denegado. Se requiere uno de los siguientes roles: ${requiredRoles.join(', ')}`,
