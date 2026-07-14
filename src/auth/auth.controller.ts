@@ -134,7 +134,7 @@ export class AuthController {
 
     const userAgent = request.get('user-agent') ?? '';
 
-    // Full session flow: tokens + session + history + geo alert
+    //Full session flow: tokens + session + history + geo alert
     return this.authService.loginWithSession(
       user,
       ipAddress as string,
