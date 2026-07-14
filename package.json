@@ -8,7 +8,7 @@
   "scripts": {
     "build": "node --max-old-space-size=1024 node_modules/@nestjs/cli/bin/nest.js build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "postinstall": "npm run build",
+    "postinstall": "node -e \"const fs=require('fs');process.exit(fs.existsSync('dist/src/main.js')||fs.existsSync('dist/main.js')?0:1)\" || npm run build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
