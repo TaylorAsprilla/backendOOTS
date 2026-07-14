@@ -11,6 +11,7 @@ import {
   Query,
   DefaultValuePipe,
   ParseIntPipe,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -41,6 +42,8 @@ import {
 @ApiTags('Autenticación')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Public()
@@ -177,10 +180,14 @@ export class AuthController {
     description: 'Token inválido o expirado',
   })
   validateToken(@CurrentUser() user: User) {
-    return {
+    const response = {
       valid: true,
       user: user.toResponseObject(),
     };
+
+    this.logger.log(`[auth-validate] response=${JSON.stringify(response)}`);
+
+    return response;
   }
 
   @UseGuards(JwtAuthGuard)
