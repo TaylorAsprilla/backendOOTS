@@ -24,14 +24,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     try {
       const user = await this.authService.validateUser(payload);
 
+      this.logger.log(
+        `[jwt-strategy] validated token sub=${payload.sub} email=${payload.email} jwtRole=${payload.role} userId=${user.id} userRole=${user.role?.name ?? 'undefined'} countryId=${user.countryId ?? 'undefined'}`,
+      );
+
       if (payload.role !== user.role?.name) {
-        this.logger.warn({
-          message: 'JWT role differs from validated user role',
-          userId: user.id,
-          email: user.email,
-          jwtRole: payload.role,
-          userRole: user.role?.name,
-        });
+        this.logger.warn(
+          `[jwt-strategy] jwt role mismatch userId=${user.id} email=${user.email} jwtRole=${payload.role} userRole=${user.role?.name ?? 'undefined'}`,
+        );
       }
 
       return user;
