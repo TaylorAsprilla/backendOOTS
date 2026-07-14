@@ -727,7 +727,6 @@ export class ParticipantsController {
 
   @Get('by-user/:userId')
   @UseGuards(JwtAuthGuard)
-  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
   @ApiOperation({
     summary: 'Obtener participantes creados por un usuario específico',
     description:
