@@ -10,7 +10,6 @@ import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { SearchParticipantsDto } from './dto/search-participants.dto';
 import { Participant } from './entities/participant.entity';
 import { FamilyMember } from './entities/family-member.entity';
-import { BioPsychosocialHistory } from './entities/bio-psychosocial-history.entity';
 import { EmergencyContact } from './entities/emergency-contact.entity';
 import { ParticipantEmergencyContact } from './entities/participant-emergency-contact.entity';
 
@@ -27,12 +26,8 @@ export class ParticipantsService {
     return await this.participantRepository.manager.transaction(
       async (transactionalEntityManager) => {
         // Extraer las relaciones anidadas del DTO principal
-        const {
-          familyMembers,
-          bioPsychosocialHistory,
-          emergencyContacts,
-          ...participantData
-        } = createParticipantDto;
+        const { familyMembers, emergencyContacts, ...participantData } =
+          createParticipantDto;
 
         // Validar si el documentNumber ya existe
         const existingByDocument = await transactionalEntityManager.findOne(
@@ -88,21 +83,10 @@ export class ParticipantsService {
           );
         }
 
-        // 2. Crear historial biopsicosocial (OneToOne)
-        if (bioPsychosocialHistory) {
-          const bioPsychosocialEntity = transactionalEntityManager.create(
-            BioPsychosocialHistory,
-            {
-              ...bioPsychosocialHistory,
-              participantId: savedParticipant.id,
-            },
-          );
-          relationPromises.push(
-            transactionalEntityManager.save(bioPsychosocialEntity),
-          );
-        }
+        // Nota: bioPsychosocialHistory pertenece a Case (case_id es FK obligatoria
+        // y única), no a Participant; se registra al crear el caso.
 
-        // 3. Crear contactos de emergencia (ManyToMany con pivot)
+        // 2. Crear contactos de emergencia (ManyToMany con pivot)
         if (emergencyContacts && emergencyContacts.length > 0) {
           for (const contactData of emergencyContacts) {
             const { relationshipId, ...emergencyContactInfo } = contactData;
