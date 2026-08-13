@@ -1,12 +1,35 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Logger,
+  ValidationPipe,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import helmet from 'helmet';
 import compression from 'compression';
+
+const bootstrapLogger = new Logger('Process');
+
+// Sin estos handlers, una promesa rechazada sin catch en cualquier parte del
+// código mata el proceso completo sin dejar rastro (Node >=15 termina el
+// proceso por defecto). Los registramos antes de todo para poder ver la
+// causa real en los logs la próxima vez que ocurra un crash en producción.
+// Se registra el handler para loguear, pero se sigue terminando el proceso
+// (fail-fast) porque el estado de la app puede quedar inconsistente y
+// systemd/EB ya lo reinicia automáticamente.
+process.on('unhandledRejection', (reason) => {
+  bootstrapLogger.error('Unhandled Rejection', reason as Error);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  bootstrapLogger.error('Uncaught Exception', error.stack);
+  process.exit(1);
+});
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
