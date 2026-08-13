@@ -10,7 +10,6 @@ import {
   IsNumber,
   IsInt,
   IsPositive,
-  IsObject,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -128,43 +127,8 @@ export class CreateFamilyMemberDto {
   academicLevelId: number;
 }
 
-export class CreateBioPsychosocialHistoryDto {
-  @IsOptional()
-  @IsString()
-  completedGrade?: string;
-
-  @IsOptional()
-  @IsString()
-  institution?: string;
-
-  @IsOptional()
-  @IsString()
-  profession?: string;
-
-  @IsOptional()
-  @IsString()
-  occupationalHistory?: string;
-
-  @IsOptional()
-  @IsNumber()
-  housingTypeId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  academicLevelId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  incomeSourceId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  incomeLevelId?: number;
-
-  @IsOptional()
-  @IsString()
-  housing?: string;
-}
+// Nota: la historia biopsicosocial pertenece a Case (ver src/cases/dto/case.dto.ts),
+// no a Participant. Se elimina de aquí para evitar violaciones de FK en creación.
 
 // DTO principal (definido al final)
 export class CreateParticipantDto {
@@ -320,15 +284,4 @@ export class CreateParticipantDto {
   @ValidateNested({ each: true })
   @Type(() => CreateFamilyMemberDto)
   familyMembers?: CreateFamilyMemberDto[];
-
-  // HISTORIAL BIOPSICOSOCIAL (información personal del participante)
-  @ApiProperty({
-    description: 'Historia biopsicosocial del participante',
-    required: false,
-  })
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CreateBioPsychosocialHistoryDto)
-  bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
 }

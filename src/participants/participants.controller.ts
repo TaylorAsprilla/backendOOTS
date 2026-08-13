@@ -189,22 +189,6 @@ export class ParticipantsController {
               academicLevelId: 1,
             },
           ],
-          bioPsychosocialHistory: {
-            schooling: 'Universidad',
-            completedGrade: 'Profesional Completo',
-            institution: 'Universidad Nacional de Colombia',
-            profession: 'Psicóloga Clínica',
-            incomeSource: 'Sueldo',
-            incomeLevel: 'Más de 1 SMLV',
-            occupationalHistory:
-              '5 años como psicóloga clínica en hospital público, 3 años en consulta privada',
-            housingTypeId: 1,
-            academicLevelId: 3,
-            incomeSourceId: 2,
-            incomeLevelId: 4,
-            housing:
-              'Casa de 3 habitaciones, 2 baños, sala, comedor, cocina integral y patio trasero',
-          },
         },
       },
       'ejemplo-basico': {
