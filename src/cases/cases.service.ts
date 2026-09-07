@@ -75,6 +75,7 @@ export class CasesService {
         const newCase = manager.create(Case, {
           participantId: createCaseDto.participantId,
           status: CaseStatus.OPEN,
+          caseType: createCaseDto.caseType,
           consultationReason: createCaseDto.consultationReason,
           intervention: createCaseDto.intervention,
           referrals: createCaseDto.referrals,
@@ -478,15 +479,17 @@ export class CasesService {
 
     // Actualizar campos escalares directamente (evita cascade en relaciones cargadas)
     const scalarFields: Partial<Case> = {};
+    if (updateCaseDto.caseType !== undefined) {
+      scalarFields.caseType = updateCaseDto.caseType;
+    }
     if (updateCaseDto.consultationReason !== undefined) {
-      scalarFields.consultationReason =
-        updateCaseDto.consultationReason as string;
+      scalarFields.consultationReason = updateCaseDto.consultationReason;
     }
     if (updateCaseDto.intervention !== undefined) {
-      scalarFields.intervention = updateCaseDto.intervention as string;
+      scalarFields.intervention = updateCaseDto.intervention;
     }
     if (updateCaseDto.referrals !== undefined) {
-      scalarFields.referrals = updateCaseDto.referrals as string;
+      scalarFields.referrals = updateCaseDto.referrals;
     }
 
     if (Object.keys(scalarFields).length > 0) {

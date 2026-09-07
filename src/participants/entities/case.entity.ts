@@ -10,7 +10,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { CaseStatus } from '../../common/enums';
+import { CaseStatus, CaseType } from '../../common/enums';
 import { Participant } from './participant.entity';
 import { User } from '../../users/entities/user.entity';
 import { FamilyMember } from './family-member.entity';
@@ -48,6 +48,14 @@ export class Case {
     default: CaseStatus.OPEN,
   })
   status!: CaseStatus;
+
+  @Column({
+    name: 'case_type',
+    type: 'enum',
+    enum: CaseType,
+    default: CaseType.ACTIVE_CASE,
+  })
+  caseType!: CaseType;
 
   @Column({ name: 'participant_id', type: 'int', unsigned: true })
   participantId!: number;
