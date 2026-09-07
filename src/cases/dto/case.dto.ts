@@ -5,14 +5,15 @@ import {
   IsOptional,
   IsObject,
   ValidateNested,
+  ValidateIf,
   IsArray,
   IsNumber,
+  IsBoolean,
   IsDateString,
-  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CaseStatus, HealthHistoryType } from '../../common/enums';
+import { CaseStatus, CaseType, HealthHistoryType } from '../../common/enums';
 import { CreateFollowUpPlanDto } from '../../participants/dto/create-follow-up-plan.dto';
 
 // ============================================================================
@@ -278,19 +279,56 @@ export class CreateInterventionPlanDto {
 
 export class CreateProgressNoteDto {
   @ApiProperty({
-    description: 'Fecha en que se realizó la sesión',
+    description: 'Fecha de inicio de la sesión',
     example: '2024-03-01',
   })
   @IsDateString()
-  sessionDate!: string;
+  startDate!: string;
 
   @ApiProperty({
-    description: 'Tipo de sesión: INDIVIDUAL, GRUPAL, FAMILIAR, EVALUACION',
+    description: 'Fecha de culminación de la sesión',
+    example: '2024-03-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @ApiProperty({
+    description: 'Hora de inicio de la sesión (HH:mm)',
+    example: '09:00',
     required: false,
   })
   @IsOptional()
   @IsString()
-  sessionType?: string;
+  startTime?: string;
+
+  @ApiProperty({
+    description: 'Hora de culminación de la sesión (HH:mm)',
+    example: '10:00',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  endTime?: string;
+
+  @ApiProperty({
+    description: 'Indica si el participante asistió a la cita',
+    example: true,
+    default: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  attended?: boolean;
+
+  @ApiProperty({
+    description: 'Motivo de inasistencia (solo si attended es false)',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  absenceReason?: string;
 
   @ApiProperty({
     description: 'ID del tipo de abordaje (catálogo approach_types)',
@@ -430,6 +468,18 @@ export class CreateCaseDto {
   @IsNotEmpty()
   participantId!: number;
 
+  // 1b. TIPO DE CASO: consulta breve (solo notas de progreso, referidos y nota de cierre) o caso activo (todas las pestañas)
+  @ApiProperty({
+    description:
+      'Tipo de caso. "brief_consultation" omite la validación de composición familiar, historia biopsicosocial y demás pestañas clínicas, dejando solo notas de progreso, referidos y nota de cierre.',
+    enum: CaseType,
+    default: CaseType.ACTIVE_CASE,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(CaseType)
+  caseType?: CaseType;
+
   // 2. MOTIVO DE LA CONSULTA - opcional
   @ApiProperty({
     description: 'Motivo de consulta del caso',
@@ -451,6 +501,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   identifiedSituations?: number[];
 
   // 4. INTERVENCIÓN INICIAL - ahora es string simple
@@ -483,6 +534,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateFollowUpPlanDto)
   followUpPlan?: CreateFollowUpPlanDto[];
 
@@ -502,6 +554,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreatePhysicalHealthHistoryDto)
   physicalHealthHistory?: CreatePhysicalHealthHistoryDto[];
 
@@ -521,6 +574,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateMentalHealthHistoryDto)
   mentalHealthHistory?: CreateMentalHealthHistoryDto[];
 
@@ -545,6 +599,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateFamilyHealthHistoryDto)
   family_health_history?: CreateFamilyHealthHistoryDto[];
 
@@ -556,6 +611,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsObject()
   @ValidateNested()
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateWeighingDto)
   weighing?: CreateWeighingDto;
 
@@ -568,6 +624,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateInterventionPlanDto)
   interventionPlans?: CreateInterventionPlanDto[];
 
@@ -626,6 +683,7 @@ export class CreateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateFamilyMemberDto)
   familyMembers?: CreateFamilyMemberDto[];
 
@@ -649,6 +707,7 @@ export class CreateCaseDto {
   @IsObject()
   @IsNotEmpty()
   @ValidateNested()
+  @ValidateIf((o: CreateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateBioPsychosocialHistoryDto)
   bioPsychosocialHistory!: CreateBioPsychosocialHistoryDto;
 }
@@ -662,6 +721,16 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsNumber()
   participantId?: number;
+
+  @ApiProperty({
+    description:
+      'Tipo de caso. "brief_consultation" omite la validación de composición familiar, historia biopsicosocial y demás pestañas clínicas, dejando solo notas de progreso, referidos y nota de cierre.',
+    enum: CaseType,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(CaseType)
+  caseType?: CaseType;
 
   @ApiProperty({
     description: 'Motivo de consulta del caso',
@@ -699,6 +768,7 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   identifiedSituations?: number[];
 
   @ApiProperty({
@@ -709,6 +779,7 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateFollowUpPlanDto)
   followUpPlan?: CreateFollowUpPlanDto[];
 
@@ -720,6 +791,7 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreatePhysicalHealthHistoryDto)
   physicalHealthHistory?: CreatePhysicalHealthHistoryDto[];
 
@@ -731,6 +803,7 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateMentalHealthHistoryDto)
   mentalHealthHistory?: CreateMentalHealthHistoryDto[];
 
@@ -742,6 +815,7 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateFamilyHealthHistoryDto)
   family_health_history?: CreateFamilyHealthHistoryDto[];
 
@@ -752,6 +826,7 @@ export class UpdateCaseDto {
   })
   @IsOptional()
   @ValidateNested()
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateWeighingDto)
   weighing?: CreateWeighingDto;
 
@@ -763,6 +838,7 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateInterventionPlanDto)
   interventionPlans?: CreateInterventionPlanDto[];
 
@@ -794,6 +870,7 @@ export class UpdateCaseDto {
   })
   @IsOptional()
   @ValidateNested()
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateBioPsychosocialHistoryDto)
   bioPsychosocialHistory?: CreateBioPsychosocialHistoryDto;
 
@@ -805,6 +882,7 @@ export class UpdateCaseDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
+  @ValidateIf((o: UpdateCaseDto) => o.caseType !== CaseType.BRIEF_CONSULTATION)
   @Type(() => CreateFamilyMemberDto)
   familyMembers?: CreateFamilyMemberDto[];
 }
@@ -818,6 +896,25 @@ export class UpdateCaseStatusDto {
   @IsEnum(CaseStatus)
   @IsNotEmpty()
   status!: CaseStatus;
+}
+
+export class TransferCaseDto {
+  @ApiProperty({
+    description: 'ID del profesional al que se transfiere el caso',
+    example: 5,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  toProfessionalId!: number;
+
+  @ApiProperty({
+    description: 'Motivo de la transferencia',
+    required: false,
+    example: 'Reasignación por carga de trabajo del profesional anterior',
+  })
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
 
 export class CaseResponseDto {

@@ -32,6 +32,7 @@ import {
   CreateCaseDto,
   UpdateCaseDto,
   UpdateCaseStatusDto,
+  TransferCaseDto,
   CaseResponseDto,
 } from './dto/case.dto';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -123,8 +124,10 @@ export class CasesController {
           ],
           progressNotes: [
             {
-              sessionDate: '2024-01-15',
-              sessionType: 'INDIVIDUAL',
+              startDate: '2024-01-15',
+              endDate: '2024-01-15',
+              startTime: '09:00',
+              endTime: '10:30',
               summary:
                 'Primera sesión de orientación psicológica. Se estableció rapport adecuado',
               observations:
@@ -664,10 +667,11 @@ export class CasesController {
         progressNotes: [
           {
             id: 1,
-            sessionDate: '2024-10-31T14:00:00.000Z',
+            startDate: '2024-10-31',
+            endDate: '2024-10-31',
+            startTime: '14:00',
+            endTime: '15:30',
             sessionNumber: 1,
-            sessionType: 'Individual',
-            duration: 90,
             summary:
               'Primera sesión completada exitosamente. Participante mostró buena receptividad y motivación para el cambio',
             observations:
@@ -677,10 +681,11 @@ export class CasesController {
           },
           {
             id: 2,
-            sessionDate: '2024-11-07T14:00:00.000Z',
+            startDate: '2024-11-07',
+            endDate: '2024-11-07',
+            startTime: '14:00',
+            endTime: '15:00',
             sessionNumber: 2,
-            sessionType: 'Individual',
-            duration: 60,
             summary:
               'Revisión de tareas. Participante completó diario de pensamientos',
             observations:
@@ -981,6 +986,61 @@ export class CasesController {
     @Body() updateCaseStatusDto: UpdateCaseStatusDto,
   ) {
     return await this.casesService.updateStatus(id, updateCaseStatusDto);
+  }
+
+  @Patch(':id/transfer')
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Transferir un caso a otro profesional',
+    description:
+      'Reasigna el profesional responsable del caso. Restringido a roles SUPERVISOR, COORDINADOR y ADMIN. ' +
+      'Conserva el historial de todas las transferencias del caso (de quién a quién y quién la realizó).',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del caso',
+    type: Number,
+    example: 1,
+  })
+  @ApiBody({ type: TransferCaseDto })
+  @ApiResponse({ status: 200, description: 'Caso transferido exitosamente' })
+  @ApiResponse({ status: 404, description: 'Caso o profesional no encontrado' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  async transferCase(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() transferCaseDto: TransferCaseDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    return await this.casesService.transferCase(
+      id,
+      transferCaseDto,
+      currentUser.id,
+    );
+  }
+
+  @Get(':id/transfers')
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Historial de transferencias de un caso',
+    description:
+      'Retorna el historial completo de reasignaciones del caso, ordenado del más reciente al más antiguo.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del caso',
+    type: Number,
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Historial de transferencias del caso',
+  })
+  async getTransferHistory(@Param('id', ParseIntPipe) id: number) {
+    return await this.casesService.getTransferHistory(id);
   }
 
   @Get('by-user/:userId')

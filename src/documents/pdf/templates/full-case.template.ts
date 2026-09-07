@@ -66,16 +66,21 @@ export function buildFullCaseDoc(
     ],
   );
 
-  // Notas de progreso ordenadas cronológicamente (ascendente por sessionDate)
+  // Notas de progreso ordenadas cronológicamente (ascendente por startDate)
   const sortedProgress = [...(caseEntity.progressNotes ?? [])].sort((a, b) => {
-    const da = a.sessionDate ? new Date(a.sessionDate).getTime() : 0;
-    const db = b.sessionDate ? new Date(b.sessionDate).getTime() : 0;
+    const da = a.startDate ? new Date(a.startDate).getTime() : 0;
+    const db = b.startDate ? new Date(b.startDate).getTime() : 0;
     return da - db;
   });
 
   const progressContent: Content[] = sortedProgress.flatMap((pn, i) => [
-    subItemTitle(`${i + 1}. Sesión del ${formatDate(pn.sessionDate)}`),
+    subItemTitle(`${i + 1}. Sesión del ${formatDate(pn.startDate)}`),
     dataTable([
+      ['Fecha de culminación', formatDate(pn.endDate)],
+      ['Hora de inicio', pn.startTime],
+      ['Hora de culminación', pn.endTime],
+      ['Asistió', pn.attended ? 'Sí' : 'No'],
+      ['Motivo de inasistencia', pn.attended ? undefined : pn.absenceReason],
       ['Tipo de abordaje', pn.approachType?.name],
       ['Tipo de proceso', pn.processType?.name],
       ['Proceso', pn.process],

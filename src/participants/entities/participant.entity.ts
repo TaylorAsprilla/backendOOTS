@@ -60,20 +60,26 @@ export class Participant {
   })
   email?: string;
 
-  @Column({ name: 'document_type_id', type: 'int', unsigned: true })
-  documentTypeId!: number;
+  @Column({
+    name: 'document_type_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
+  documentTypeId?: number;
 
-  @ManyToOne(() => DocumentType, { eager: true })
+  @ManyToOne(() => DocumentType, { eager: true, nullable: true })
   @JoinColumn({ name: 'document_type_id' })
-  documentType!: DocumentType;
+  documentType?: DocumentType;
 
   @Column({
     name: 'document_number',
     type: 'varchar',
     length: 50,
     unique: true,
+    nullable: true,
   })
-  documentNumber!: string;
+  documentNumber?: string;
 
   @Column({ name: 'address', type: 'varchar', length: 200 })
   address!: string;
