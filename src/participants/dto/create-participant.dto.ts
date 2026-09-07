@@ -167,11 +167,23 @@ export class CreateParticipantDto {
   @IsEmail()
   email?: string;
 
+  @ApiProperty({
+    description: 'ID del tipo de documento (de catálogo document-types)',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
   @IsNumber()
-  documentTypeId: number;
+  documentTypeId?: number;
 
+  @ApiProperty({
+    description: 'Número de documento del participante',
+    example: '1234567890',
+    required: false,
+  })
+  @IsOptional()
   @IsString()
-  documentNumber: string;
+  documentNumber?: string;
 
   @IsString()
   @MinLength(10)

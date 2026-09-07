@@ -24,14 +24,22 @@ export function buildProgressNoteDoc(
     ...buildCoverBanner(
       'NOTA DE PROGRESO',
       caseEntity,
-      `Sesión del ${formatDate(note.sessionDate)}`,
+      `Sesión del ${formatDate(note.startDate)}`,
     ),
     ...participantInfoSection(caseEntity),
     ...caseInfoSection(caseEntity),
 
     sectionTitle('Datos de la Sesión'),
     dataTable([
-      ['Fecha de la sesión', formatDate(note.sessionDate)],
+      ['Fecha de inicio', formatDate(note.startDate)],
+      ['Fecha de culminación', formatDate(note.endDate)],
+      ['Hora de inicio', note.startTime],
+      ['Hora de culminación', note.endTime],
+      ['Asistió', note.attended ? 'Sí' : 'No'],
+      [
+        'Motivo de inasistencia',
+        note.attended ? undefined : note.absenceReason,
+      ],
       ['Tipo de abordaje', note.approachType?.name],
       ['Tipo de proceso', note.processType?.name],
       ['Profesional que registra', fullUserName(currentUser)],

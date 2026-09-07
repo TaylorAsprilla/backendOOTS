@@ -29,18 +29,20 @@ export class ParticipantsService {
         const { familyMembers, emergencyContacts, ...participantData } =
           createParticipantDto;
 
-        // Validar si el documentNumber ya existe
-        const existingByDocument = await transactionalEntityManager.findOne(
-          Participant,
-          {
-            where: { documentNumber: participantData.documentNumber },
-          },
-        );
-
-        if (existingByDocument) {
-          throw new ConflictException(
-            `El número de documento ${participantData.documentNumber} ya está registrado`,
+        // Validar si el documentNumber ya existe (solo si se proporciona)
+        if (participantData.documentNumber) {
+          const existingByDocument = await transactionalEntityManager.findOne(
+            Participant,
+            {
+              where: { documentNumber: participantData.documentNumber },
+            },
           );
+
+          if (existingByDocument) {
+            throw new ConflictException(
+              `El número de documento ${participantData.documentNumber} ya está registrado`,
+            );
+          }
         }
 
         // Validar si el email ya existe (solo si se proporciona)
@@ -506,7 +508,7 @@ export class ParticipantsService {
       firstLastName: string;
       secondLastName?: string;
       fullName: string;
-      documentNumber: string;
+      documentNumber?: string;
       phoneNumber?: string;
       email?: string;
       city?: string;

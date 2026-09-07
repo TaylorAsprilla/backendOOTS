@@ -16,8 +16,23 @@ export class ProgressNote {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id!: number;
 
-  @Column({ name: 'session_date', type: 'date' })
-  sessionDate!: Date;
+  @Column({ name: 'start_date', type: 'date' })
+  startDate!: Date;
+
+  @Column({ name: 'end_date', type: 'date', nullable: true })
+  endDate?: Date;
+
+  @Column({ name: 'start_time', type: 'time', nullable: true })
+  startTime?: string;
+
+  @Column({ name: 'end_time', type: 'time', nullable: true })
+  endTime?: string;
+
+  @Column({ name: 'attended', type: 'boolean', default: true })
+  attended!: boolean;
+
+  @Column({ name: 'absence_reason', type: 'text', nullable: true })
+  absenceReason?: string;
 
   @Column({
     name: 'approach_type_id',

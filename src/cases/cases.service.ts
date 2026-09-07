@@ -256,8 +256,14 @@ export class CasesService {
 
           const progressNotes = createCaseDto.progressNotes.map((noteData) =>
             manager.create(ProgressNote, {
-              sessionDate: new Date(noteData.sessionDate),
-              sessionType: noteData.sessionType,
+              startDate: new Date(noteData.startDate),
+              endDate: noteData.endDate
+                ? new Date(noteData.endDate)
+                : undefined,
+              startTime: noteData.startTime,
+              endTime: noteData.endTime,
+              attended: noteData.attended,
+              absenceReason: noteData.absenceReason,
               summary: noteData.summary,
               observations: noteData.observations,
               agreements: noteData.agreements,
@@ -823,7 +829,7 @@ export class CasesService {
       participant: {
         id: number;
         fullName: string;
-        documentNumber: string;
+        documentNumber?: string;
       };
     }>;
   }> {

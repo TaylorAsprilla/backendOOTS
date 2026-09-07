@@ -7,6 +7,7 @@ import {
   ValidateNested,
   IsArray,
   IsNumber,
+  IsBoolean,
   IsDateString,
   ArrayMinSize,
 } from 'class-validator';
@@ -278,19 +279,56 @@ export class CreateInterventionPlanDto {
 
 export class CreateProgressNoteDto {
   @ApiProperty({
-    description: 'Fecha en que se realizó la sesión',
+    description: 'Fecha de inicio de la sesión',
     example: '2024-03-01',
   })
   @IsDateString()
-  sessionDate!: string;
+  startDate!: string;
 
   @ApiProperty({
-    description: 'Tipo de sesión: INDIVIDUAL, GRUPAL, FAMILIAR, EVALUACION',
+    description: 'Fecha de culminación de la sesión',
+    example: '2024-03-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @ApiProperty({
+    description: 'Hora de inicio de la sesión (HH:mm)',
+    example: '09:00',
     required: false,
   })
   @IsOptional()
   @IsString()
-  sessionType?: string;
+  startTime?: string;
+
+  @ApiProperty({
+    description: 'Hora de culminación de la sesión (HH:mm)',
+    example: '10:00',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  endTime?: string;
+
+  @ApiProperty({
+    description: 'Indica si el participante asistió a la cita',
+    example: true,
+    default: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  attended?: boolean;
+
+  @ApiProperty({
+    description: 'Motivo de inasistencia (solo si attended es false)',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  absenceReason?: string;
 
   @ApiProperty({
     description: 'ID del tipo de abordaje (catálogo approach_types)',

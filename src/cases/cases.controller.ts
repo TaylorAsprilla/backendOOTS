@@ -123,8 +123,10 @@ export class CasesController {
           ],
           progressNotes: [
             {
-              sessionDate: '2024-01-15',
-              sessionType: 'INDIVIDUAL',
+              startDate: '2024-01-15',
+              endDate: '2024-01-15',
+              startTime: '09:00',
+              endTime: '10:30',
               summary:
                 'Primera sesión de orientación psicológica. Se estableció rapport adecuado',
               observations:
@@ -664,10 +666,11 @@ export class CasesController {
         progressNotes: [
           {
             id: 1,
-            sessionDate: '2024-10-31T14:00:00.000Z',
+            startDate: '2024-10-31',
+            endDate: '2024-10-31',
+            startTime: '14:00',
+            endTime: '15:30',
             sessionNumber: 1,
-            sessionType: 'Individual',
-            duration: 90,
             summary:
               'Primera sesión completada exitosamente. Participante mostró buena receptividad y motivación para el cambio',
             observations:
@@ -677,10 +680,11 @@ export class CasesController {
           },
           {
             id: 2,
-            sessionDate: '2024-11-07T14:00:00.000Z',
+            startDate: '2024-11-07',
+            endDate: '2024-11-07',
+            startTime: '14:00',
+            endTime: '15:00',
             sessionNumber: 2,
-            sessionType: 'Individual',
-            duration: 60,
             summary:
               'Revisión de tareas. Participante completó diario de pensamientos',
             observations:
