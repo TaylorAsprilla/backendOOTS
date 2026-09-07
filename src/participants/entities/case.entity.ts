@@ -24,6 +24,7 @@ import { ParticipantIdentifiedSituation } from './participant-identified-situati
 import { FollowUpPlan } from './follow-up-plan.entity';
 import { Weighing } from './weighing.entity';
 import { FamilyHealthHistory } from './family-health-history.entity';
+import { CaseTransfer } from '../../cases/entities/case-transfer.entity';
 
 @Entity('cases')
 @Index('IDX_cases_status', ['status'])
@@ -75,6 +76,22 @@ export class Case {
   @ManyToOne(() => User, { nullable: true, eager: false })
   @JoinColumn({ name: 'created_by_id' })
   createdBy?: User;
+
+  // Profesional actualmente responsable del caso (se actualiza al transferir)
+  @Column({
+    name: 'assigned_to_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
+  assignedToId?: number;
+
+  @ManyToOne(() => User, { nullable: true, eager: false })
+  @JoinColumn({ name: 'assigned_to_id' })
+  assignedTo?: User;
+
+  @OneToMany(() => CaseTransfer, (transfer) => transfer.case)
+  transfers!: CaseTransfer[];
 
   // INFORMACIÓN FAMILIAR (ahora pertenece al caso)
   @OneToMany(() => FamilyMember, (familyMember) => familyMember.case, {

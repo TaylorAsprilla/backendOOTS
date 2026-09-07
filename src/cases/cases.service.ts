@@ -20,12 +20,15 @@ import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { Weighing } from '../participants/entities/weighing.entity';
 import { FamilyMember } from '../participants/entities/family-member.entity';
 import { BioPsychosocialHistory } from '../participants/entities/bio-psychosocial-history.entity';
+import { CaseTransfer } from './entities/case-transfer.entity';
+import { User } from '../users/entities/user.entity';
 import {
   CreateCaseDto,
   UpdateCaseDto,
   UpdateCaseStatusDto,
+  TransferCaseDto,
 } from './dto/case.dto';
-import { CaseStatus } from '../common/enums';
+import { CaseStatus, CaseType, Role } from '../common/enums';
 
 @Injectable()
 export class CasesService {
@@ -80,17 +83,22 @@ export class CasesService {
           intervention: createCaseDto.intervention,
           referrals: createCaseDto.referrals,
           createdById,
+          assignedToId: createdById,
         });
 
         const savedCase = await manager.save(newCase);
         this.logger.debug(`Caso creado con ID: ${savedCase.id}`);
+
+        // Las pestañas clínicas no aplican en consulta breve, aunque el front las envíe
+        const isBriefConsultation =
+          createCaseDto.caseType === CaseType.BRIEF_CONSULTATION;
 
         // ============================================================================
         // INFORMACIÓN FAMILIAR Y BIOPSICOSOCIAL (ahora del caso)
         // ============================================================================
 
         // 3. Crear miembros familiares si se proporcionan
-        if (createCaseDto.familyMembers?.length) {
+        if (!isBriefConsultation && createCaseDto.familyMembers?.length) {
           this.logger.debug(
             `Creando ${createCaseDto.familyMembers.length} miembros familiares`,
           );
@@ -108,7 +116,7 @@ export class CasesService {
         }
 
         // 4. Crear historial biopsicosocial si se proporciona
-        if (createCaseDto.bioPsychosocialHistory) {
+        if (!isBriefConsultation && createCaseDto.bioPsychosocialHistory) {
           this.logger.debug('Creando historial biopsicosocial');
 
           // Verificar si ya existe un historial para este caso
@@ -150,7 +158,7 @@ export class CasesService {
         // ============================================================================
 
         // 5. Crear planes de seguimiento
-        if (createCaseDto.followUpPlan?.length) {
+        if (!isBriefConsultation && createCaseDto.followUpPlan?.length) {
           this.logger.debug(
             `Creando ${createCaseDto.followUpPlan.length} planes de seguimiento`,
           );
@@ -167,7 +175,10 @@ export class CasesService {
         }
 
         // 6. Crear historiales de salud física
-        if (createCaseDto.physicalHealthHistory?.length) {
+        if (
+          !isBriefConsultation &&
+          createCaseDto.physicalHealthHistory?.length
+        ) {
           this.logger.debug(
             `Creando ${createCaseDto.physicalHealthHistory.length} historiales de salud física`,
           );
@@ -184,7 +195,7 @@ export class CasesService {
         }
 
         // 7. Crear historiales de salud mental
-        if (createCaseDto.mentalHealthHistory?.length) {
+        if (!isBriefConsultation && createCaseDto.mentalHealthHistory?.length) {
           this.logger.debug(
             `Creando ${createCaseDto.mentalHealthHistory.length} historiales de salud mental`,
           );
@@ -201,7 +212,10 @@ export class CasesService {
         }
 
         // 7b. Crear antecedentes familiares de salud
-        if (createCaseDto.family_health_history?.length) {
+        if (
+          !isBriefConsultation &&
+          createCaseDto.family_health_history?.length
+        ) {
           this.logger.debug(
             `Creando ${createCaseDto.family_health_history.length} antecedentes familiares de salud`,
           );
@@ -221,7 +235,7 @@ export class CasesService {
         }
 
         // 8. Crear ponderación (weighing)
-        if (createCaseDto.weighing) {
+        if (!isBriefConsultation && createCaseDto.weighing) {
           this.logger.debug('Creando ponderación del caso');
 
           const weighing = manager.create(Weighing, {
@@ -233,7 +247,7 @@ export class CasesService {
         }
 
         // 9. Crear planes de intervención
-        if (createCaseDto.interventionPlans?.length) {
+        if (!isBriefConsultation && createCaseDto.interventionPlans?.length) {
           this.logger.debug(
             `Creando ${createCaseDto.interventionPlans.length} planes de intervención`,
           );
@@ -276,7 +290,10 @@ export class CasesService {
         }
 
         // 11. Crear situaciones identificadas
-        if (createCaseDto.identifiedSituations?.length) {
+        if (
+          !isBriefConsultation &&
+          createCaseDto.identifiedSituations?.length
+        ) {
           this.logger.debug(
             `Procesando ${createCaseDto.identifiedSituations.length} situaciones identificadas`,
           );
@@ -475,7 +492,13 @@ export class CasesService {
     updateCaseDto: UpdateCaseDto,
   ): Promise<Case> {
     // Verificar que el caso existe
-    await this.findOne(caseId);
+    const existingCase = await this.findOne(caseId);
+
+    // Las pestañas clínicas (familia, biopsicosocial, salud, etc.) no aplican
+    // en consulta breve, aunque el front las envíe con datos incompletos
+    const effectiveCaseType = updateCaseDto.caseType ?? existingCase.caseType;
+    const isBriefConsultation =
+      effectiveCaseType === CaseType.BRIEF_CONSULTATION;
 
     // Actualizar campos escalares directamente (evita cascade en relaciones cargadas)
     const scalarFields: Partial<Case> = {};
@@ -496,7 +519,7 @@ export class CasesService {
       await this.caseRepository.update(caseId, scalarFields);
     }
 
-    if (updateCaseDto.followUpPlan?.length) {
+    if (!isBriefConsultation && updateCaseDto.followUpPlan?.length) {
       const followUpPlanRepo = this.dataSource.getRepository(FollowUpPlan);
       await followUpPlanRepo.delete({ caseId });
       const newPlans = updateCaseDto.followUpPlan.map((planData) =>
@@ -505,7 +528,10 @@ export class CasesService {
       await followUpPlanRepo.save(newPlans);
     }
 
-    if (updateCaseDto.physicalHealthHistory !== undefined) {
+    if (
+      !isBriefConsultation &&
+      updateCaseDto.physicalHealthHistory !== undefined
+    ) {
       const physRepo = this.dataSource.getRepository(PhysicalHealthHistory);
       await physRepo.delete({ caseId });
       if (updateCaseDto.physicalHealthHistory.length) {
@@ -516,7 +542,10 @@ export class CasesService {
       }
     }
 
-    if (updateCaseDto.mentalHealthHistory !== undefined) {
+    if (
+      !isBriefConsultation &&
+      updateCaseDto.mentalHealthHistory !== undefined
+    ) {
       const mentalRepo = this.dataSource.getRepository(MentalHealthHistory);
       await mentalRepo.delete({ caseId });
       if (updateCaseDto.mentalHealthHistory.length) {
@@ -527,7 +556,7 @@ export class CasesService {
       }
     }
 
-    if (updateCaseDto.family_health_history?.length) {
+    if (!isBriefConsultation && updateCaseDto.family_health_history?.length) {
       const familyRepo = this.dataSource.getRepository(FamilyHealthHistory);
       // Borrar solo los del mismo history_type que se está actualizando
       const historyTypes = [
@@ -549,7 +578,7 @@ export class CasesService {
       await familyRepo.save(newRecords);
     }
 
-    if (updateCaseDto.weighing) {
+    if (!isBriefConsultation && updateCaseDto.weighing) {
       const weighingRepo = this.dataSource.getRepository(Weighing);
       const existing = await weighingRepo.findOne({ where: { caseId } });
       if (existing) {
@@ -561,7 +590,7 @@ export class CasesService {
       }
     }
 
-    if (updateCaseDto.interventionPlans?.length) {
+    if (!isBriefConsultation && updateCaseDto.interventionPlans?.length) {
       const interventionRepo = this.dataSource.getRepository(InterventionPlan);
       await interventionRepo.delete({ caseId });
       const newPlans = updateCaseDto.interventionPlans.map((plan) =>
@@ -591,7 +620,7 @@ export class CasesService {
       }
     }
 
-    if (updateCaseDto.bioPsychosocialHistory) {
+    if (!isBriefConsultation && updateCaseDto.bioPsychosocialHistory) {
       const bioRepo = this.dataSource.getRepository(BioPsychosocialHistory);
       const existing = await bioRepo.findOne({ where: { caseId } });
       if (existing) {
@@ -603,7 +632,7 @@ export class CasesService {
       }
     }
 
-    if (updateCaseDto.familyMembers !== undefined) {
+    if (!isBriefConsultation && updateCaseDto.familyMembers !== undefined) {
       const familyMemberRepo = this.dataSource.getRepository(FamilyMember);
       await familyMemberRepo.delete({ caseId });
       if (updateCaseDto.familyMembers.length) {
@@ -615,6 +644,75 @@ export class CasesService {
     }
 
     return await this.findOne(caseId);
+  }
+
+  async transferCase(
+    caseId: number,
+    transferCaseDto: TransferCaseDto,
+    transferredById: number,
+  ): Promise<Case> {
+    const caseEntity = await this.findOne(caseId);
+
+    const toUser = await this.dataSource.getRepository(User).findOne({
+      where: { id: transferCaseDto.toProfessionalId },
+    });
+
+    if (!toUser) {
+      throw new NotFoundException(
+        `Profesional con ID ${transferCaseDto.toProfessionalId} no encontrado`,
+      );
+    }
+
+    const allowedRoles = [
+      Role.PSICOLOGO,
+      Role.ORIENTADOR,
+      Role.TRABAJO_SOCIAL,
+      Role.COORDINADOR,
+      Role.SUPERVISOR,
+    ];
+    if (
+      !toUser.role?.name ||
+      !allowedRoles.includes(toUser.role.name as Role)
+    ) {
+      throw new BadRequestException(
+        'El profesional destino no tiene un rol válido para recibir casos',
+      );
+    }
+
+    const fromUserId = caseEntity.assignedToId ?? caseEntity.createdById;
+
+    if (fromUserId === transferCaseDto.toProfessionalId) {
+      throw new BadRequestException(
+        'El caso ya está asignado a este profesional',
+      );
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      // Conserva el historial de a quién estuvo asignado el caso antes de la transferencia
+      const transfer = manager.create(CaseTransfer, {
+        caseId,
+        fromUserId,
+        toUserId: transferCaseDto.toProfessionalId,
+        transferredById,
+        reason: transferCaseDto.reason,
+      });
+      await manager.save(transfer);
+
+      await manager.update(Case, caseId, {
+        assignedToId: transferCaseDto.toProfessionalId,
+      });
+    });
+
+    return await this.findOne(caseId);
+  }
+
+  async getTransferHistory(caseId: number): Promise<CaseTransfer[]> {
+    await this.findOne(caseId);
+
+    return await this.dataSource.getRepository(CaseTransfer).find({
+      where: { caseId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async updateStatus(

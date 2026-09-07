@@ -898,6 +898,25 @@ export class UpdateCaseStatusDto {
   status!: CaseStatus;
 }
 
+export class TransferCaseDto {
+  @ApiProperty({
+    description: 'ID del profesional al que se transfiere el caso',
+    example: 5,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  toProfessionalId!: number;
+
+  @ApiProperty({
+    description: 'Motivo de la transferencia',
+    required: false,
+    example: 'Reasignación por carga de trabajo del profesional anterior',
+  })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
 export class CaseResponseDto {
   @ApiProperty({ description: 'ID único del caso', example: 1 })
   id!: number;
