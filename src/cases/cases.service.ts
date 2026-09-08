@@ -780,12 +780,15 @@ export class CasesService {
     limit: number;
     totalPages: number;
   }> {
-    const [data, total] = await this.caseRepository.findAndCount({
-      relations: ['participant'],
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const [data, total] = await this.caseRepository
+      .createQueryBuilder('case')
+      .leftJoinAndSelect('case.participant', 'participant')
+      .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
+      .orderBy('case.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
@@ -793,10 +796,14 @@ export class CasesService {
     data: Case[];
     total: number;
   }> {
-    const data = await this.caseRepository.find({
-      relations: ['participant', 'createdBy'],
-      order: { createdAt: 'DESC' },
-    });
+    const data = await this.caseRepository
+      .createQueryBuilder('case')
+      .leftJoinAndSelect('case.participant', 'participant')
+      .leftJoinAndSelect('case.createdBy', 'createdBy')
+      .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
+      .orderBy('case.createdAt', 'DESC')
+      .getMany();
+
     return { data, total: data.length };
   }
 
@@ -817,6 +824,7 @@ export class CasesService {
       id: number;
       status: CaseStatus;
       consultationReason?: string;
+      progressNotesCount: number;
       createdAt: Date;
       updatedAt: Date;
       participant: {
@@ -843,6 +851,7 @@ export class CasesService {
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
       .leftJoinAndSelect('case.createdBy', 'createdBy')
+      .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
       .orderBy('case.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -881,6 +890,7 @@ export class CasesService {
         id: c.id,
         status: c.status,
         consultationReason: c.consultationReason,
+        progressNotesCount: c.progressNotesCount ?? 0,
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
         participant: {
@@ -925,6 +935,7 @@ export class CasesService {
       status: CaseStatus;
       consultationReason?: string;
       intervention?: string;
+      progressNotesCount: number;
       createdAt: Date;
       updatedAt: Date;
       participant: {
@@ -937,6 +948,7 @@ export class CasesService {
     const cases = await this.caseRepository
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
+      .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
       .where('case.createdById = :userId', { userId })
       .orderBy('case.createdAt', 'DESC')
       .getMany();
@@ -948,6 +960,7 @@ export class CasesService {
         status: caseEntity.status,
         consultationReason: caseEntity.consultationReason,
         intervention: caseEntity.intervention,
+        progressNotesCount: caseEntity.progressNotesCount ?? 0,
         createdAt: caseEntity.createdAt,
         updatedAt: caseEntity.updatedAt,
         participant: {

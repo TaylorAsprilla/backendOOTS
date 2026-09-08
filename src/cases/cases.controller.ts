@@ -485,6 +485,7 @@ export class CasesController {
             consultationReason: 'Consulta por ansiedad',
             intervention: null,
             referrals: null,
+            progressNotesCount: 4,
             createdAt: '2026-06-10T10:30:00.000Z',
             updatedAt: '2026-06-10T10:30:00.000Z',
             closedAt: null,
@@ -1092,6 +1093,7 @@ export class CasesController {
                 type: 'string',
                 example: 'Consulta por ansiedad',
               },
+              progressNotesCount: { type: 'number', example: 4 },
               createdAt: { type: 'string', format: 'date-time' },
               participant: {
                 type: 'object',
@@ -1164,6 +1166,7 @@ export class CasesController {
           participantId: 1,
           consultationReason:
             'Consulta por síntomas de ansiedad y estrés laboral persistente',
+          progressNotesCount: 4,
           intervention:
             'Sesión inicial de orientación psicológica de 90 minutos',
           closingNote: null,
