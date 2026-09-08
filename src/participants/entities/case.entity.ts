@@ -155,6 +155,8 @@ export class Case {
   })
   progressNotes!: ProgressNote[];
 
+  progressNotesCount?: number;
+
   // 11. REFERIDOS - ahora es string simple
   @Column({ name: 'referrals', type: 'text', nullable: true })
   referrals?: string;
