@@ -539,7 +539,12 @@ export class CaseDiscussionsService {
   ): PersistedFamilyMember[] {
     return familyMembers.map((familyMember, index) => ({
       name: familyMember.name,
-      age: this.calculateAge(familyMember.birthDate),
+      age:
+        familyMember.age != null
+          ? familyMember.age
+          : familyMember.birthDate
+            ? this.calculateAge(familyMember.birthDate)
+            : undefined,
       relationship:
         familyMember.familyRelationship?.name ||
         String(familyMember.familyRelationshipId),

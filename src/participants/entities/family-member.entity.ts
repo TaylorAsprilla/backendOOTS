@@ -19,8 +19,11 @@ export class FamilyMember {
   @Column({ name: 'name', type: 'varchar', length: 100 })
   name!: string;
 
-  @Column({ name: 'birth_date', type: 'date' })
-  birthDate!: Date;
+  @Column({ name: 'age', type: 'int', nullable: true })
+  age?: number;
+
+  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  birthDate?: Date;
 
   @Column({ name: 'occupation', type: 'varchar', length: 200 })
   occupation!: string;

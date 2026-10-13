@@ -11,6 +11,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import helmet from 'helmet';
 import compression from 'compression';
+import { runMigrations } from './migrate';
 
 const bootstrapLogger = new Logger('Process');
 
@@ -32,6 +33,13 @@ process.on('uncaughtException', (error) => {
 });
 
 async function bootstrap() {
+  // Ejecutar migraciones automáticas al iniciar la app (Elastic Beanstalk / Producción)
+  try {
+    await runMigrations();
+  } catch (err: any) {
+    bootstrapLogger.error(`Error ejecutando migraciones: ${err?.message}`, err?.stack);
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // Configurar middleware de seguridad

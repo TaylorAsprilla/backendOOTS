@@ -30,11 +30,22 @@ export class CreateFamilyMemberDto {
   name!: string;
 
   @ApiProperty({
+    description: 'Edad del familiar en años',
+    example: 35,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  age?: number;
+
+  @ApiProperty({
     description: 'Fecha de nacimiento del familiar',
     example: '1980-07-20',
+    required: false,
   })
+  @IsOptional()
   @IsDateString()
-  birthDate!: string;
+  birthDate?: string;
 
   @ApiProperty({
     description: 'Ocupación o actividad principal del familiar',

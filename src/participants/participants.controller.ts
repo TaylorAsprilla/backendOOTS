@@ -425,6 +425,8 @@ export class ParticipantsController {
   }
 
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY, Role.TRABAJO_SOCIAL)
   @ApiOperation({
     summary: 'Actualizar datos de un participante',
     description:

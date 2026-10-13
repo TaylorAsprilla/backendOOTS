@@ -549,6 +549,10 @@ export class CatalogSeedService implements OnModuleInit {
         name: 'Proceso de Acompañamiento',
         description: 'Proceso de seguimiento y apoyo continuo',
       },
+      {
+        name: 'Inicial',
+        description: 'Nota inicial / Primer encuentro',
+      },
     ];
 
     await this.processTypeRepository.save(processTypes);

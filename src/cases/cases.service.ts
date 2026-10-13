@@ -279,6 +279,8 @@ export class CasesService {
               endTime: noteData.endTime,
               attended: noteData.attended,
               absenceReason: noteData.absenceReason,
+              approachTypeId: noteData.approachTypeId,
+              processTypeId: noteData.processTypeId,
               summary: noteData.summary,
               observations: noteData.observations,
               agreements: noteData.agreements,
