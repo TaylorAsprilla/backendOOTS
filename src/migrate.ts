@@ -16,7 +16,7 @@ interface IndexRow extends RowDataPacket {
   INDEX_NAME: string;
 }
 
-async function runMigrations() {
+export async function runMigrations() {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
     port: +(process.env.DB_PORT || '3306'),
@@ -80,13 +80,51 @@ async function runMigrations() {
       console.log('[migrate] · refresh_tokens index already correct, skipping');
     }
 
+    // ── 4. family_members.age and nullable birth_date ─────────────────────
+    const [ageRows] = await connection.query<ColumnRow[]>(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'family_members' AND COLUMN_NAME = 'age'`,
+      [process.env.DB_DATABASE],
+    );
+    if (ageRows.length === 0) {
+      await connection.query(
+        `ALTER TABLE family_members
+           ADD COLUMN age INT NULL AFTER name,
+           MODIFY COLUMN birth_date DATE NULL`,
+      );
+      await connection.query(
+        `UPDATE family_members
+           SET age = TIMESTAMPDIFF(YEAR, birth_date, CURDATE())
+         WHERE age IS NULL AND birth_date IS NOT NULL`,
+      );
+      console.log('[migrate] ✓ Added family_members.age and made birth_date nullable');
+    } else {
+      console.log('[migrate] · family_members.age already exists, skipping');
+    }
+
+    // ── 5. process_types.Inicial ──────────────────────────────────────────
+    const [processTypeRows] = await connection.query<RowDataPacket[]>(
+      `SELECT id FROM process_types WHERE name = 'Inicial'`,
+    );
+    if (processTypeRows.length === 0) {
+      await connection.query(
+        `INSERT INTO process_types (name, description, is_active)
+         VALUES ('Inicial', 'Nota inicial / Primer encuentro', 1)`,
+      );
+      console.log('[migrate] ✓ Added process_types "Inicial"');
+    } else {
+      console.log('[migrate] · process_types "Inicial" already exists, skipping');
+    }
+
     console.log('[migrate] All migrations completed successfully');
   } finally {
     await connection.end();
   }
 }
 
-runMigrations().catch((err) => {
-  console.error('[migrate] Migration failed:', err.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  runMigrations().catch((err) => {
+    console.error('[migrate] Migration failed:', err.message);
+    process.exit(1);
+  });
+}

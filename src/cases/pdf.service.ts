@@ -204,7 +204,14 @@ export class PdfService {
             'Relación',
             fm.familyRelationship?.name ?? String(fm.familyRelationshipId),
           ],
-          ['Fecha de nacimiento', formatDate(fm.birthDate)],
+          [
+            'Edad',
+            fm.age != null
+              ? `${fm.age} años`
+              : fm.birthDate
+                ? formatDate(fm.birthDate)
+                : '—',
+          ],
           ['Ocupación', fm.occupation],
           ['Nivel académico', fm.academicLevel?.name],
         ]),
