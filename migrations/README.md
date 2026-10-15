@@ -1,5 +1,13 @@
 # Guía de Migración: Datos Médicos de Participant a Case
 
+## Auditoría de participantes (migración independiente)
+
+Ejecutar [create-participant-audit-logs.sql](./create-participant-audit-logs.sql) en la base de datos correspondiente antes de iniciar el backend actualizado. El script es idempotente y crea únicamente `participant_audit_logs`; no modifica participantes ni reconstruye su historial anterior.
+
+La tabla guarda participante, usuario (ID, nombre y correo), acción y fecha/hora UTC con precisión de microsegundos. No contiene valores anteriores/nuevos ni claves foráneas con borrado en cascada, para conservar el historial. Las escrituras se realizan en la misma transacción que la operación del participante.
+
+Verificar con `SHOW CREATE TABLE participant_audit_logs;` y reiniciar el backend. En producción se debe aplicar el SQL explícitamente; no activar `synchronize` para desplegar esta migración.
+
 ## Objetivo
 
 Esta migración cambia la arquitectura del sistema para que toda la información médica y clínica esté asociada a **Cases** en lugar de **Participants**. Esto permite tener múltiples consultas (casos) por participante, cada una con su propia información médica.

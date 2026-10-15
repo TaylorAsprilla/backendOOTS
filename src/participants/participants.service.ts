@@ -2,9 +2,10 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { SearchParticipantsDto } from './dto/search-participants.dto';
@@ -12,6 +13,12 @@ import { Participant } from './entities/participant.entity';
 import { FamilyMember } from './entities/family-member.entity';
 import { EmergencyContact } from './entities/emergency-contact.entity';
 import { ParticipantEmergencyContact } from './entities/participant-emergency-contact.entity';
+import { User } from '../users/entities/user.entity';
+import { Role } from '../common/enums/role.enum';
+import {
+  ParticipantAuditAction,
+  ParticipantAuditLog,
+} from '../audit/entities/participant-audit-log.entity';
 
 @Injectable()
 export class ParticipantsService {
@@ -22,6 +29,7 @@ export class ParticipantsService {
 
   async create(
     createParticipantDto: CreateParticipantDto,
+    currentUser: User,
   ): Promise<Participant> {
     return await this.participantRepository.manager.transaction(
       async (transactionalEntityManager) => {
@@ -62,10 +70,10 @@ export class ParticipantsService {
         }
 
         // Crear el participante principal primero (dentro de la transacción)
-        const participant = transactionalEntityManager.create(
-          Participant,
-          participantData,
-        );
+        const participant = transactionalEntityManager.create(Participant, {
+          ...participantData,
+          registeredById: currentUser.id,
+        });
         const savedParticipant =
           await transactionalEntityManager.save(participant);
 
@@ -149,6 +157,12 @@ export class ParticipantsService {
           );
         }
 
+        await this.recordAudit(
+          transactionalEntityManager,
+          savedParticipant.id,
+          currentUser,
+          ParticipantAuditAction.CREATE,
+        );
         return result;
       },
     );
@@ -224,10 +238,12 @@ export class ParticipantsService {
   async update(
     id: number,
     updateParticipantDto: UpdateParticipantDto,
+    currentUser: User,
   ): Promise<Participant> {
     return await this.participantRepository.manager.transaction(
       async (transactionalEntityManager) => {
         const participant = await this.findOne(id);
+        this.assertCanEditParticipant(participant, currentUser);
 
         // Extraer emergency contacts si vienen en el DTO
         const { emergencyContacts, ...participantData } = updateParticipantDto;
@@ -345,15 +361,97 @@ export class ParticipantsService {
           }
         }
 
+        await this.recordAudit(
+          transactionalEntityManager,
+          id,
+          currentUser,
+          ParticipantAuditAction.UPDATE,
+        );
+
         // Retornar participante actualizado con todas las relaciones
         return await this.findOne(id);
       },
     );
   }
 
-  async remove(id: number): Promise<void> {
-    await this.findOne(id); // Verificar que existe
-    await this.participantRepository.softDelete(id);
+  private assertCanEditParticipant(
+    participant: Participant,
+    currentUser: User,
+  ): void {
+    if (currentUser.role?.name === Role.ADMIN) {
+      return;
+    }
+
+    if (
+      currentUser.role?.name === Role.ADMIN_COUNTRY &&
+      currentUser.countryId != null &&
+      Number(participant.countryId) === Number(currentUser.countryId)
+    ) {
+      return;
+    }
+
+    if (
+      currentUser.role?.name === Role.TRABAJO_SOCIAL &&
+      Number(participant.registeredById) === Number(currentUser.id)
+    ) {
+      return;
+    }
+
+    if (currentUser.role?.name === Role.ADMIN_COUNTRY) {
+      throw new ForbiddenException(
+        'Solo puede editar participantes de su país asignado',
+      );
+    }
+
+    if (currentUser.role?.name === Role.TRABAJO_SOCIAL) {
+      throw new ForbiddenException(
+        'Solo puede editar participantes que usted registró',
+      );
+    }
+
+    throw new ForbiddenException(
+      'No tiene permiso para editar este participante',
+    );
+  }
+
+  async remove(id: number, currentUser: User): Promise<void> {
+    await this.participantRepository.manager.transaction(async (manager) => {
+      const participant = await manager.findOne(Participant, { where: { id } });
+      if (!participant) {
+        throw new NotFoundException(`Participant with ID ${id} not found`);
+      }
+      await manager.softDelete(Participant, id);
+      await this.recordAudit(
+        manager,
+        id,
+        currentUser,
+        ParticipantAuditAction.DELETE,
+      );
+    });
+  }
+
+  private async recordAudit(
+    manager: EntityManager,
+    participantId: number,
+    currentUser: User,
+    action: ParticipantAuditAction,
+  ): Promise<void> {
+    const entry = manager.create(ParticipantAuditLog, {
+      participantId,
+      userId: currentUser.id,
+      userEmail: currentUser.email,
+      userName: [
+        currentUser.firstName,
+        currentUser.secondName,
+        currentUser.firstLastName,
+        currentUser.secondLastName,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      action,
+      createdAt: new Date(),
+    });
+    await manager.save(entry);
   }
 
   async getDemographicStats() {
@@ -548,6 +646,60 @@ export class ParticipantsService {
         email: p.email,
         city: p.city,
         createdAt: p.createdAt,
+      })),
+    };
+  }
+
+  async findByCountry(countryId: number): Promise<{
+    countryId: number;
+    total: number;
+    participants: Array<{
+      id: number;
+      firstName: string;
+      secondName?: string;
+      firstLastName: string;
+      secondLastName?: string;
+      fullName: string;
+      documentNumber?: string;
+      phoneNumber?: string;
+      email?: string;
+      city?: string;
+      createdAt: Date;
+    }>;
+  }> {
+    const participants = await this.participantRepository.find({
+      where: { countryId },
+      order: { createdAt: 'DESC' },
+      select: [
+        'id',
+        'firstName',
+        'secondName',
+        'firstLastName',
+        'secondLastName',
+        'documentNumber',
+        'phoneNumber',
+        'email',
+        'city',
+        'createdAt',
+      ],
+    });
+
+    return {
+      countryId,
+      total: participants.length,
+      participants: participants.map((participant) => ({
+        id: participant.id,
+        firstName: participant.firstName,
+        secondName: participant.secondName,
+        firstLastName: participant.firstLastName,
+        secondLastName: participant.secondLastName,
+        fullName:
+          `${participant.firstName} ${participant.secondName || ''} ${participant.firstLastName} ${participant.secondLastName || ''}`.trim(),
+        documentNumber: participant.documentNumber,
+        phoneNumber: participant.phoneNumber,
+        email: participant.email,
+        city: participant.city,
+        createdAt: participant.createdAt,
       })),
     };
   }

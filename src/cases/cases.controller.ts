@@ -806,11 +806,20 @@ export class CasesController {
   })
   @ApiResponse({ status: 200, description: 'Caso actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Caso no encontrado' })
+  @ApiResponse({
+    status: 403,
+    description: 'Solo el usuario que creó el caso puede editarlo.',
+  })
   async updateCase(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCaseDto: UpdateCaseDto,
+    @CurrentUser() currentUser: User,
   ) {
-    return await this.casesService.updateCase(id, updateCaseDto);
+    return await this.casesService.updateCase(
+      id,
+      updateCaseDto,
+      currentUser.id,
+    );
   }
 
   @Patch(':id/status')
@@ -982,11 +991,20 @@ export class CasesController {
       },
     },
   })
+  @ApiResponse({
+    status: 403,
+    description: 'Solo el usuario que creó el caso puede cambiar su estado.',
+  })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCaseStatusDto: UpdateCaseStatusDto,
+    @CurrentUser() currentUser: User,
   ) {
-    return await this.casesService.updateStatus(id, updateCaseStatusDto);
+    return await this.casesService.updateStatus(
+      id,
+      updateCaseStatusDto,
+      currentUser.id,
+    );
   }
 
   @Patch(':id/transfer')

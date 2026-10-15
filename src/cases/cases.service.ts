@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -492,9 +493,11 @@ export class CasesService {
   async updateCase(
     caseId: number,
     updateCaseDto: UpdateCaseDto,
+    currentUserId: number,
   ): Promise<Case> {
     // Verificar que el caso existe
     const existingCase = await this.findOne(caseId);
+    this.assertCaseCreator(existingCase, currentUserId);
 
     // Las pestañas clínicas (familia, biopsicosocial, salud, etc.) no aplican
     // en consulta breve, aunque el front las envíe con datos incompletos
@@ -720,8 +723,10 @@ export class CasesService {
   async updateStatus(
     caseId: number,
     updateCaseStatusDto: UpdateCaseStatusDto,
+    currentUserId: number,
   ): Promise<Case> {
     const caseEntity = await this.findOne(caseId);
+    this.assertCaseCreator(caseEntity, currentUserId);
 
     // Validar transiciones de estado válidas
     this.validateStatusTransition(
@@ -731,6 +736,14 @@ export class CasesService {
 
     caseEntity.status = updateCaseStatusDto.status;
     return await this.caseRepository.save(caseEntity);
+  }
+
+  private assertCaseCreator(caseEntity: Case, currentUserId: number): void {
+    if (Number(caseEntity.createdById) !== Number(currentUserId)) {
+      throw new ForbiddenException(
+        'Solo el usuario que creó el caso puede editarlo',
+      );
+    }
   }
 
   private async generateCaseNumber(): Promise<string> {

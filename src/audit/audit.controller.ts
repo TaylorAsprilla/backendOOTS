@@ -5,6 +5,8 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   UseGuards,
+  Param,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -12,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
   ApiResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 import { AuditAction } from './entities/audit-log.entity';
@@ -26,6 +29,29 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('audit-logs')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
+
+  @Get('participants/:participantId')
+  @Roles(Role.ADMIN, Role.SUPERVISOR, Role.COORDINADOR)
+  @ApiOperation({
+    summary: 'Consultar auditoría de un participante',
+    description:
+      'Retorna quién creó, actualizó o eliminó al participante y la fecha y hora de cada operación, incluso después del borrado lógico.',
+  })
+  @ApiParam({ name: 'participantId', type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  findParticipantHistory(
+    @Param('participantId', ParseIntPipe) participantId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    if (participantId < 1 || page < 1 || limit < 1 || limit > 100) {
+      throw new BadRequestException(
+        'participantId y page deben ser positivos; limit debe estar entre 1 y 100',
+      );
+    }
+    return this.auditService.findParticipantHistory(participantId, page, limit);
+  }
 
   @Get()
   @Roles(Role.ADMIN, Role.SUPERVISOR, Role.COORDINADOR)
