@@ -12,6 +12,22 @@ import {
 } from '../audit/entities/participant-audit-log.entity';
 
 describe('ParticipantsService access control and auditing', () => {
+  it('includes case counts in the global list without loading clinical case data', async () => {
+    const participants = [{ id: 12, casesCount: 3 }];
+    const query = {
+      setFindOptions: jest.fn().mockReturnThis(),
+      loadRelationCountAndMap: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(participants),
+    };
+    const repository = {
+      createQueryBuilder: jest.fn().mockReturnValue(query),
+    } as unknown as Repository<Participant>;
+    const result = await new ParticipantsService(repository).findAllNoPagination();
+    expect(query.setFindOptions).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+    expect(query.loadRelationCountAndMap).toHaveBeenCalledWith('participant.casesCount', 'participant.cases');
+    expect(result).toEqual({ data: participants, total: 1 });
+  });
+
   const participant = {
     id: 12,
     registeredById: 7,

@@ -202,9 +202,11 @@ export class ParticipantsService {
     data: Participant[];
     total: number;
   }> {
-    const participants = await this.participantRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+    const participants = await this.participantRepository
+      .createQueryBuilder('participant')
+      .setFindOptions({ order: { createdAt: 'DESC' } })
+      .loadRelationCountAndMap('participant.casesCount', 'participant.cases')
+      .getMany();
 
     return {
       data: participants,
