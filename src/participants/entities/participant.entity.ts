@@ -178,4 +178,6 @@ export class Participant {
     cascade: true,
   })
   cases!: Case[];
+
+  casesCount?: number;
 }

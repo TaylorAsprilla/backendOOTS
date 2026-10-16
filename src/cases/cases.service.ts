@@ -968,27 +968,14 @@ export class CasesService {
     };
   }
 
-  async findCasesByUser(userId: number): Promise<{
-    userId: number;
-    total: number;
-    cases: Array<{
-      id: number;
-      status: CaseStatus;
-      consultationReason?: string;
-      intervention?: string;
-      progressNotesCount: number;
-      createdAt: Date;
-      updatedAt: Date;
-      participant: {
-        id: number;
-        fullName: string;
-        documentNumber?: string;
-      };
-    }>;
-  }> {
+  async findCasesByUser(userId: number) {
     const cases = await this.caseRepository
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
+      .leftJoinAndSelect('participant.country', 'country')
+      .leftJoinAndSelect('case.createdBy', 'createdBy')
+      .leftJoinAndSelect('case.closingNote', 'closingNote')
+      .leftJoinAndSelect('case.followUpPlans', 'followUpPlans')
       .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
       .where('case.createdById = :userId', { userId })
       .orderBy('case.createdAt', 'DESC')
@@ -998,9 +985,29 @@ export class CasesService {
       .filter((caseEntity) => caseEntity.participant != null)
       .map((caseEntity) => ({
         id: caseEntity.id,
+        caseNumber: caseEntity.caseNumber,
+        caseType: caseEntity.caseType,
         status: caseEntity.status,
         consultationReason: caseEntity.consultationReason,
         intervention: caseEntity.intervention,
+        referrals: caseEntity.referrals,
+        closingNote: caseEntity.closingNote?.observations,
+        closedAt: caseEntity.closingNote?.closingDate,
+        followUpPlans: caseEntity.followUpPlans?.map((plan) => ({
+          orientationAppointment: plan.orientationAppointment,
+          appointmentDate: plan.appointmentDate,
+        })),
+        createdById: caseEntity.createdById,
+        createdBy: caseEntity.createdBy ? {
+          id: caseEntity.createdBy.id,
+          firstName: caseEntity.createdBy.firstName,
+          secondName: caseEntity.createdBy.secondName,
+          firstLastName: caseEntity.createdBy.firstLastName,
+          secondLastName: caseEntity.createdBy.secondLastName,
+          email: caseEntity.createdBy.email,
+          status: caseEntity.createdBy.status,
+          roleId: caseEntity.createdBy.roleId,
+        } : null,
         progressNotesCount: caseEntity.progressNotesCount ?? 0,
         createdAt: caseEntity.createdAt,
         updatedAt: caseEntity.updatedAt,
@@ -1009,6 +1016,15 @@ export class CasesService {
           fullName:
             `${caseEntity.participant.firstName} ${caseEntity.participant.secondName || ''} ${caseEntity.participant.firstLastName} ${caseEntity.participant.secondLastName || ''}`.trim(),
           documentNumber: caseEntity.participant.documentNumber,
+          email: caseEntity.participant.email,
+          phoneNumber: caseEntity.participant.phoneNumber,
+          city: caseEntity.participant.city,
+          state: caseEntity.participant.state,
+          countryId: caseEntity.participant.countryId,
+          country: caseEntity.participant.country ? {
+            id: caseEntity.participant.country.id,
+            name: caseEntity.participant.country.name,
+          } : null,
         },
       }));
 

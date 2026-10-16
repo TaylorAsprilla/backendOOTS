@@ -8,6 +8,37 @@ import { CasesService } from './cases.service';
 import { CaseDocumentHistoryService } from './case-document-history.service';
 
 describe('CasesService edit access control and closing', () => {
+  it('keeps the user scope and supplies safe professional, participant and expandable details', async () => {
+    const query = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      loadRelationCountAndMap: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([{
+        id: 36, createdById: 7, status: CaseStatus.OPEN, progressNotesCount: 2,
+        participant: { id: 12, firstName: 'Ana', firstLastName: 'Perez', city: 'Bogota', country: { id: 1, name: 'Colombia' } },
+        createdBy: { id: 7, firstName: 'Sara', firstLastName: 'Diaz', email: 'sara@example.test', password: 'not returned' },
+        intervention: 'Intervention', closingNote: { observations: 'Summary' },
+        followUpPlans: [{ orientationAppointment: true, appointmentDate: '2026-10-20', privateNote: 'not returned' }],
+      }, { id: 37, participant: { id: 13 }, createdBy: null }]),
+    };
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(query) } as unknown as Repository<Case>;
+    const service = new CasesService(
+      repository, {} as Repository<Participant>, {} as DataSource, {} as CaseDocumentHistoryService,
+    );
+    const result = await service.findCasesByUser(7);
+    expect(query.where).toHaveBeenCalledWith('case.createdById = :userId', { userId: 7 });
+    expect(result.cases[0]).toMatchObject({
+      id: 36, progressNotesCount: 2, closingNote: 'Summary',
+      participant: { city: 'Bogota' },
+      createdBy: { id: 7, email: 'sara@example.test' },
+      followUpPlans: [{ orientationAppointment: true, appointmentDate: '2026-10-20' }],
+    });
+    expect(result.cases[0].createdBy).not.toHaveProperty('password');
+    expect(result.cases[0].followUpPlans?.[0]).not.toHaveProperty('privateNote');
+    expect(result.cases[1].createdBy).toBeNull();
+  });
+
   const makeService = (caseEntity: Case) => {
     const update = jest.fn(
       (_target: unknown, _id: number, fields: Partial<Case>) => {

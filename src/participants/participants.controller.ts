@@ -335,7 +335,8 @@ export class ParticipantsController {
     description:
       'Retorna la lista completa de participantes registrados en el sistema, sin paginación ni filtros. ' +
       'Ordenados por fecha de creación descendente. Útil para exportaciones, selectores y vistas globales. ' +
-      'Incluye relaciones eager (gender, maritalStatus, healthInsurance, documentType, country, registeredBy).',
+      'Incluye relaciones eager (gender, maritalStatus, healthInsurance, documentType, country, registeredBy) ' +
+      'y casesCount con el total de casos asociados, sin cargar su contenido clínico.',
   })
   @ApiOkResponse({
     description: 'Lista completa de participantes obtenida exitosamente.',
