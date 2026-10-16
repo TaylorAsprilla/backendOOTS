@@ -157,6 +157,11 @@ export class Case {
 
   progressNotesCount?: number;
 
+  // Historical rendering context; these values are not live entity relations.
+  participantAge?: number;
+  documentDate?: Date;
+  documentClosedBy?: User;
+
   // 11. REFERIDOS - ahora es string simple
   @Column({ name: 'referrals', type: 'text', nullable: true })
   referrals?: string;

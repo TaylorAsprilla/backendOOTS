@@ -38,7 +38,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     this.logger.log(
-      `[jwt-auth-guard] authenticated userId=${user.id} email=${user.email ?? 'undefined'} roleId=${user.role?.id ?? user.roleId ?? 'undefined'} roleName=${user.role?.name ?? 'undefined'} countryId=${user.countryId ?? 'undefined'}`,
+      `[jwt-auth-guard] authenticated userId=${user.id} roleId=${user.role?.id ?? user.roleId ?? 'undefined'} roleName=${user.role?.name ?? 'undefined'} countryId=${user.countryId ?? 'undefined'}`,
     );
 
     return user;

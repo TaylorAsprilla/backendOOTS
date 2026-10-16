@@ -44,28 +44,34 @@ export function buildHelpProcessCompletionDoc(
         },
       ];
 
-  return baseDocDefinition([
-    ...buildCoverBanner(
-      'CULMINACIÓN DEL PROCESO DE AYUDA',
-      caseEntity,
-      'Documento de cierre del proceso de acompañamiento.',
-    ),
-    ...participantInfoSection(caseEntity),
-    ...caseInfoSection(caseEntity),
+  return baseDocDefinition(
+    [
+      ...buildCoverBanner(
+        'CULMINACIÓN DEL PROCESO DE AYUDA',
+        caseEntity,
+        'Documento de cierre del proceso de acompañamiento.',
+      ),
+      ...participantInfoSection(caseEntity),
+      ...caseInfoSection(caseEntity),
 
-    sectionTitle('Estado de Culminación'),
-    dataTable([
-      ['Estado actual del caso', caseEntity.status],
-      ['Fecha de generación', formatDate(new Date())],
-      [
-        'Seguimientos culminados',
-        completedFollowUps.length || 'Ninguno registrado',
-      ],
-    ]),
+      sectionTitle('Estado de Culminación'),
+      dataTable([
+        ['Estado actual del caso', caseEntity.status],
+        [
+          'Fecha de generación',
+          formatDate(caseEntity.documentDate ?? new Date()),
+        ],
+        [
+          'Seguimientos culminados',
+          completedFollowUps.length || 'Ninguno registrado',
+        ],
+      ]),
 
-    sectionTitle('Detalles del Proceso de Ayuda'),
-    ...followUpContent,
+      sectionTitle('Detalles del Proceso de Ayuda'),
+      ...followUpContent,
 
-    buildSignatureBlock(currentUser),
-  ]);
+      buildSignatureBlock(currentUser, caseEntity.documentDate),
+    ],
+    caseEntity.documentDate,
+  );
 }

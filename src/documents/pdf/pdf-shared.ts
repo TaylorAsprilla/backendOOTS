@@ -92,6 +92,7 @@ export const formatDate = (d?: Date | string | null): string => {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'UTC',
   });
 };
 
@@ -233,7 +234,7 @@ export function buildHeader(): Content {
         ? {
             columns: [
               {
-                image: logoDataUrl,
+                image: 'ootsLogo',
                 width: 72,
                 margin: [40, 5, 0, 0],
               },
@@ -258,7 +259,7 @@ export function buildHeader(): Content {
   };
 }
 
-export function buildFooter() {
+export function buildFooter(referenceDate: Date = new Date()) {
   return (currentPage: number, pageCount: number): Content => ({
     stack: [
       {
@@ -285,7 +286,7 @@ export function buildFooter() {
                 color: PALETTE.MUTED,
               },
               {
-                text: `Generado el ${formatDate(new Date())}`,
+                text: `Generado el ${formatDate(referenceDate)}`,
                 fontSize: 7,
                 color: PALETTE.MUTED,
               },
@@ -334,7 +335,7 @@ export function buildCoverBanner(
         {
           stack: [
             ...(logoDataUrl
-              ? [{ image: logoDataUrl, width: 90, margin: [0, 10, 0, 4] }]
+              ? [{ image: 'ootsLogo', width: 90, margin: [0, 10, 0, 4] }]
               : []),
             {
               text: documentTitle,
@@ -409,7 +410,10 @@ export function buildCoverBanner(
 // =============================================================================
 // Bloque opcional de firmas (deshabilitado por configuración)
 // =============================================================================
-export function buildSignatureBlock(currentUser: User): Content {
+export function buildSignatureBlock(
+  currentUser: User,
+  referenceDate: Date = new Date(),
+): Content {
   if (!INCLUDE_SIGNATURES) {
     // Espacio reservado: si en el futuro se habilita, se renderizan las firmas.
     return { text: '' };
@@ -479,7 +483,7 @@ export function buildSignatureBlock(currentUser: User): Content {
             width: 180,
           },
           {
-            text: formatDate(new Date()),
+            text: formatDate(referenceDate),
             fontSize: 8,
             color: PALETTE.ACCENT,
             alignment: 'center',
@@ -526,6 +530,7 @@ export function participantInfoSection(caseEntity: Case): Content[] {
         `${p?.documentType?.name ?? ''} ${p?.documentNumber ?? ''}`.trim(),
       ],
       ['Fecha de nacimiento', formatDate(p?.birthDate)],
+      ['Edad al registrar el histórico', caseEntity.participantAge],
       ['Género', p?.gender?.name],
       ['Estado civil', p?.maritalStatus?.name],
       ['Teléfono', p?.phoneNumber],
@@ -548,7 +553,19 @@ export function caseInfoSection(caseEntity: Case): Content[] {
       ['Estado', caseEntity.status],
       ['Fecha de apertura', formatDate(caseEntity.createdAt)],
       ['Última actualización', formatDate(caseEntity.updatedAt)],
-      ['Profesional responsable', fullUserName(caseEntity.createdBy)],
+      [
+        'Profesional responsable',
+        fullUserName(caseEntity.assignedTo ?? caseEntity.createdBy),
+      ],
+      ...(caseEntity.documentClosedBy
+        ? [
+            ['Cerrado por', fullUserName(caseEntity.documentClosedBy)] as Pair,
+            [
+              'Fecha del cierre histórico',
+              formatDate(caseEntity.documentDate),
+            ] as Pair,
+          ]
+        : []),
       ['Motivo de consulta', caseEntity.consultationReason],
     ]),
   ];
@@ -557,13 +574,17 @@ export function caseInfoSection(caseEntity: Case): Content[] {
 // =============================================================================
 // Base común para todos los documentos
 // =============================================================================
-export function baseDocDefinition(content: Content[]): TDocumentDefinitions {
+export function baseDocDefinition(
+  content: Content[],
+  referenceDate?: Date,
+): TDocumentDefinitions {
   return {
     pageSize: 'A4',
+    images: getLogoDataUrl() ? { ootsLogo: getLogoDataUrl() } : {},
     pageMargins: [40, 72, 40, 55],
     defaultStyle: { font: 'Roboto' },
     header: buildHeader(),
-    footer: buildFooter(),
+    footer: buildFooter(referenceDate),
     content,
   };
 }

@@ -6,6 +6,8 @@ import {
   ParseIntPipe,
   Query,
   Res,
+  UseGuards,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -19,8 +21,12 @@ import {
 import { DocumentsService } from './documents.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-type Disposition = 'inline' | 'attachment';
+enum Disposition {
+  INLINE = 'inline',
+  ATTACHMENT = 'attachment',
+}
 
 function sendPdf(
   res: Response,
@@ -32,12 +38,15 @@ function sendPdf(
     'Content-Type': 'application/pdf',
     'Content-Disposition': `${disposition}; filename="${filename}"`,
     'Content-Length': buffer.length,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
   });
   res.end(buffer);
 }
 
 @ApiTags('Documentos (PDF)')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('cases/:caseId/documents')
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
@@ -71,7 +80,8 @@ export class DocumentsController {
   })
   async helpProcessCompletion(
     @Param('caseId', ParseIntPipe) caseId: number,
-    @Query('disposition') disposition: Disposition = 'attachment',
+    @Query('disposition', new ParseEnumPipe(Disposition, { optional: true }))
+    disposition: Disposition = Disposition.ATTACHMENT,
     @CurrentUser() currentUser: User,
     @Res() res: Response,
   ) {
@@ -111,7 +121,8 @@ export class DocumentsController {
   })
   async interventionPlan(
     @Param('caseId', ParseIntPipe) caseId: number,
-    @Query('disposition') disposition: Disposition = 'attachment',
+    @Query('disposition', new ParseEnumPipe(Disposition, { optional: true }))
+    disposition: Disposition = Disposition.ATTACHMENT,
     @CurrentUser() currentUser: User,
     @Res() res: Response,
   ) {
@@ -149,7 +160,8 @@ export class DocumentsController {
   async progressNote(
     @Param('caseId', ParseIntPipe) caseId: number,
     @Param('progressNoteId', ParseIntPipe) progressNoteId: number,
-    @Query('disposition') disposition: Disposition = 'attachment',
+    @Query('disposition', new ParseEnumPipe(Disposition, { optional: true }))
+    disposition: Disposition = Disposition.ATTACHMENT,
     @CurrentUser() currentUser: User,
     @Res() res: Response,
   ) {
@@ -189,7 +201,8 @@ export class DocumentsController {
   })
   async closingNote(
     @Param('caseId', ParseIntPipe) caseId: number,
-    @Query('disposition') disposition: Disposition = 'attachment',
+    @Query('disposition', new ParseEnumPipe(Disposition, { optional: true }))
+    disposition: Disposition = Disposition.ATTACHMENT,
     @CurrentUser() currentUser: User,
     @Res() res: Response,
   ) {
@@ -222,7 +235,8 @@ export class DocumentsController {
   @ApiResponse({ status: 404, description: 'Caso no encontrado' })
   async fullCase(
     @Param('caseId', ParseIntPipe) caseId: number,
-    @Query('disposition') disposition: Disposition = 'attachment',
+    @Query('disposition', new ParseEnumPipe(Disposition, { optional: true }))
+    disposition: Disposition = Disposition.ATTACHMENT,
     @CurrentUser() currentUser: User,
     @Res() res: Response,
   ) {

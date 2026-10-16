@@ -48,7 +48,73 @@
 - La auditoría comienza al desplegar este cambio; no reconstruye autores ni fechas de operaciones históricas.
 - Antes de desplegar, ejecutar [la migración de auditoría](../migrations/create-participant-audit-logs.sql) y reiniciar el backend.
 
-## 6. Pruebas con JWT
+## 6. PDF dinámicos e integridad histórica
+
+Todos los PDF se generan en memoria al solicitarlos; no hay almacenamiento de PDF, S3, archivos temporales, tareas programadas ni generación al cerrar. El cierre solo persiste información histórica en MySQL.
+
+### Fuentes y autorización
+
+- Al crear un caso se conserva el participante (incluidos nombres de catálogos, dirección y edad al abrir), su composición familiar y la identidad del profesional.
+- En casos activos, los PDF combinan esos snapshots con las notas, planes, evaluaciones y seguimientos actuales del expediente.
+- Las correcciones de composición familiar realizadas en el caso activo actualizan su snapshot familiar en la misma transacción; ese snapshot queda inmutable al cerrar. Los datos del participante permanecen como estaban al abrir el caso.
+- Al cerrar, en la misma transacción se congelan todos los datos del expediente, etiquetas de catálogos, discusiones y nombres/cargos/correos de los responsables, así como la identidad del usuario que cierra. No se almacenan contraseñas ni tokens.
+- Los PDF cerrados se generan exclusivamente desde ese cierre persistido. No recargan el participante, notas ni usuarios actuales. Las fechas de contenido se formatean en UTC y la fecha de referencia de los documentos queda fija al cierre.
+- Los expedientes cerrados no admiten edición, transferencias, cambios de discusión ni reapertura. Para continuar la atención se crea otro caso.
+- ADMIN descarga cualquier caso; ADMIN_COUNTRY solo casos del país histórico de apertura; TRABAJO_SOCIAL solo casos cuyo `createdById` corresponde a su usuario. El servidor verifica JWT y permisos en cada descarga, antes de cargar datos clínicos; otros roles reciben 403.
+- La descarga no depende de quién la realiza para mostrar el profesional histórico.
+- Para casos anteriores se conserva una referencia con los datos disponibles al migrar (`source=legacy`); no se presenta como una reconstrucción exacta de la apertura o del cierre original. Si se desconoce el autor de un cierre anterior, no se inventa.
+
+### Endpoints
+
+Todos usan GET con JWT y devuelven `application/pdf`, `Content-Disposition` y `Cache-Control: no-store`:
+
+- `/api/v1/cases/:id/pdf` (diseño de descarga existente).
+- `/api/v1/cases/:caseId/documents/full-case/pdf`.
+- `/api/v1/cases/:caseId/documents/help-process-completion/pdf`.
+- `/api/v1/cases/:caseId/documents/intervention-plan/pdf`.
+- `/api/v1/cases/:caseId/documents/progress-notes/:progressNoteId/pdf`.
+- `/api/v1/cases/:caseId/documents/closing-note/pdf`.
+- `/api/v1/cases/:caseId/discussions/:discussionId/pdf`.
+
+Los IDs de notas/discusiones deben pertenecer al caso autorizado. Los endpoints de documentos/discusiones aceptan únicamente `disposition=inline|attachment`.
+
+Los errores de generación y de persistencia del histórico no imprimen datos clínicos. El logger de base de datos oculta SQL y parámetros de consultas fallidas; los logs de autenticación identifican usuarios por ID, sin correos.
+
+Las lecturas activas cargan relaciones por tipo de documento con consultas agrupadas, sin consultas por cada nota. Los documentos reutilizan una sola imagen del logo por PDF sin cambiar el diseño. Angular bloquea el botón durante la generación y comparte únicamente solicitudes simultáneas al mismo documento; no mantiene una caché de PDF finalizados y permite reintentos tras error o cancelación.
+
+### Pruebas
+
+Pruebas unitarias:
+
+```powershell
+npm test -- --runInBand --runTestsByPath src/cases/cases.service.spec.ts src/cases/case-document-history.service.spec.ts src/documents/documents.service.spec.ts
+```
+
+Las pruebas HTTP de las siete rutas comprueban JWT ausente/caducado, acceso del creador y de ADMIN, denegación por país o propietario ajeno, `no-store` e IDs de notas/discusiones ajenos al caso:
+
+```powershell
+npm test -- --runInBand --runTestsByPath src/documents/documents.http.spec.ts src/common/logging/redacted-database.logger.spec.ts
+```
+
+Prueba de integración explícita contra MySQL local de desarrollo, después de aplicar la migración:
+
+```powershell
+$env:CASE_HISTORY_DB_TEST='true'
+npm test -- --runInBand --runTestsByPath src/cases/case-document-history.integration.spec.ts
+Remove-Item Env:CASE_HISTORY_DB_TEST
+```
+
+La integración usa una transacción exterior y revierte todos sus datos de prueba. Verifica:
+
+1. Participante de 35 años, notas nuevas visibles en el segundo PDF activo y datos de apertura sin cambios.
+2. Dirección histórica A después de cambiar la dirección actual y de simular una descarga seis meses después; mismo contenido renderizado del expediente cerrado.
+3. Invariancia tras cambiar notas, composición familiar, catálogos, discusiones y nombres del profesional; notas individuales accesibles por su ID histórico.
+4. Denegación a otro trabajador social y a un administrador de otro país; prohibición de editar/reabrir el caso cerrado.
+5. Reversión del cierre si falla el snapshot y ausencia de escrituras de archivos durante la generación.
+
+Las pruebas del frontend cubren solicitudes simultáneas, nueva generación después de completar, reintentos y cancelación.
+
+## 7. Pruebas con JWT
 
 - Usar JWT con los claims correctos (`role`, `countryId`, `id`)
 - La atribución del participante debe provenir del usuario autenticado; no se debe confiar en `registeredById` enviado en el body.

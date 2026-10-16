@@ -1,10 +1,12 @@
 import {
   Injectable,
-  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { CasesService } from '../cases/cases.service';
+import {
+  CaseDocumentHistoryService,
+  CaseDocumentKind,
+} from '../cases/case-document-history.service';
 import { Case } from '../participants/entities/case.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { User } from '../users/entities/user.entity';
@@ -16,10 +18,8 @@ import { DocumentGeneratorService } from './pdf/pdf.service';
  */
 @Injectable()
 export class DocumentsService {
-  private readonly logger = new Logger(DocumentsService.name);
-
   constructor(
-    private readonly casesService: CasesService,
+    private readonly documentHistory: CaseDocumentHistoryService,
     private readonly pdfService: DocumentGeneratorService,
   ) {}
 
@@ -27,15 +27,23 @@ export class DocumentsService {
    * Recupera el caso con todas sus relaciones para alimentar los PDFs.
    * Lanza NotFoundException si el caso no existe.
    */
-  private async getCaseOrFail(caseId: number): Promise<Case> {
-    return await this.casesService.findOne(caseId);
+  private async getCaseOrFail(
+    caseId: number,
+    user: User,
+    kind: CaseDocumentKind,
+  ): Promise<Case> {
+    return await this.documentHistory.getDocumentCase(caseId, user, kind);
   }
 
   async generateHelpProcessCompletion(
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(
+      caseId,
+      currentUser,
+      'completion',
+    );
 
     if (!caseEntity.followUpPlans || caseEntity.followUpPlans.length === 0) {
       throw new UnprocessableEntityException(
@@ -45,7 +53,7 @@ export class DocumentsService {
 
     const buffer = await this.pdfService.generateHelpProcessCompletion(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -57,7 +65,11 @@ export class DocumentsService {
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(
+      caseId,
+      currentUser,
+      'intervention',
+    );
 
     if (
       !caseEntity.interventionPlans ||
@@ -70,7 +82,7 @@ export class DocumentsService {
 
     const buffer = await this.pdfService.generateInterventionPlan(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -83,7 +95,11 @@ export class DocumentsService {
     progressNoteId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(
+      caseId,
+      currentUser,
+      'progress',
+    );
 
     const note: ProgressNote | undefined = (
       caseEntity.progressNotes ?? []
@@ -98,7 +114,7 @@ export class DocumentsService {
     const buffer = await this.pdfService.generateProgressNote(
       caseEntity,
       note,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -110,7 +126,7 @@ export class DocumentsService {
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(caseId, currentUser, 'closing');
 
     if (!caseEntity.closingNote) {
       throw new NotFoundException(
@@ -120,7 +136,7 @@ export class DocumentsService {
 
     const buffer = await this.pdfService.generateClosingNote(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -132,11 +148,11 @@ export class DocumentsService {
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(caseId, currentUser, 'full');
 
     const buffer = await this.pdfService.generateFullCase(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,

@@ -40,18 +40,21 @@ export function buildInterventionPlanDoc(
         },
       ];
 
-  return baseDocDefinition([
-    ...buildCoverBanner(
-      'PLAN DE INTERVENCIÓN',
-      caseEntity,
-      'Documento del plan de intervención del caso.',
-    ),
-    ...participantInfoSection(caseEntity),
-    ...caseInfoSection(caseEntity),
+  return baseDocDefinition(
+    [
+      ...buildCoverBanner(
+        'PLAN DE INTERVENCIÓN',
+        caseEntity,
+        'Documento del plan de intervención del caso.',
+      ),
+      ...participantInfoSection(caseEntity),
+      ...caseInfoSection(caseEntity),
 
-    sectionTitle('Plan(es) de Intervención'),
-    ...plansContent,
+      sectionTitle('Plan(es) de Intervención'),
+      ...plansContent,
 
-    buildSignatureBlock(currentUser),
-  ]);
+      buildSignatureBlock(currentUser, caseEntity.documentDate),
+    ],
+    caseEntity.documentDate,
+  );
 }

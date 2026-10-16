@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { Case } from '../../participants/entities/case.entity';
 import { ProgressNote } from '../../participants/entities/progress-note.entity';
 import { User } from '../../users/entities/user.entity';
@@ -24,12 +28,11 @@ export class DocumentGeneratorService {
     try {
       const doc = buildHelpProcessCompletionDoc(caseEntity, currentUser);
       return await renderPdfToBuffer(doc);
-    } catch (err) {
+    } catch {
       this.logger.error(
         `Error generando PDF de culminación (caso ${caseEntity.id})`,
-        err as Error,
       );
-      throw err;
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
     }
   }
 
@@ -40,12 +43,11 @@ export class DocumentGeneratorService {
     try {
       const doc = buildInterventionPlanDoc(caseEntity, currentUser);
       return await renderPdfToBuffer(doc);
-    } catch (err) {
+    } catch {
       this.logger.error(
         `Error generando PDF plan de intervención (caso ${caseEntity.id})`,
-        err as Error,
       );
-      throw err;
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
     }
   }
 
@@ -57,12 +59,11 @@ export class DocumentGeneratorService {
     try {
       const doc = buildProgressNoteDoc(caseEntity, note, currentUser);
       return await renderPdfToBuffer(doc);
-    } catch (err) {
+    } catch {
       this.logger.error(
         `Error generando PDF nota de progreso (caso ${caseEntity.id}, nota ${note.id})`,
-        err as Error,
       );
-      throw err;
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
     }
   }
 
@@ -73,12 +74,11 @@ export class DocumentGeneratorService {
     try {
       const doc = buildClosingNoteDoc(caseEntity, currentUser);
       return await renderPdfToBuffer(doc);
-    } catch (err) {
+    } catch {
       this.logger.error(
         `Error generando PDF nota de cierre (caso ${caseEntity.id})`,
-        err as Error,
       );
-      throw err;
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
     }
   }
 
@@ -86,12 +86,11 @@ export class DocumentGeneratorService {
     try {
       const doc = buildFullCaseDoc(caseEntity, currentUser);
       return await renderPdfToBuffer(doc);
-    } catch (err) {
+    } catch {
       this.logger.error(
         `Error generando PDF completo del caso (caso ${caseEntity.id})`,
-        err as Error,
       );
-      throw err;
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
     }
   }
 }

@@ -1,62 +1,82 @@
-import { ForbiddenException } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CaseStatus } from '../common/enums';
 import { Participant } from '../participants/entities/participant.entity';
 import { Case } from '../participants/entities/case.entity';
+import { User } from '../users/entities/user.entity';
 import { CasesService } from './cases.service';
-import { UpdateCaseDto, UpdateCaseStatusDto } from './dto/case.dto';
+import { CaseDocumentHistoryService } from './case-document-history.service';
 
-describe('CasesService edit access control', () => {
+describe('CasesService edit access control and closing', () => {
   const makeService = (caseEntity: Case) => {
-    const caseRepository = {
-      update: jest.fn(),
-      save: jest.fn((entity: Case) => Promise.resolve(entity)),
-    } as unknown as Repository<Case>;
-    const service = new CasesService(
-      caseRepository,
-      {} as Repository<Participant>,
-      {} as DataSource,
+    const update = jest.fn(
+      (_target: unknown, _id: number, fields: Partial<Case>) => {
+        Object.assign(caseEntity, fields);
+        return Promise.resolve({ affected: 1 });
+      },
     );
-    jest.spyOn(service, 'findOne').mockResolvedValue(caseEntity);
-
-    return { service, caseRepository };
+    const manager = {
+      update,
+      findOne: jest.fn().mockResolvedValue(caseEntity),
+      findOneBy: jest.fn().mockResolvedValue({ id: 7 }),
+    } as unknown as EntityManager;
+    const dataSource = {
+      transaction: jest.fn(
+        (callback: (manager: EntityManager) => Promise<unknown>) =>
+          callback(manager),
+      ),
+    } as unknown as DataSource;
+    const history = new CaseDocumentHistoryService(dataSource);
+    jest.spyOn(history, 'lockCase').mockResolvedValue(caseEntity);
+    jest.spyOn(history, 'loadCase').mockResolvedValue(caseEntity);
+    const freeze = jest.spyOn(history, 'freeze').mockResolvedValue();
+    const service = new CasesService(
+      {} as Repository<Case>,
+      {} as Repository<Participant>,
+      dataSource,
+      history,
+    );
+    return { service, update, freeze };
   };
 
   it('allows only the case creator to update the case details', async () => {
-    const caseEntity = { id: 4, createdById: 7 } as Case;
-    const { service } = makeService(caseEntity);
-
-    await expect(service.updateCase(4, {} as UpdateCaseDto, 7)).resolves.toBe(
-      caseEntity,
+    const entity = { id: 4, createdById: 7, status: CaseStatus.OPEN } as Case;
+    const { service } = makeService(entity);
+    await expect(service.updateCase(4, {}, 7)).resolves.toBe(entity);
+    await expect(service.updateCase(4, {}, 8)).rejects.toBeInstanceOf(
+      ForbiddenException,
     );
-    await expect(
-      service.updateCase(4, {} as UpdateCaseDto, 8),
-    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('allows only the case creator to change its status', async () => {
-    const caseEntity = {
-      id: 4,
-      createdById: 7,
-      status: CaseStatus.OPEN,
-    } as Case;
-    const { service, caseRepository } = makeService(caseEntity);
-
+    const entity = { id: 4, createdById: 7, status: CaseStatus.OPEN } as Case;
+    const { service, update, freeze } = makeService(entity);
+    await service.updateStatus(4, { status: CaseStatus.IN_PROGRESS }, 7);
     await expect(
-      service.updateStatus(
-        4,
-        { status: CaseStatus.IN_PROGRESS } as UpdateCaseStatusDto,
-        7,
-      ),
-    ).resolves.toBe(caseEntity);
-    await expect(
-      service.updateStatus(
-        4,
-        { status: CaseStatus.CLOSED } as UpdateCaseStatusDto,
-        8,
-      ),
+      service.updateStatus(4, { status: CaseStatus.CLOSED }, 8),
     ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(freeze).not.toHaveBeenCalled();
+  });
 
-    expect(caseRepository.save.mock.calls).toHaveLength(1);
+  it('captures a closing snapshot inside the status transaction', async () => {
+    const entity = { id: 4, createdById: 7, status: CaseStatus.OPEN } as Case;
+    const { service, freeze } = makeService(entity);
+    await service.updateStatus(4, { status: CaseStatus.CLOSED }, 7);
+    expect(freeze).toHaveBeenCalledWith(expect.anything(), entity, {
+      id: 7,
+    } as User);
+  });
+
+  it('rejects edits and reopening after closing, even for the creator', async () => {
+    const entity = { id: 4, createdById: 7, status: CaseStatus.CLOSED } as Case;
+    const { service, update } = makeService(entity);
+    await expect(
+      service.updateCase(4, { consultationReason: 'Changed' }, 7),
+    ).rejects.toBeInstanceOf(ConflictException);
+    await expect(
+      service.updateStatus(4, { status: CaseStatus.OPEN }, 7),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(update).not.toHaveBeenCalled();
   });
 });

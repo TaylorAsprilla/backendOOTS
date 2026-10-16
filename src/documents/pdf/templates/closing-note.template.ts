@@ -19,24 +19,27 @@ export function buildClosingNoteDoc(
 ): TDocumentDefinitions {
   const closing = caseEntity.closingNote;
 
-  return baseDocDefinition([
-    ...buildCoverBanner(
-      'NOTA DE CIERRE',
-      caseEntity,
-      'Documento de cierre del caso.',
-    ),
-    ...participantInfoSection(caseEntity),
-    ...caseInfoSection(caseEntity),
+  return baseDocDefinition(
+    [
+      ...buildCoverBanner(
+        'NOTA DE CIERRE',
+        caseEntity,
+        'Documento de cierre del caso.',
+      ),
+      ...participantInfoSection(caseEntity),
+      ...caseInfoSection(caseEntity),
 
-    sectionTitle('Detalles del Cierre'),
-    dataTable([
-      ['Fecha de cierre', formatDate(closing?.closingDate)],
-      ['Motivo de cierre', closing?.reason],
-      ['Resumen / Logros', closing?.achievements],
-      ['Recomendaciones', closing?.recommendations],
-      ['Conclusiones / Observaciones', closing?.observations],
-    ]),
+      sectionTitle('Detalles del Cierre'),
+      dataTable([
+        ['Fecha de cierre', formatDate(closing?.closingDate)],
+        ['Motivo de cierre', closing?.reason],
+        ['Resumen / Logros', closing?.achievements],
+        ['Recomendaciones', closing?.recommendations],
+        ['Conclusiones / Observaciones', closing?.observations],
+      ]),
 
-    buildSignatureBlock(currentUser),
-  ]);
+      buildSignatureBlock(currentUser, caseEntity.documentDate),
+    ],
+    caseEntity.documentDate,
+  );
 }

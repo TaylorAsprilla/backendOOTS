@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
 import { PdfService } from './pdf.service';
+import { CaseDocumentHistoryService } from './case-document-history.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import {
@@ -51,6 +52,7 @@ export class CasesController {
   constructor(
     private readonly casesService: CasesService,
     private readonly pdfService: PdfService,
+    private readonly documentHistory: CaseDocumentHistoryService,
   ) {}
 
   @Post()
@@ -775,15 +777,20 @@ export class CasesController {
     @Res() res: Response,
     @CurrentUser() currentUser: User,
   ) {
-    const caseEntity = await this.casesService.findOne(id);
+    const caseEntity = await this.documentHistory.getDocumentCase(
+      id,
+      currentUser,
+    );
     const pdfBuffer = await this.pdfService.generateCasePdf(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="caso-${caseEntity.id}.pdf"`,
       'Content-Length': pdfBuffer.length,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
     });
     res.end(pdfBuffer);
   }

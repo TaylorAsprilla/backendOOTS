@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RedactedDatabaseLogger } from './common/logging/redacted-database.logger';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -61,6 +62,11 @@ import configuration from './config/configuration';
       database: process.env.DB_DATABASE,
       synchronize: process.env.NODE_ENV === 'development', // Solo en desarrollo
       autoLoadEntities: true,
+      logger: new RedactedDatabaseLogger(
+        process.env.NODE_ENV === 'development'
+          ? ['error', 'warn', 'log']
+          : false,
+      ),
       logging:
         process.env.NODE_ENV === 'development'
           ? ['error', 'warn', 'log']

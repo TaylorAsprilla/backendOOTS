@@ -7,9 +7,15 @@ const vfsFonts: Record<string, string> = require('pdfmake/build/vfs_fonts');
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { Case } from '../participants/entities/case.entity';
 import { User } from '../users/entities/user.entity';
+import { fullUserName } from '../documents/pdf/pdf-shared';
+import { CaseStatus } from '../common/enums';
 
 type Content = any;
 type TDocumentDefinitions = any;
@@ -37,11 +43,27 @@ const fonts = {
 
 @Injectable()
 export class PdfService {
+  private readonly logger = new Logger(PdfService.name);
   private createPrinter() {
     return new PdfPrinter(fonts);
   }
 
-  generateCasePdf(caseEntity: Case, currentUser: User): Promise<Buffer> {
+  async generateCasePdf(caseEntity: Case, currentUser: User): Promise<Buffer> {
+    try {
+      return await this.renderCasePdf(caseEntity, currentUser);
+    } catch (error) {
+      this.logger.error(
+        `No se pudo generar el PDF del caso ${caseEntity.id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
+    }
+  }
+
+  private async renderCasePdf(
+    caseEntity: Case,
+    currentUser: User,
+  ): Promise<Buffer> {
     const p = caseEntity.participant;
     const fullName = [
       p?.firstName,
@@ -61,9 +83,19 @@ export class PdfService {
     const VAL = '#212529'; // casi negro — valores
     const MUTED = '#6c757d'; // gris medio — textos secundarios y pie de página
     const BORDER = '#C4BEF0'; // lila claro — bordes de tabla
-    const logoPng = fs.readFileSync(
+    const logoCandidates = [
       path.join(__dirname, '..', 'assets', 'images', 'logo-oots.png'),
+      path.join(__dirname, '..', '..', 'assets', 'images', 'logo-oots.png'),
+    ];
+    const logoPath = logoCandidates.find((candidate) =>
+      fs.existsSync(candidate),
     );
+    if (!logoPath) {
+      throw new Error(
+        `No se encontró el logo del PDF. Rutas verificadas: ${logoCandidates.join(', ')}`,
+      );
+    }
+    const logoPng = fs.readFileSync(logoPath);
     const logoDataUrl = `data:image/png;base64,${logoPng.toString('base64')}`;
 
     const formatDate = (d?: Date | string | null): string => {
@@ -72,6 +104,7 @@ export class PdfService {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+        timeZone: 'UTC',
       });
     };
 
@@ -270,6 +303,7 @@ export class PdfService {
 
     const docDefinition: TDocumentDefinitions = {
       pageSize: 'A4',
+      images: { ootsLogo: logoDataUrl },
       pageMargins: [40, 72, 40, 55],
       defaultStyle: { font: 'Roboto' },
 
@@ -282,7 +316,7 @@ export class PdfService {
           {
             columns: [
               {
-                image: logoDataUrl,
+                image: 'ootsLogo',
                 width: 72,
                 margin: [40, 5, 0, 0],
               },
@@ -332,7 +366,7 @@ export class PdfService {
                     color: MUTED,
                   },
                   {
-                    text: `Generado el ${formatDate(new Date())}`,
+                    text: `Generado el ${formatDate(caseEntity.documentDate ?? new Date())}`,
                     fontSize: 7,
                     color: MUTED,
                   },
@@ -365,7 +399,7 @@ export class PdfService {
             {
               stack: [
                 {
-                  image: logoDataUrl,
+                  image: 'ootsLogo',
                   width: 90,
                   margin: [0, 10, 0, 4],
                 },
@@ -452,8 +486,18 @@ export class PdfService {
           ['Última actualización', formatDate(caseEntity.updatedAt)],
           [
             'Fecha de cierre',
-            closing?.closingDate ? formatDate(closing.closingDate) : '—',
+            formatDate(
+              closing?.closingDate ??
+                (caseEntity.status === CaseStatus.CLOSED
+                  ? caseEntity.documentDate
+                  : undefined),
+            ),
           ],
+          [
+            'Profesional responsable',
+            fullUserName(caseEntity.assignedTo ?? caseEntity.createdBy),
+          ],
+          ['Responsable del cierre', fullUserName(caseEntity.documentClosedBy)],
         ]),
 
         // 2. Datos del Participante
@@ -465,6 +509,7 @@ export class PdfService {
             `${p?.documentType?.name ?? ''} ${p?.documentNumber ?? ''}`,
           ],
           ['Fecha de nacimiento', formatDate(p?.birthDate)],
+          ['Edad al registrar el histórico', caseEntity.participantAge],
           ['Género', p?.gender?.name],
           ['Estado civil', p?.maritalStatus?.name],
           ['Teléfono', p?.phoneNumber],
@@ -671,7 +716,7 @@ export class PdfService {
                   width: 180,
                 },
                 {
-                  text: formatDate(new Date()),
+                  text: formatDate(caseEntity.documentDate ?? new Date()),
                   fontSize: 8,
                   color: ACCENT,
                   alignment: 'center',
@@ -686,7 +731,7 @@ export class PdfService {
       ],
     };
 
-    return new Promise<Buffer>((resolve, reject) => {
+    return await new Promise<Buffer>((resolve, reject) => {
       const printer = this.createPrinter();
       const pdfDoc = printer.createPdfKitDocument(docDefinition) as {
         on: (event: string, cb: (arg: Buffer & Error) => void) => void;

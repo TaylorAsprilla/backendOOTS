@@ -30,6 +30,7 @@ import {
   TransferCaseDto,
 } from './dto/case.dto';
 import { CaseStatus, CaseType, Role } from '../common/enums';
+import { CaseDocumentHistoryService } from './case-document-history.service';
 
 @Injectable()
 export class CasesService {
@@ -41,6 +42,7 @@ export class CasesService {
     @InjectRepository(Participant)
     private readonly participantRepository: Repository<Participant>,
     private readonly dataSource: DataSource,
+    private readonly documentHistory: CaseDocumentHistoryService,
   ) {}
 
   /**
@@ -331,10 +333,11 @@ export class CasesService {
         }
 
         // Retornar el caso completo con todas las relaciones
-        const completeCase = await this.findCaseWithRelations(
+        const completeCase = await this.documentHistory.loadCase(
           manager,
           savedCase.id,
         );
+        await this.documentHistory.captureOpening(manager, completeCase);
 
         this.logger.log(`Caso creado exitosamente con ID: ${savedCase.id}`);
 
@@ -495,160 +498,169 @@ export class CasesService {
     updateCaseDto: UpdateCaseDto,
     currentUserId: number,
   ): Promise<Case> {
-    // Verificar que el caso existe
-    const existingCase = await this.findOne(caseId);
-    this.assertCaseCreator(existingCase, currentUserId);
+    return this.dataSource.transaction(async (manager) => {
+      const existingCase = await this.documentHistory.lockCase(manager, caseId);
+      this.assertCaseCreator(existingCase, currentUserId);
+      this.documentHistory.assertOpen(existingCase);
 
-    // Las pestañas clínicas (familia, biopsicosocial, salud, etc.) no aplican
-    // en consulta breve, aunque el front las envíe con datos incompletos
-    const effectiveCaseType = updateCaseDto.caseType ?? existingCase.caseType;
-    const isBriefConsultation =
-      effectiveCaseType === CaseType.BRIEF_CONSULTATION;
+      // Las pestañas clínicas (familia, biopsicosocial, salud, etc.) no aplican
+      // en consulta breve, aunque el front las envíe con datos incompletos
+      const effectiveCaseType = updateCaseDto.caseType ?? existingCase.caseType;
+      const isBriefConsultation =
+        effectiveCaseType === CaseType.BRIEF_CONSULTATION;
 
-    // Actualizar campos escalares directamente (evita cascade en relaciones cargadas)
-    const scalarFields: Partial<Case> = {};
-    if (updateCaseDto.caseType !== undefined) {
-      scalarFields.caseType = updateCaseDto.caseType;
-    }
-    if (updateCaseDto.consultationReason !== undefined) {
-      scalarFields.consultationReason = updateCaseDto.consultationReason;
-    }
-    if (updateCaseDto.intervention !== undefined) {
-      scalarFields.intervention = updateCaseDto.intervention;
-    }
-    if (updateCaseDto.referrals !== undefined) {
-      scalarFields.referrals = updateCaseDto.referrals;
-    }
+      // Actualizar campos escalares directamente (evita cascade en relaciones cargadas)
+      const scalarFields: Partial<Case> = {};
+      if (updateCaseDto.caseType !== undefined) {
+        scalarFields.caseType = updateCaseDto.caseType;
+      }
+      if (updateCaseDto.consultationReason !== undefined) {
+        scalarFields.consultationReason = updateCaseDto.consultationReason;
+      }
+      if (updateCaseDto.intervention !== undefined) {
+        scalarFields.intervention = updateCaseDto.intervention;
+      }
+      if (updateCaseDto.referrals !== undefined) {
+        scalarFields.referrals = updateCaseDto.referrals;
+      }
 
-    if (Object.keys(scalarFields).length > 0) {
-      await this.caseRepository.update(caseId, scalarFields);
-    }
+      if (Object.keys(scalarFields).length > 0) {
+        await manager.update(Case, caseId, scalarFields);
+      }
 
-    if (!isBriefConsultation && updateCaseDto.followUpPlan?.length) {
-      const followUpPlanRepo = this.dataSource.getRepository(FollowUpPlan);
-      await followUpPlanRepo.delete({ caseId });
-      const newPlans = updateCaseDto.followUpPlan.map((planData) =>
-        followUpPlanRepo.create({ ...planData, caseId: caseId }),
-      );
-      await followUpPlanRepo.save(newPlans);
-    }
-
-    if (
-      !isBriefConsultation &&
-      updateCaseDto.physicalHealthHistory !== undefined
-    ) {
-      const physRepo = this.dataSource.getRepository(PhysicalHealthHistory);
-      await physRepo.delete({ caseId });
-      if (updateCaseDto.physicalHealthHistory.length) {
-        const newRecords = updateCaseDto.physicalHealthHistory.map((item) =>
-          physRepo.create({ ...item, caseId }),
+      if (!isBriefConsultation && updateCaseDto.followUpPlan?.length) {
+        const followUpPlanRepo = manager.getRepository(FollowUpPlan);
+        await followUpPlanRepo.delete({ caseId });
+        const newPlans = updateCaseDto.followUpPlan.map((planData) =>
+          followUpPlanRepo.create({ ...planData, caseId: caseId }),
         );
-        await physRepo.save(newRecords);
+        await followUpPlanRepo.save(newPlans);
       }
-    }
 
-    if (
-      !isBriefConsultation &&
-      updateCaseDto.mentalHealthHistory !== undefined
-    ) {
-      const mentalRepo = this.dataSource.getRepository(MentalHealthHistory);
-      await mentalRepo.delete({ caseId });
-      if (updateCaseDto.mentalHealthHistory.length) {
-        const newRecords = updateCaseDto.mentalHealthHistory.map((item) =>
-          mentalRepo.create({ ...item, caseId }),
+      if (
+        !isBriefConsultation &&
+        updateCaseDto.physicalHealthHistory !== undefined
+      ) {
+        const physRepo = manager.getRepository(PhysicalHealthHistory);
+        await physRepo.delete({ caseId });
+        if (updateCaseDto.physicalHealthHistory.length) {
+          const newRecords = updateCaseDto.physicalHealthHistory.map((item) =>
+            physRepo.create({ ...item, caseId }),
+          );
+          await physRepo.save(newRecords);
+        }
+      }
+
+      if (
+        !isBriefConsultation &&
+        updateCaseDto.mentalHealthHistory !== undefined
+      ) {
+        const mentalRepo = manager.getRepository(MentalHealthHistory);
+        await mentalRepo.delete({ caseId });
+        if (updateCaseDto.mentalHealthHistory.length) {
+          const newRecords = updateCaseDto.mentalHealthHistory.map((item) =>
+            mentalRepo.create({ ...item, caseId }),
+          );
+          await mentalRepo.save(newRecords);
+        }
+      }
+
+      if (!isBriefConsultation && updateCaseDto.family_health_history?.length) {
+        const familyRepo = manager.getRepository(FamilyHealthHistory);
+        // Borrar solo los del mismo history_type que se está actualizando
+        const historyTypes = [
+          ...new Set(
+            updateCaseDto.family_health_history.map((i) => i.history_type),
+          ),
+        ];
+        for (const historyType of historyTypes) {
+          await familyRepo.delete({ caseId, historyType });
+        }
+        const newRecords = updateCaseDto.family_health_history.map((item) =>
+          familyRepo.create({
+            caseId,
+            historyType: item.history_type,
+            familyHistoryFather: item.familyHistoryFather,
+            familyHistoryMother: item.familyHistoryMother,
+          }),
         );
-        await mentalRepo.save(newRecords);
+        await familyRepo.save(newRecords);
       }
-    }
 
-    if (!isBriefConsultation && updateCaseDto.family_health_history?.length) {
-      const familyRepo = this.dataSource.getRepository(FamilyHealthHistory);
-      // Borrar solo los del mismo history_type que se está actualizando
-      const historyTypes = [
-        ...new Set(
-          updateCaseDto.family_health_history.map((i) => i.history_type),
-        ),
-      ];
-      for (const historyType of historyTypes) {
-        await familyRepo.delete({ caseId, historyType });
+      if (!isBriefConsultation && updateCaseDto.weighing) {
+        const weighingRepo = manager.getRepository(Weighing);
+        const existing = await weighingRepo.findOne({ where: { caseId } });
+        if (existing) {
+          await weighingRepo.update(existing.id, updateCaseDto.weighing);
+        } else {
+          await weighingRepo.save(
+            weighingRepo.create({ ...updateCaseDto.weighing, caseId }),
+          );
+        }
       }
-      const newRecords = updateCaseDto.family_health_history.map((item) =>
-        familyRepo.create({
-          caseId,
-          historyType: item.history_type,
-          familyHistoryFather: item.familyHistoryFather,
-          familyHistoryMother: item.familyHistoryMother,
-        }),
-      );
-      await familyRepo.save(newRecords);
-    }
 
-    if (!isBriefConsultation && updateCaseDto.weighing) {
-      const weighingRepo = this.dataSource.getRepository(Weighing);
-      const existing = await weighingRepo.findOne({ where: { caseId } });
-      if (existing) {
-        await weighingRepo.update(existing.id, updateCaseDto.weighing);
-      } else {
-        await weighingRepo.save(
-          weighingRepo.create({ ...updateCaseDto.weighing, caseId }),
+      if (!isBriefConsultation && updateCaseDto.interventionPlans?.length) {
+        const interventionRepo = manager.getRepository(InterventionPlan);
+        await interventionRepo.delete({ caseId });
+        const newPlans = updateCaseDto.interventionPlans.map((plan) =>
+          interventionRepo.create({ ...plan, caseId }),
         );
+        await interventionRepo.save(newPlans);
       }
-    }
 
-    if (!isBriefConsultation && updateCaseDto.interventionPlans?.length) {
-      const interventionRepo = this.dataSource.getRepository(InterventionPlan);
-      await interventionRepo.delete({ caseId });
-      const newPlans = updateCaseDto.interventionPlans.map((plan) =>
-        interventionRepo.create({ ...plan, caseId }),
-      );
-      await interventionRepo.save(newPlans);
-    }
-
-    if (updateCaseDto.progressNotes?.length) {
-      const progressRepo = this.dataSource.getRepository(ProgressNote);
-      await progressRepo.delete({ caseId });
-      const newNotes = updateCaseDto.progressNotes.map((note) =>
-        progressRepo.create({ ...note, caseId }),
-      );
-      await progressRepo.save(newNotes);
-    }
-
-    if (updateCaseDto.closingNote) {
-      const closingRepo = this.dataSource.getRepository(ClosingNote);
-      const existing = await closingRepo.findOne({ where: { caseId } });
-      if (existing) {
-        await closingRepo.update(existing.id, updateCaseDto.closingNote);
-      } else {
-        await closingRepo.save(
-          closingRepo.create({ ...updateCaseDto.closingNote, caseId }),
+      if (updateCaseDto.progressNotes?.length) {
+        const progressRepo = manager.getRepository(ProgressNote);
+        await progressRepo.delete({ caseId });
+        const newNotes = updateCaseDto.progressNotes.map((note) =>
+          progressRepo.create({ ...note, caseId }),
         );
+        await progressRepo.save(newNotes);
       }
-    }
 
-    if (!isBriefConsultation && updateCaseDto.bioPsychosocialHistory) {
-      const bioRepo = this.dataSource.getRepository(BioPsychosocialHistory);
-      const existing = await bioRepo.findOne({ where: { caseId } });
-      if (existing) {
-        await bioRepo.update(existing.id, updateCaseDto.bioPsychosocialHistory);
-      } else {
-        await bioRepo.save(
-          bioRepo.create({ ...updateCaseDto.bioPsychosocialHistory, caseId }),
-        );
+      if (updateCaseDto.closingNote) {
+        const closingRepo = manager.getRepository(ClosingNote);
+        const existing = await closingRepo.findOne({ where: { caseId } });
+        if (existing) {
+          await closingRepo.update(existing.id, updateCaseDto.closingNote);
+        } else {
+          await closingRepo.save(
+            closingRepo.create({ ...updateCaseDto.closingNote, caseId }),
+          );
+        }
       }
-    }
 
-    if (!isBriefConsultation && updateCaseDto.familyMembers !== undefined) {
-      const familyMemberRepo = this.dataSource.getRepository(FamilyMember);
-      await familyMemberRepo.delete({ caseId });
-      if (updateCaseDto.familyMembers.length) {
-        const newMembers = updateCaseDto.familyMembers.map((member) =>
-          familyMemberRepo.create({ ...member, caseId }),
-        );
-        await familyMemberRepo.save(newMembers);
+      if (!isBriefConsultation && updateCaseDto.bioPsychosocialHistory) {
+        const bioRepo = manager.getRepository(BioPsychosocialHistory);
+        const existing = await bioRepo.findOne({ where: { caseId } });
+        if (existing) {
+          await bioRepo.update(
+            existing.id,
+            updateCaseDto.bioPsychosocialHistory,
+          );
+        } else {
+          await bioRepo.save(
+            bioRepo.create({ ...updateCaseDto.bioPsychosocialHistory, caseId }),
+          );
+        }
       }
-    }
 
-    return await this.findOne(caseId);
+      if (!isBriefConsultation && updateCaseDto.familyMembers !== undefined) {
+        const familyMemberRepo = manager.getRepository(FamilyMember);
+        await familyMemberRepo.delete({ caseId });
+        if (updateCaseDto.familyMembers.length) {
+          const newMembers = updateCaseDto.familyMembers.map((member) =>
+            familyMemberRepo.create({ ...member, caseId }),
+          );
+          await familyMemberRepo.save(newMembers);
+        }
+      }
+
+      const updated = await this.findCaseWithRelations(manager, caseId);
+      if (!isBriefConsultation && updateCaseDto.familyMembers !== undefined) {
+        await this.documentHistory.refreshFamily(manager, updated);
+      }
+      return updated;
+    });
   }
 
   async transferCase(
@@ -693,6 +705,8 @@ export class CasesService {
     }
 
     await this.dataSource.transaction(async (manager) => {
+      const lockedCase = await this.documentHistory.lockCase(manager, caseId);
+      this.documentHistory.assertOpen(lockedCase);
       // Conserva el historial de a quién estuvo asignado el caso antes de la transferencia
       const transfer = manager.create(CaseTransfer, {
         caseId,
@@ -725,17 +739,29 @@ export class CasesService {
     updateCaseStatusDto: UpdateCaseStatusDto,
     currentUserId: number,
   ): Promise<Case> {
-    const caseEntity = await this.findOne(caseId);
-    this.assertCaseCreator(caseEntity, currentUserId);
+    return this.dataSource.transaction(async (manager) => {
+      const caseEntity = await this.documentHistory.lockCase(manager, caseId);
+      this.assertCaseCreator(caseEntity, currentUserId);
+      this.documentHistory.assertOpen(caseEntity);
 
-    // Validar transiciones de estado válidas
-    this.validateStatusTransition(
-      caseEntity.status,
-      updateCaseStatusDto.status,
-    );
+      // Validar transiciones de estado válidas
+      this.validateStatusTransition(
+        caseEntity.status,
+        updateCaseStatusDto.status,
+      );
 
-    caseEntity.status = updateCaseStatusDto.status;
-    return await this.caseRepository.save(caseEntity);
+      await manager.update(Case, caseId, {
+        status: updateCaseStatusDto.status,
+      });
+      const updated = await this.documentHistory.loadCase(manager, caseId);
+      if (updated.status === CaseStatus.CLOSED) {
+        const actor = await manager.findOneBy(User, { id: currentUserId });
+        if (!actor)
+          throw new NotFoundException('Usuario de cierre no encontrado');
+        await this.documentHistory.freeze(manager, updated, actor);
+      }
+      return updated;
+    });
   }
 
   private assertCaseCreator(caseEntity: Case, currentUserId: number): void {
@@ -775,7 +801,7 @@ export class CasesService {
     const validTransitions: Record<CaseStatus, CaseStatus[]> = {
       [CaseStatus.OPEN]: [CaseStatus.IN_PROGRESS, CaseStatus.CLOSED],
       [CaseStatus.IN_PROGRESS]: [CaseStatus.OPEN, CaseStatus.CLOSED],
-      [CaseStatus.CLOSED]: [CaseStatus.OPEN, CaseStatus.IN_PROGRESS],
+      [CaseStatus.CLOSED]: [],
     };
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
