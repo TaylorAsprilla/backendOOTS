@@ -3,8 +3,24 @@ import { CaseDocumentHistoryService } from '../cases/case-document-history.servi
 import { User } from '../users/entities/user.entity';
 import { DocumentsService } from './documents.service';
 import { DocumentGeneratorService } from './pdf/pdf.service';
+import { Case } from '../participants/entities/case.entity';
+import { CaseStatus } from '../common/enums';
 
 describe('DocumentsService authorization', () => {
+  it.each([
+    [CaseStatus.OPEN, 'Aún no puede descargar la nota de cierre. Registre y guarde la nota en la sección «Nota de cierre» del caso y vuelva a intentarlo.'],
+    [CaseStatus.CLOSED, 'No se puede descargar la nota de cierre: no se registró antes de cerrar el expediente. Contacte al administrador.'],
+  ])('explains the missing closing note for a %s case', async (status, message) => {
+    const getDocumentCase = jest.fn().mockResolvedValue(
+      Object.assign(new Case(), { id: 33, status }),
+    );
+    const service = new DocumentsService(
+      { getDocumentCase } as unknown as CaseDocumentHistoryService,
+      {} as DocumentGeneratorService,
+    );
+    await expect(service.generateClosingNote(33, new User())).rejects.toThrow(message);
+  });
+
   it.each([
     'generateHelpProcessCompletion',
     'generateInterventionPlan',
