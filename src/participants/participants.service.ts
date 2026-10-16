@@ -598,111 +598,93 @@ export class ParticipantsService {
     };
   }
 
-  async findByUser(userId: number): Promise<{
-    userId: number;
-    total: number;
-    participants: Array<{
-      id: number;
-      firstName: string;
-      secondName?: string;
-      firstLastName: string;
-      secondLastName?: string;
-      fullName: string;
-      documentNumber?: string;
-      phoneNumber?: string;
-      email?: string;
-      city?: string;
-      createdAt: Date;
-    }>;
-  }> {
-    const participants = await this.participantRepository.find({
-      where: { registeredById: userId },
-      order: { createdAt: 'DESC' },
-      select: [
-        'id',
-        'firstName',
-        'secondName',
-        'firstLastName',
-        'secondLastName',
-        'documentNumber',
-        'phoneNumber',
-        'email',
-        'city',
-        'createdAt',
-      ],
-    });
+  async findByUser(userId: number) {
+    const participants = await this.participantRepository
+      .createQueryBuilder('participant')
+      .setFindOptions({
+        where: { registeredById: userId },
+        order: { createdAt: 'DESC' },
+        select: [
+          'id',
+          'firstName',
+          'secondName',
+          'firstLastName',
+          'secondLastName',
+          'documentNumber',
+          'phoneNumber',
+          'email',
+          'city',
+          'state',
+          'createdAt',
+        ],
+      })
+      .loadRelationCountAndMap('participant.casesCount', 'participant.cases')
+      .getMany();
 
     return {
       userId,
       total: participants.length,
-      participants: participants.map((p) => ({
-        id: p.id,
-        firstName: p.firstName,
-        secondName: p.secondName,
-        firstLastName: p.firstLastName,
-        secondLastName: p.secondLastName,
-        fullName:
-          `${p.firstName} ${p.secondName || ''} ${p.firstLastName} ${p.secondLastName || ''}`.trim(),
-        documentNumber: p.documentNumber,
-        phoneNumber: p.phoneNumber,
-        email: p.email,
-        city: p.city,
-        createdAt: p.createdAt,
-      })),
+      participants: participants.map((participant) => this.toListItem(participant)),
     };
   }
 
-  async findByCountry(countryId: number): Promise<{
-    countryId: number;
-    total: number;
-    participants: Array<{
-      id: number;
-      firstName: string;
-      secondName?: string;
-      firstLastName: string;
-      secondLastName?: string;
-      fullName: string;
-      documentNumber?: string;
-      phoneNumber?: string;
-      email?: string;
-      city?: string;
-      createdAt: Date;
-    }>;
-  }> {
-    const participants = await this.participantRepository.find({
-      where: { countryId },
-      order: { createdAt: 'DESC' },
-      select: [
-        'id',
-        'firstName',
-        'secondName',
-        'firstLastName',
-        'secondLastName',
-        'documentNumber',
-        'phoneNumber',
-        'email',
-        'city',
-        'createdAt',
-      ],
-    });
+  async findByCountry(countryId: number) {
+    const participants = await this.participantRepository
+      .createQueryBuilder('participant')
+      .setFindOptions({
+        where: { countryId },
+        order: { createdAt: 'DESC' },
+        select: [
+          'id',
+          'firstName',
+          'secondName',
+          'firstLastName',
+          'secondLastName',
+          'documentNumber',
+          'phoneNumber',
+          'email',
+          'city',
+          'state',
+          'createdAt',
+        ],
+      })
+      .loadRelationCountAndMap('participant.casesCount', 'participant.cases')
+      .getMany();
 
     return {
       countryId,
       total: participants.length,
-      participants: participants.map((participant) => ({
-        id: participant.id,
-        firstName: participant.firstName,
-        secondName: participant.secondName,
-        firstLastName: participant.firstLastName,
-        secondLastName: participant.secondLastName,
-        fullName:
-          `${participant.firstName} ${participant.secondName || ''} ${participant.firstLastName} ${participant.secondLastName || ''}`.trim(),
-        documentNumber: participant.documentNumber,
-        phoneNumber: participant.phoneNumber,
-        email: participant.email,
-        city: participant.city,
-        createdAt: participant.createdAt,
-      })),
+      participants: participants.map((participant) => this.toListItem(participant)),
+    };
+  }
+
+  private toListItem(participant: Participant) {
+    return {
+      id: participant.id,
+      firstName: participant.firstName,
+      secondName: participant.secondName,
+      firstLastName: participant.firstLastName,
+      secondLastName: participant.secondLastName,
+      fullName: [
+        participant.firstName, participant.secondName,
+        participant.firstLastName, participant.secondLastName,
+      ].filter(Boolean).join(' '),
+      documentNumber: participant.documentNumber,
+      phoneNumber: participant.phoneNumber,
+      email: participant.email,
+      city: participant.city,
+      state: participant.state,
+      casesCount: participant.casesCount,
+      country: participant.country ? { iso: participant.country.iso } : null,
+      registeredBy: participant.registeredBy ? {
+        id: participant.registeredBy.id,
+        firstName: participant.registeredBy.firstName,
+        secondName: participant.registeredBy.secondName,
+        firstLastName: participant.registeredBy.firstLastName,
+        secondLastName: participant.registeredBy.secondLastName,
+        email: participant.registeredBy.email,
+      } : null,
+      createdAt: participant.createdAt,
     };
   }
 

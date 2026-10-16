@@ -12,6 +12,33 @@ import {
 } from '../audit/entities/participant-audit-log.entity';
 
 describe('ParticipantsService access control and auditing', () => {
+  it.each([
+    ['user', { registeredById: 7 }],
+    ['country', { countryId: 7 }],
+  ])('keeps the %s scope while returning table counts and safe relation summaries', async (scope, where) => {
+    const rows = [{
+      id: 12, firstName: 'Ana', firstLastName: 'Perez', casesCount: 2,
+      country: { iso: 'CO', internal: 'not returned' },
+      registeredBy: { id: 7, firstName: 'Sara', firstLastName: 'Diaz', email: 'sara@example.test', password: 'not returned' },
+    }, { id: 13, casesCount: 0, country: null, registeredBy: null }];
+    const query = {
+      setFindOptions: jest.fn().mockReturnThis(),
+      loadRelationCountAndMap: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(rows),
+    };
+    const repository = { createQueryBuilder: jest.fn().mockReturnValue(query) } as unknown as Repository<Participant>;
+    const service = new ParticipantsService(repository);
+    const result = scope === 'user' ? await service.findByUser(7) : await service.findByCountry(7);
+    expect(query.setFindOptions).toHaveBeenCalledWith(expect.objectContaining({ where }));
+    expect(query.loadRelationCountAndMap).toHaveBeenCalledWith('participant.casesCount', 'participant.cases');
+    expect(result.participants[0]).toMatchObject({
+      casesCount: 2, fullName: 'Ana Perez', country: { iso: 'CO' },
+      registeredBy: { id: 7, email: 'sara@example.test' },
+    });
+    expect(result.participants[0].registeredBy).not.toHaveProperty('password');
+    expect(result.participants[1]).toMatchObject({ casesCount: 0, registeredBy: null, country: null });
+  });
+
   it('includes case counts in the global list without loading clinical case data', async () => {
     const participants = [{ id: 12, casesCount: 3 }];
     const query = {
