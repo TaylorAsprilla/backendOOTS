@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { CasesService } from './cases.service';
 import { PdfService } from './pdf.service';
+import { CaseDocumentHistoryService } from './case-document-history.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import {
@@ -51,6 +52,7 @@ export class CasesController {
   constructor(
     private readonly casesService: CasesService,
     private readonly pdfService: PdfService,
+    private readonly documentHistory: CaseDocumentHistoryService,
   ) {}
 
   @Post()
@@ -775,15 +777,20 @@ export class CasesController {
     @Res() res: Response,
     @CurrentUser() currentUser: User,
   ) {
-    const caseEntity = await this.casesService.findOne(id);
+    const caseEntity = await this.documentHistory.getDocumentCase(
+      id,
+      currentUser,
+    );
     const pdfBuffer = await this.pdfService.generateCasePdf(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="caso-${caseEntity.id}.pdf"`,
       'Content-Length': pdfBuffer.length,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
     });
     res.end(pdfBuffer);
   }
@@ -806,11 +813,20 @@ export class CasesController {
   })
   @ApiResponse({ status: 200, description: 'Caso actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Caso no encontrado' })
+  @ApiResponse({
+    status: 403,
+    description: 'Solo el usuario que creó el caso puede editarlo.',
+  })
   async updateCase(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCaseDto: UpdateCaseDto,
+    @CurrentUser() currentUser: User,
   ) {
-    return await this.casesService.updateCase(id, updateCaseDto);
+    return await this.casesService.updateCase(
+      id,
+      updateCaseDto,
+      currentUser.id,
+    );
   }
 
   @Patch(':id/status')
@@ -982,11 +998,20 @@ export class CasesController {
       },
     },
   })
+  @ApiResponse({
+    status: 403,
+    description: 'Solo el usuario que creó el caso puede cambiar su estado.',
+  })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCaseStatusDto: UpdateCaseStatusDto,
+    @CurrentUser() currentUser: User,
   ) {
-    return await this.casesService.updateStatus(id, updateCaseStatusDto);
+    return await this.casesService.updateStatus(
+      id,
+      updateCaseStatusDto,
+      currentUser.id,
+    );
   }
 
   @Patch(':id/transfer')

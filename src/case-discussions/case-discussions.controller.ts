@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  ParseEnumPipe,
   Patch,
   Post,
   Query,
@@ -33,7 +34,10 @@ import { AnnulCaseDiscussionDto } from './dto/annul-case-discussion.dto';
 import { QueryCaseDiscussionDto } from './dto/query-case-discussion.dto';
 import { CaseDiscussionsService } from './case-discussions.service';
 
-type Disposition = 'inline' | 'attachment';
+enum Disposition {
+  INLINE = 'inline',
+  ATTACHMENT = 'attachment',
+}
 
 function sendPdf(
   res: Response,
@@ -45,6 +49,8 @@ function sendPdf(
     'Content-Type': 'application/pdf',
     'Content-Disposition': `${disposition}; filename="${filename}"`,
     'Content-Length': buffer.length,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
   });
   res.end(buffer);
 }
@@ -85,7 +91,10 @@ export class CaseDiscussionsController {
     },
   })
   @ApiResponse({ status: 201, description: 'Discusión creada' })
-  @ApiResponse({ status: 400, description: 'Participante no asociado al caso o supervisor inválido' })
+  @ApiResponse({
+    status: 400,
+    description: 'Participante no asociado al caso o supervisor inválido',
+  })
   @ApiResponse({ status: 403, description: 'Usuario sin permisos' })
   @ApiResponse({ status: 404, description: 'Caso no encontrado' })
   async create(
@@ -99,7 +108,11 @@ export class CaseDiscussionsController {
   @Get()
   @ApiOperation({ summary: 'Listar discusiones de un caso' })
   @ApiParam({ name: 'caseId', type: Number, example: 15 })
-  @ApiQuery({ name: 'status', required: false, enum: ['BORRADOR', 'FINALIZADA', 'ANULADA'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['BORRADOR', 'FINALIZADA', 'ANULADA'],
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Listado paginado de discusiones' })
@@ -108,7 +121,11 @@ export class CaseDiscussionsController {
     @Query() query: QueryCaseDiscussionDto,
     @CurrentUser() currentUser: User,
   ) {
-    return await this.caseDiscussionsService.findAll(caseId, query, currentUser);
+    return await this.caseDiscussionsService.findAll(
+      caseId,
+      query,
+      currentUser,
+    );
   }
 
   @Get(':discussionId')
@@ -146,7 +163,10 @@ export class CaseDiscussionsController {
     },
   })
   @ApiResponse({ status: 200, description: 'Discusión actualizada' })
-  @ApiResponse({ status: 403, description: 'Usuario sin permisos o discusión no editable' })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuario sin permisos o discusión no editable',
+  })
   async update(
     @Param('caseId', ParseIntPipe) caseId: number,
     @Param('discussionId', ParseIntPipe) discussionId: number,
@@ -180,8 +200,14 @@ export class CaseDiscussionsController {
     },
   })
   @ApiResponse({ status: 200, description: 'Discusión finalizada' })
-  @ApiResponse({ status: 400, description: 'Faltan recomendaciones obligatorias' })
-  @ApiResponse({ status: 403, description: 'Discusión finalizada o anulada no editable' })
+  @ApiResponse({
+    status: 400,
+    description: 'Faltan recomendaciones obligatorias',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Discusión finalizada o anulada no editable',
+  })
   async finalize(
     @Param('caseId', ParseIntPipe) caseId: number,
     @Param('discussionId', ParseIntPipe) discussionId: number,
@@ -249,7 +275,8 @@ export class CaseDiscussionsController {
   async pdf(
     @Param('caseId', ParseIntPipe) caseId: number,
     @Param('discussionId', ParseIntPipe) discussionId: number,
-    @Query('disposition') disposition: Disposition = 'attachment',
+    @Query('disposition', new ParseEnumPipe(Disposition, { optional: true }))
+    disposition: Disposition = Disposition.ATTACHMENT,
     @CurrentUser() currentUser: User,
     @Res() res: Response,
   ) {

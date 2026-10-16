@@ -36,6 +36,8 @@ import { Role } from '../common/enums/role.enum';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { SearchParticipantsDto } from './dto/search-participants.dto';
 import { ParticipantsService } from './participants.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 
 @ApiTags('participants')
 @Controller('participants')
@@ -223,8 +225,11 @@ export class ParticipantsController {
       },
     },
   })
-  create(@Body() createParticipantDto: CreateParticipantDto) {
-    return this.participantsService.create(createParticipantDto);
+  create(
+    @Body() createParticipantDto: CreateParticipantDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    return this.participantsService.create(createParticipantDto, currentUser);
   }
 
   @Get()
@@ -424,6 +429,28 @@ export class ParticipantsController {
     return this.participantsService.findOne(id);
   }
 
+  @Get('by-country/:countryId')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN_COUNTRY)
+  @ApiOperation({
+    summary: 'Obtener participantes del país asignado',
+    description:
+      'Retorna los participantes del país asignado al usuario ADMIN_COUNTRY autenticado.',
+  })
+  @ApiParam({
+    name: 'countryId',
+    description: 'ID del país asignado al usuario autenticado',
+    type: Number,
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'El usuario no es ADMIN_COUNTRY o el país no está asignado a él.',
+  })
+  findByCountry(@Param('countryId', ParseIntPipe) countryId: number) {
+    return this.participantsService.findByCountry(countryId);
+  }
+
   @Patch(':id')
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN, Role.ADMIN_COUNTRY, Role.TRABAJO_SOCIAL)
@@ -504,6 +531,11 @@ export class ParticipantsController {
       },
     },
   })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Edición permitida solo para ADMIN, ADMIN_COUNTRY dentro de su país asignado y TRABAJO_SOCIAL sobre participantes registrados por él.',
+  })
   @ApiBadRequestResponse({
     description:
       'Datos de actualización inválidos. Verifica el formato de los campos proporcionados.',
@@ -545,8 +577,9 @@ export class ParticipantsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateParticipantDto,
+    @CurrentUser() currentUser: User,
   ) {
-    return this.participantsService.update(id, updateDto);
+    return this.participantsService.update(id, updateDto, currentUser);
   }
 
   @Delete(':id')
@@ -612,8 +645,11 @@ export class ParticipantsController {
       },
     },
   })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.participantsService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() currentUser: User,
+  ) {
+    return this.participantsService.remove(id, currentUser);
   }
 
   @Get('check-exists/:documentNumber')

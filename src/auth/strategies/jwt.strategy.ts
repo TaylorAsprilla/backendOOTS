@@ -25,12 +25,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       const user = await this.authService.validateUser(payload);
 
       this.logger.log(
-        `[jwt-strategy] validated token sub=${payload.sub} email=${payload.email} jwtRole=${payload.role} userId=${user.id} userRole=${user.role?.name ?? 'undefined'} countryId=${user.countryId ?? 'undefined'}`,
+        `[jwt-strategy] validated token sub=${payload.sub} jwtRole=${payload.role} userId=${user.id} userRole=${user.role?.name ?? 'undefined'} countryId=${user.countryId ?? 'undefined'}`,
       );
 
       if (payload.role !== user.role?.name) {
         this.logger.warn(
-          `[jwt-strategy] jwt role mismatch userId=${user.id} email=${user.email} jwtRole=${payload.role} userRole=${user.role?.name ?? 'undefined'}`,
+          `[jwt-strategy] jwt role mismatch userId=${user.id} jwtRole=${payload.role} userRole=${user.role?.name ?? 'undefined'}`,
         );
       }
 

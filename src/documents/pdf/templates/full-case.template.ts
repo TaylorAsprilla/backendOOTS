@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Case } from '../../../participants/entities/case.entity';
 import { User } from '../../../users/entities/user.entity';
+import { CaseStatus } from '../../../common/enums';
 import {
   baseDocDefinition,
   buildCoverBanner,
@@ -8,6 +9,7 @@ import {
   caseInfoSection,
   dataTable,
   formatDate,
+  fullUserName,
   participantInfoSection,
   sectionTitle,
   subItemTitle,
@@ -62,6 +64,7 @@ export function buildFullCaseDoc(
         ['Referido', fu.referred],
         ['Cita de orientación', fu.orientationAppointment],
         ['Proceso completado', fu.processCompleted],
+        ['Otros detalles', fu.otherDetails],
       ]),
     ],
   );
@@ -104,137 +107,157 @@ export function buildFullCaseDoc(
     ]),
   ]);
 
-  return baseDocDefinition([
-    ...buildCoverBanner(
-      'INFORME COMPLETO DEL CASO',
-      caseEntity,
-      'Documento consolidado con toda la información del caso.',
-    ),
-    ...participantInfoSection(caseEntity),
+  return baseDocDefinition(
+    [
+      ...buildCoverBanner(
+        'INFORME COMPLETO DEL CASO',
+        caseEntity,
+        'Documento consolidado con toda la información del caso.',
+      ),
+      ...participantInfoSection(caseEntity),
 
-    sectionTitle('Información del Caso'),
-    dataTable([
-      ['Número de caso', caseEntity.caseNumber],
-      ['Estado', caseEntity.status],
-      ['Motivo de consulta', caseEntity.consultationReason],
-      ['Intervención inicial', caseEntity.intervention],
-      ['Referidos', caseEntity.referrals],
-      ['Situaciones identificadas', situations],
-      ['Fecha de creación', formatDate(caseEntity.createdAt)],
-      ['Última actualización', formatDate(caseEntity.updatedAt)],
-      [
-        'Fecha de cierre',
-        closing?.closingDate ? formatDate(closing.closingDate) : '—',
-      ],
-    ]),
-    ...caseInfoSection(caseEntity).slice(0, 0), // (caseInfoSection ya cubre algunos; evitamos duplicar)
+      sectionTitle('Información del Caso'),
+      dataTable([
+        ['Número de caso', caseEntity.caseNumber],
+        ['Estado', caseEntity.status],
+        ['Motivo de consulta', caseEntity.consultationReason],
+        ['Intervención inicial', caseEntity.intervention],
+        ['Referidos', caseEntity.referrals],
+        ['Situaciones identificadas', situations],
+        ['Fecha de creación', formatDate(caseEntity.createdAt)],
+        ['Última actualización', formatDate(caseEntity.updatedAt)],
+        [
+          'Profesional responsable',
+          fullUserName(caseEntity.assignedTo ?? caseEntity.createdBy),
+        ],
+        ['Responsable del cierre', fullUserName(caseEntity.documentClosedBy)],
+        [
+          'Fecha de cierre',
+          formatDate(
+            closing?.closingDate ??
+              (caseEntity.status === CaseStatus.CLOSED
+                ? caseEntity.documentDate
+                : undefined),
+          ),
+        ],
+      ]),
+      ...caseInfoSection(caseEntity).slice(0, 0), // (caseInfoSection ya cubre algunos; evitamos duplicar)
 
-    ...(bio
-      ? [
-          sectionTitle('Historia Biopsicosocial'),
-          dataTable([
-            ['Nivel académico', bio.academicLevel?.name ?? bio.completedGrade],
-            ['Institución', bio.institution],
-            ['Profesión', bio.profession],
-            ['Historia ocupacional', bio.occupationalHistory],
-            ['Vivienda', bio.housing],
-            ['Tipo de vivienda', bio.housingType?.name],
-            ['Fuente de ingreso', bio.incomeSource?.name],
-            ['Nivel de ingreso', bio.incomeLevel?.name],
-          ]),
-        ]
-      : []),
+      ...(bio
+        ? [
+            sectionTitle('Historia Biopsicosocial'),
+            dataTable([
+              [
+                'Nivel académico',
+                bio.academicLevel?.name ?? bio.completedGrade,
+              ],
+              ['Institución', bio.institution],
+              ['Profesión', bio.profession],
+              ['Historia ocupacional', bio.occupationalHistory],
+              ['Vivienda', bio.housing],
+              ['Tipo de vivienda', bio.housingType?.name],
+              ['Fuente de ingreso', bio.incomeSource?.name],
+              ['Nivel de ingreso', bio.incomeLevel?.name],
+            ]),
+          ]
+        : []),
 
-    ...(phys
-      ? [
-          sectionTitle('Salud Física'),
-          dataTable([
-            ['Condiciones actuales', phys.currentConditions],
-            ['Medicamentos', phys.medications],
-            ['Observaciones', phys.observations],
-          ]),
-        ]
-      : []),
+      ...(phys
+        ? [
+            sectionTitle('Salud Física'),
+            dataTable([
+              ['Condiciones actuales', phys.currentConditions],
+              ['Medicamentos', phys.medications],
+              ['Observaciones', phys.observations],
+            ]),
+          ]
+        : []),
 
-    ...(physFamily
-      ? [
-          sectionTitle('Antecedentes Familiares (Salud Física)'),
-          dataTable([
-            ['Antecedentes (padre)', physFamily.familyHistoryFather],
-            ['Antecedentes (madre)', physFamily.familyHistoryMother],
-          ]),
-        ]
-      : []),
+      ...(physFamily
+        ? [
+            sectionTitle('Antecedentes Familiares (Salud Física)'),
+            dataTable([
+              ['Antecedentes (padre)', physFamily.familyHistoryFather],
+              ['Antecedentes (madre)', physFamily.familyHistoryMother],
+            ]),
+          ]
+        : []),
 
-    ...(mental
-      ? [
-          sectionTitle('Salud Mental'),
-          dataTable([
-            ['Condiciones actuales', mental.currentConditions],
-            ['Medicamentos', mental.medications],
-            ['Observaciones', mental.observations],
-          ]),
-        ]
-      : []),
+      ...(mental
+        ? [
+            sectionTitle('Salud Mental'),
+            dataTable([
+              ['Condiciones actuales', mental.currentConditions],
+              ['Medicamentos', mental.medications],
+              ['Observaciones', mental.observations],
+            ]),
+          ]
+        : []),
 
-    ...(mentalFamily
-      ? [
-          sectionTitle('Antecedentes Familiares (Salud Mental)'),
-          dataTable([
-            ['Antecedentes (padre)', mentalFamily.familyHistoryFather],
-            ['Antecedentes (madre)', mentalFamily.familyHistoryMother],
-          ]),
-        ]
-      : []),
+      ...(mentalFamily
+        ? [
+            sectionTitle('Antecedentes Familiares (Salud Mental)'),
+            dataTable([
+              ['Antecedentes (padre)', mentalFamily.familyHistoryFather],
+              ['Antecedentes (madre)', mentalFamily.familyHistoryMother],
+            ]),
+          ]
+        : []),
 
-    ...(weigh
-      ? [
-          sectionTitle('Ponderación'),
-          dataTable([
-            ['Motivo de consulta', weigh.reasonConsultation],
-            ['Situación identificada', weigh.identifiedSituation],
-            ['Condiciones favorables', weigh.favorableConditions],
-            ['Condiciones no favorables', weigh.conditionsNotFavorable],
-            ['Proceso de ayuda', weigh.helpProcess],
-          ]),
-        ]
-      : []),
+      ...(weigh
+        ? [
+            sectionTitle('Ponderación'),
+            dataTable([
+              ['Motivo de consulta', weigh.reasonConsultation],
+              ['Situación identificada', weigh.identifiedSituation],
+              ['Condiciones favorables', weigh.favorableConditions],
+              ['Condiciones no favorables', weigh.conditionsNotFavorable],
+              ['Proceso de ayuda', weigh.helpProcess],
+            ]),
+          ]
+        : []),
 
-    ...(familyContent.length
-      ? [sectionTitle('Grupo Familiar'), ...familyContent]
-      : []),
+      ...(familyContent.length
+        ? [sectionTitle('Grupo Familiar'), ...familyContent]
+        : []),
 
-    ...(followUpContent.length
-      ? [
-          sectionTitle('Plan de Seguimiento / Proceso de Ayuda'),
-          ...followUpContent,
-        ]
-      : []),
+      ...(followUpContent.length
+        ? [
+            sectionTitle('Plan de Seguimiento / Proceso de Ayuda'),
+            ...followUpContent,
+          ]
+        : []),
 
-    ...(interventionContent.length
-      ? [sectionTitle('Planes de Intervención'), ...interventionContent]
-      : []),
+      ...(interventionContent.length
+        ? [sectionTitle('Planes de Intervención'), ...interventionContent]
+        : []),
 
-    ...(progressContent.length
-      ? [
-          sectionTitle('Notas de Progreso (orden cronológico)'),
-          ...progressContent,
-        ]
-      : []),
+      ...(progressContent.length
+        ? [
+            sectionTitle('Notas de Progreso (orden cronológico)'),
+            ...progressContent,
+          ]
+        : []),
 
-    ...(closing
-      ? [
-          sectionTitle('Nota de Cierre'),
-          dataTable([
-            ['Razón de cierre', closing.reason],
-            ['Logros', closing.achievements],
-            ['Recomendaciones', closing.recommendations],
-            ['Observaciones', closing.observations],
-            ['Fecha de cierre', formatDate(closing.closingDate)],
-          ]),
-        ]
-      : []),
+      ...(closing
+        ? [
+            sectionTitle('Nota de Cierre'),
+            dataTable([
+              ['Razón de cierre', closing.reason],
+              ['Logros', closing.achievements],
+              ['Recomendaciones', closing.recommendations],
+              ['Observaciones', closing.observations],
+              ['Fecha de cierre', formatDate(closing.closingDate)],
+              [
+                'Responsable del cierre',
+                fullUserName(caseEntity.documentClosedBy),
+              ],
+            ]),
+          ]
+        : []),
 
-    buildSignatureBlock(currentUser),
-  ]);
+      buildSignatureBlock(currentUser, caseEntity.documentDate),
+    ],
+    caseEntity.documentDate,
+  );
 }

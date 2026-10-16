@@ -14,6 +14,8 @@ import { ParticipantIdentifiedSituation } from '../participants/entities/partici
 import { IdentifiedSituation } from '../identified-situations/entities/identified-situation.entity';
 import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { Weighing } from '../participants/entities/weighing.entity';
+import { CaseDocumentHistory } from './entities/case-document-history.entity';
+import { CaseDocumentHistoryService } from './case-document-history.service';
 
 @Module({
   imports: [
@@ -29,10 +31,11 @@ import { Weighing } from '../participants/entities/weighing.entity';
       ParticipantIdentifiedSituation,
       IdentifiedSituation,
       FollowUpPlan,
+      CaseDocumentHistory,
     ]),
   ],
   controllers: [CasesController],
-  providers: [CasesService, PdfService],
-  exports: [CasesService],
+  providers: [CasesService, PdfService, CaseDocumentHistoryService],
+  exports: [CasesService, CaseDocumentHistoryService],
 })
 export class CasesModule {}

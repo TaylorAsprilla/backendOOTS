@@ -9,9 +9,11 @@ import { CaseDiscussionFamilyMember } from './entities/case-discussion-family-me
 import { CaseDiscussionsController } from './case-discussions.controller';
 import { CaseDiscussionsService } from './case-discussions.service';
 import { CaseDiscussionsPdfService } from './case-discussions-pdf.service';
+import { CasesModule } from '../cases/cases.module';
 
 @Module({
   imports: [
+    CasesModule,
     TypeOrmModule.forFeature([
       Case,
       Participant,

@@ -21,6 +21,10 @@ import { CaseDiscussion } from './entities/case-discussion.entity';
 import { CaseDiscussionFamilyMember } from './entities/case-discussion-family-member.entity';
 import { CaseDiscussionsPdfService } from './case-discussions-pdf.service';
 import { CaseDiscussionFamilyMemberDto } from './dto/case-discussion-family-member.dto';
+import {
+  CaseDocumentHistoryService,
+  ageAt,
+} from '../cases/case-document-history.service';
 
 type PersistedFamilyMember = Pick<
   CaseDiscussionFamilyMember,
@@ -44,6 +48,7 @@ export class CaseDiscussionsService {
     private readonly familyMemberRepository: Repository<FamilyMember>,
     private readonly caseDiscussionsPdfService: CaseDiscussionsPdfService,
     private readonly dataSource: DataSource,
+    private readonly documentHistory: CaseDocumentHistoryService,
   ) {}
 
   async create(
@@ -56,7 +61,6 @@ export class CaseDiscussionsService {
     this.assertCanCreateDiscussion(caseEntity, dto.supervisorId, currentUser);
 
     const supervisor = await this.validateSupervisor(dto.supervisorId);
-    const participant = await this.findParticipantOrFail(caseEntity.participantId);
 
     if (!caseEntity.createdById) {
       throw new BadRequestException(
@@ -64,11 +68,18 @@ export class CaseDiscussionsService {
       );
     }
 
-    const familyMembers = dto.familyMembers?.length
-      ? this.mapFamilyMembersFromDto(dto.familyMembers)
-      : this.snapshotCaseFamilyMembers(caseEntity.familyMembers ?? []);
-
     const saved = await this.dataSource.transaction(async (manager) => {
+      this.documentHistory.assertOpen(
+        await this.documentHistory.lockCase(manager, caseId),
+      );
+      const history = await this.documentHistory.getOpeningHistory(
+        manager,
+        caseId,
+      );
+      const participant = history.participantSnapshot;
+      const familyMembers = dto.familyMembers?.length
+        ? this.mapFamilyMembersFromDto(dto.familyMembers)
+        : this.snapshotCaseFamilyMembers(history.familySnapshot);
       const entity = manager.create(CaseDiscussion, {
         caseId: caseEntity.id,
         participantId: participant.id,
@@ -77,7 +88,9 @@ export class CaseDiscussionsService {
         discussionDate: dto.discussionDate,
         status: CaseDiscussionStatus.BORRADOR,
         clientNameSnapshot: this.getParticipantFullName(participant),
-        clientAgeSnapshot: this.calculateAge(participant.birthDate),
+        clientAgeSnapshot:
+          history.participantAge ??
+          ageAt(participant.birthDate, new Date(history.capturedAt)),
         clientGenderSnapshot: participant.gender?.name,
         clientMaritalStatusSnapshot: participant.maritalStatus?.name,
         presentedSituations: dto.presentedSituations,
@@ -113,9 +126,10 @@ export class CaseDiscussionsService {
     const isCaseWorker = this.isCaseWorker(caseEntity, currentUser);
 
     if (!isAdmin && !isCaseWorker) {
-      const hasSupervisorDiscussions = await this.caseDiscussionRepository.exist({
-        where: { caseId, supervisorId: currentUser.id },
-      });
+      const hasSupervisorDiscussions =
+        await this.caseDiscussionRepository.exist({
+          where: { caseId, supervisorId: currentUser.id },
+        });
 
       if (!hasSupervisorDiscussions) {
         throw new ForbiddenException('Usuario sin permisos');
@@ -123,7 +137,8 @@ export class CaseDiscussionsService {
     }
 
     const page = query.page && query.page > 0 ? query.page : 1;
-    const limit = query.limit && query.limit > 0 ? Math.min(query.limit, 100) : 10;
+    const limit =
+      query.limit && query.limit > 0 ? Math.min(query.limit, 100) : 10;
 
     const qb = this.caseDiscussionRepository
       .createQueryBuilder('discussion')
@@ -191,16 +206,21 @@ export class CaseDiscussionsService {
     const merged = this.caseDiscussionRepository.merge(discussion, {
       supervisorId: dto.supervisorId ?? discussion.supervisorId,
       discussionDate: dto.discussionDate ?? discussion.discussionDate,
-      presentedSituations: dto.presentedSituations ?? discussion.presentedSituations,
+      presentedSituations:
+        dto.presentedSituations ?? discussion.presentedSituations,
       affectedPeople: dto.affectedPeople ?? discussion.affectedPeople,
       socialWorkerRecommendations:
-        dto.socialWorkerRecommendations ?? discussion.socialWorkerRecommendations,
+        dto.socialWorkerRecommendations ??
+        discussion.socialWorkerRecommendations,
       supervisorRecommendations:
         dto.supervisorRecommendations ?? discussion.supervisorRecommendations,
       updatedById: currentUser.id,
     });
 
     await this.dataSource.transaction(async (manager) => {
+      this.documentHistory.assertOpen(
+        await this.documentHistory.lockCase(manager, caseId),
+      );
       await manager.save(CaseDiscussion, merged);
 
       if (dto.familyMembers) {
@@ -208,7 +228,9 @@ export class CaseDiscussionsService {
           caseDiscussionId: discussion.id,
         });
 
-        const familyMembers = this.mapFamilyMembersFromDto(dto.familyMembers).map((familyMember) =>
+        const familyMembers = this.mapFamilyMembersFromDto(
+          dto.familyMembers,
+        ).map((familyMember) =>
           manager.create(CaseDiscussionFamilyMember, {
             ...familyMember,
             caseDiscussionId: discussion.id,
@@ -262,7 +284,12 @@ export class CaseDiscussionsService {
     discussion.finalizedById = currentUser.id;
     discussion.updatedById = currentUser.id;
 
-    await this.caseDiscussionRepository.save(discussion);
+    await this.dataSource.transaction(async (manager) => {
+      this.documentHistory.assertOpen(
+        await this.documentHistory.lockCase(manager, caseId),
+      );
+      await manager.save(CaseDiscussion, discussion);
+    });
 
     return await this.findOne(caseId, discussionId, currentUser);
   }
@@ -291,7 +318,12 @@ export class CaseDiscussionsService {
     discussion.annulmentReason = dto.reason;
     discussion.updatedById = currentUser.id;
 
-    await this.caseDiscussionRepository.save(discussion);
+    await this.dataSource.transaction(async (manager) => {
+      this.documentHistory.assertOpen(
+        await this.documentHistory.lockCase(manager, caseId),
+      );
+      await manager.save(CaseDiscussion, discussion);
+    });
 
     return await this.findOne(caseId, discussionId, currentUser);
   }
@@ -301,8 +333,20 @@ export class CaseDiscussionsService {
     discussionId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const discussion = await this.findOne(caseId, discussionId, currentUser);
-    return await this.caseDiscussionsPdfService.generateDiscussionPdf(discussion);
+    const context = await this.documentHistory.getDocumentContext(
+      caseId,
+      currentUser,
+      discussionId,
+    );
+    const discussion = context.discussions.find(
+      (d) => Number(d.id) === Number(discussionId),
+    );
+    if (!discussion)
+      throw new NotFoundException('Discusión no encontrada para el caso');
+    discussion.case = context.entity;
+    return await this.caseDiscussionsPdfService.generateDiscussionPdf(
+      discussion,
+    );
   }
 
   private async findCaseOrFail(caseId: number): Promise<Case> {
@@ -323,7 +367,9 @@ export class CaseDiscussionsService {
     }
 
     if (caseEntity.familyMembers?.length) {
-      const familyIds = caseEntity.familyMembers.map((familyMember) => familyMember.id);
+      const familyIds = caseEntity.familyMembers.map(
+        (familyMember) => familyMember.id,
+      );
       caseEntity.familyMembers = await this.familyMemberRepository.find({
         where: familyIds.map((id) => ({ id })),
         order: { id: 'ASC' },
@@ -333,7 +379,9 @@ export class CaseDiscussionsService {
     return caseEntity;
   }
 
-  private async findParticipantOrFail(participantId: number): Promise<Participant> {
+  private async findParticipantOrFail(
+    participantId: number,
+  ): Promise<Participant> {
     const participant = await this.participantRepository.findOne({
       where: { id: participantId },
       relations: {
@@ -368,14 +416,20 @@ export class CaseDiscussionsService {
       Role.ADMIN_COUNTRY,
     ];
 
-    if (!supervisor.role?.name || !allowedRoles.includes(supervisor.role.name as Role)) {
+    if (
+      !supervisor.role?.name ||
+      !allowedRoles.includes(supervisor.role.name as Role)
+    ) {
       throw new BadRequestException('Supervisor inválido');
     }
 
     return supervisor;
   }
 
-  private assertParticipantMatchesCase(caseEntity: Case, participantId: number): void {
+  private assertParticipantMatchesCase(
+    caseEntity: Case,
+    participantId: number,
+  ): void {
     if (caseEntity.participantId !== participantId) {
       throw new BadRequestException('Participante no asociado al caso');
     }

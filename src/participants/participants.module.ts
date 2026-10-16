@@ -11,6 +11,7 @@ import { ParticipantEmergencyContact } from './entities/participant-emergency-co
 import { FollowUpPlan } from './entities/follow-up-plan.entity';
 import { User } from '../users/entities/user.entity';
 import { WeighingService } from './services/weighing.service';
+import { ParticipantAuditLog } from '../audit/entities/participant-audit-log.entity';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { WeighingService } from './services/weighing.service';
       ParticipantEmergencyContact,
       FollowUpPlan,
       User,
+      ParticipantAuditLog,
     ]),
   ],
   controllers: [ParticipantsController],

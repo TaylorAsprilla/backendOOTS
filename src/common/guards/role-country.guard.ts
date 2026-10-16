@@ -30,7 +30,6 @@ export class RoleCountryGuard implements CanActivate {
       `method=${request.method}`,
       `path=${request.originalUrl ?? request.url}`,
       `userId=${user?.id ?? 'undefined'}`,
-      `email=${user?.email ?? 'undefined'}`,
       `roleId=${user?.role?.id ?? user?.roleId ?? 'undefined'}`,
       `roleName=${user?.role?.name ?? 'undefined'}`,
       `countryId=${user?.countryId ?? 'undefined'}`,

@@ -4,7 +4,11 @@ const vfsFonts: Record<string, string> = require('pdfmake/build/vfs_fonts');
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { CaseDiscussion } from './entities/case-discussion.entity';
 
 type Content = any;
@@ -12,15 +16,28 @@ type TDocumentDefinitions = any;
 
 const fonts = {
   Roboto: {
-    normal: Buffer.from(vfsFonts['Roboto-Regular.ttf'], 'base64') as unknown as string,
-    bold: Buffer.from(vfsFonts['Roboto-Medium.ttf'], 'base64') as unknown as string,
-    italics: Buffer.from(vfsFonts['Roboto-Italic.ttf'], 'base64') as unknown as string,
-    bolditalics: Buffer.from(vfsFonts['Roboto-MediumItalic.ttf'], 'base64') as unknown as string,
+    normal: Buffer.from(
+      vfsFonts['Roboto-Regular.ttf'],
+      'base64',
+    ) as unknown as string,
+    bold: Buffer.from(
+      vfsFonts['Roboto-Medium.ttf'],
+      'base64',
+    ) as unknown as string,
+    italics: Buffer.from(
+      vfsFonts['Roboto-Italic.ttf'],
+      'base64',
+    ) as unknown as string,
+    bolditalics: Buffer.from(
+      vfsFonts['Roboto-MediumItalic.ttf'],
+      'base64',
+    ) as unknown as string,
   },
 };
 
 @Injectable()
 export class CaseDiscussionsPdfService {
+  private readonly logger = new Logger(CaseDiscussionsPdfService.name);
   private createPrinter() {
     return new PdfPrinter(fonts);
   }
@@ -28,7 +45,26 @@ export class CaseDiscussionsPdfService {
   async generateDiscussionPdf(
     discussion: CaseDiscussion,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const logoPath = path.join(__dirname, '..', 'assets', 'images', 'logo-oots.png');
+    try {
+      return await this.renderDiscussionPdf(discussion);
+    } catch {
+      this.logger.error(
+        `No se pudo generar el PDF de discusión ${discussion.id} del caso ${discussion.caseId}`,
+      );
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
+    }
+  }
+
+  private async renderDiscussionPdf(
+    discussion: CaseDiscussion,
+  ): Promise<{ buffer: Buffer; filename: string }> {
+    const logoPath = path.join(
+      __dirname,
+      '..',
+      'assets',
+      'images',
+      'logo-oots.png',
+    );
     const logoPng = fs.existsSync(logoPath) ? fs.readFileSync(logoPath) : null;
     const logoDataUrl = logoPng
       ? `data:image/png;base64,${logoPng.toString('base64')}`
@@ -40,6 +76,7 @@ export class CaseDiscussionsPdfService {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+        timeZone: 'UTC',
       });
     };
 
@@ -51,6 +88,7 @@ export class CaseDiscussionsPdfService {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
+        timeZone: 'UTC',
       });
     };
 
@@ -72,7 +110,12 @@ export class CaseDiscussionsPdfService {
     const row = (
       label: string,
       value?: string | number | null,
-    ): Array<{ text: string | number; bold?: boolean; fillColor?: string; margin?: number[] }> => [
+    ): Array<{
+      text: string | number;
+      bold?: boolean;
+      fillColor?: string;
+      margin?: number[];
+    }> => [
       {
         text: label,
         bold: true,
@@ -151,9 +194,18 @@ export class CaseDiscussionsPdfService {
           table: {
             widths: [170, '*'],
             body: [
-              row('Caso asociado', discussion.case?.caseNumber ?? `Caso #${discussion.caseId}`),
-              row('Participante/cliente asociado', discussion.clientNameSnapshot),
-              row('Trabajador social o manejador del caso', fullName(discussion.socialWorker)),
+              row(
+                'Caso asociado',
+                discussion.case?.caseNumber ?? `Caso #${discussion.caseId}`,
+              ),
+              row(
+                'Participante/cliente asociado',
+                discussion.clientNameSnapshot,
+              ),
+              row(
+                'Trabajador social o manejador del caso',
+                fullName(discussion.socialWorker),
+              ),
               row('Supervisor', fullName(discussion.supervisor)),
               row('Fecha de discusión', formatDate(discussion.discussionDate)),
               row('Estado', discussion.status),
@@ -232,9 +284,15 @@ export class CaseDiscussionsPdfService {
               row('Creado por', fullName(discussion.createdBy)),
               row('Fecha de creación', formatDateTime(discussion.createdAt)),
               row('Actualizado por', fullName(discussion.updatedBy)),
-              row('Fecha de actualización', formatDateTime(discussion.updatedAt)),
+              row(
+                'Fecha de actualización',
+                formatDateTime(discussion.updatedAt),
+              ),
               row('Finalizado por', fullName(discussion.finalizedBy)),
-              row('Fecha de finalización', formatDateTime(discussion.finalizedAt)),
+              row(
+                'Fecha de finalización',
+                formatDateTime(discussion.finalizedAt),
+              ),
               row('Anulado por', fullName(discussion.annulledBy)),
               row('Fecha de anulación', formatDateTime(discussion.annulledAt)),
               row('Motivo de anulación', discussion.annulmentReason),
@@ -249,7 +307,16 @@ export class CaseDiscussionsPdfService {
               width: '*',
               stack: [
                 {
-                  canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1 }],
+                  canvas: [
+                    {
+                      type: 'line',
+                      x1: 0,
+                      y1: 0,
+                      x2: 200,
+                      y2: 0,
+                      lineWidth: 1,
+                    },
+                  ],
                   margin: [0, 20, 0, 6],
                 },
                 {
@@ -266,7 +333,16 @@ export class CaseDiscussionsPdfService {
               width: '*',
               stack: [
                 {
-                  canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1 }],
+                  canvas: [
+                    {
+                      type: 'line',
+                      x1: 0,
+                      y1: 0,
+                      x2: 200,
+                      y2: 0,
+                      lineWidth: 1,
+                    },
+                  ],
                   margin: [0, 20, 0, 6],
                 },
                 {

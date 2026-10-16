@@ -1,5 +1,46 @@
 # Guía de Migración: Datos Médicos de Participant a Case
 
+## Auditoría de participantes (migración independiente)
+
+Ejecutar [create-participant-audit-logs.sql](./create-participant-audit-logs.sql) en la base de datos correspondiente antes de iniciar el backend actualizado. El script es idempotente y crea únicamente `participant_audit_logs`; no modifica participantes ni reconstruye su historial anterior.
+
+La tabla guarda participante, usuario (ID, nombre y correo), acción y fecha/hora UTC con precisión de microsegundos. No contiene valores anteriores/nuevos ni claves foráneas con borrado en cascada, para conservar el historial. Las escrituras se realizan en la misma transacción que la operación del participante.
+
+Verificar con `SHOW CREATE TABLE participant_audit_logs;` y reiniciar el backend. En producción se debe aplicar el SQL explícitamente; no activar `synchronize` para desplegar esta migración.
+
+## Históricos de expedientes para PDF dinámicos
+
+Antes de iniciar el backend actualizado, hacer un respaldo y ejecutar desde la carpeta del backend con la configuración MySQL del ambiente correspondiente:
+
+```powershell
+npm run migrate:case-history
+```
+
+El comando crea `case_document_histories` usando [create-case-document-histories.sql](./create-case-document-histories.sql) y crea la referencia histórica de los casos existentes, incluyendo participantes eliminados lógicamente. **Ejecutar solo el SQL no completa la migración**: también se necesitan los snapshots que genera el comando.
+
+- Es idempotente: omite los casos que ya tienen histórico; puede reanudarse tras un error.
+- Procesa lotes de IDs y usa una transacción por expediente; no genera archivos PDF.
+- Usa los datos actuales disponibles para casos anteriores y los marca como `legacy`. Los casos nuevos se marcan como `creation` al guardar el caso.
+- Congela también los expedientes anteriores que ya estaban cerrados. No atribuye un autor de cierre si no existe esa información.
+- No activa `synchronize`, no sobrescribe históricos existentes y no modifica los datos originales del expediente.
+- Los snapshots son datos clínicos persistentes: deben incluirse en las políticas de acceso, respaldo y retención de MySQL.
+- Si falta el participante o un responsable obligatorio, el comando informa el error sin imprimir información clínica. Corregir la integridad de datos y volver a ejecutar.
+- Realizar este paso en una ventana de mantenimiento antes de servir solicitudes con el backend nuevo. No ejecutar la versión anterior después de la migración, pues no respeta el cierre inmutable.
+
+Validación sin consultar contenido clínico:
+
+```sql
+SELECT COUNT(*) AS cases_without_history
+FROM cases c LEFT JOIN case_document_histories h ON h.case_id = c.id
+WHERE h.case_id IS NULL;
+
+SELECT COUNT(*) AS closed_without_snapshot
+FROM cases c JOIN case_document_histories h ON h.case_id = c.id
+WHERE c.status = 'closed' AND h.closed_snapshot IS NULL;
+```
+
+Ambos conteos deben ser cero. Reiniciar el backend tras migrar. Ver [reglas y pruebas de PDF](../docs/test-access-control.md#6-pdf-dinámicos-e-integridad-histórica).
+
 ## Objetivo
 
 Esta migración cambia la arquitectura del sistema para que toda la información médica y clínica esté asociada a **Cases** en lugar de **Participants**. Esto permite tener múltiples consultas (casos) por participante, cada una con su propia información médica.

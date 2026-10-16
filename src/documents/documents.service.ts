@@ -1,14 +1,17 @@
 import {
   Injectable,
-  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { CasesService } from '../cases/cases.service';
+import {
+  CaseDocumentHistoryService,
+  CaseDocumentKind,
+} from '../cases/case-document-history.service';
 import { Case } from '../participants/entities/case.entity';
 import { ProgressNote } from '../participants/entities/progress-note.entity';
 import { User } from '../users/entities/user.entity';
 import { DocumentGeneratorService } from './pdf/pdf.service';
+import { CaseStatus } from '../common/enums';
 
 /**
  * Orquesta la obtención de datos del caso y la generación del PDF correspondiente.
@@ -16,10 +19,8 @@ import { DocumentGeneratorService } from './pdf/pdf.service';
  */
 @Injectable()
 export class DocumentsService {
-  private readonly logger = new Logger(DocumentsService.name);
-
   constructor(
-    private readonly casesService: CasesService,
+    private readonly documentHistory: CaseDocumentHistoryService,
     private readonly pdfService: DocumentGeneratorService,
   ) {}
 
@@ -27,25 +28,35 @@ export class DocumentsService {
    * Recupera el caso con todas sus relaciones para alimentar los PDFs.
    * Lanza NotFoundException si el caso no existe.
    */
-  private async getCaseOrFail(caseId: number): Promise<Case> {
-    return await this.casesService.findOne(caseId);
+  private async getCaseOrFail(
+    caseId: number,
+    user: User,
+    kind: CaseDocumentKind,
+  ): Promise<Case> {
+    return await this.documentHistory.getDocumentCase(caseId, user, kind);
   }
 
   async generateHelpProcessCompletion(
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(
+      caseId,
+      currentUser,
+      'completion',
+    );
 
     if (!caseEntity.followUpPlans || caseEntity.followUpPlans.length === 0) {
       throw new UnprocessableEntityException(
-        'El caso no tiene proceso de ayuda registrado para generar el documento de culminación.',
+        caseEntity.status === CaseStatus.CLOSED
+          ? 'No se puede descargar la culminación del proceso de ayuda: no se registró esta información antes de cerrar el expediente. Contacte al administrador.'
+          : 'Aún no puede descargar la culminación del proceso de ayuda. Complete y guarde el plan de seguimiento del caso y vuelva a intentarlo.',
       );
     }
 
     const buffer = await this.pdfService.generateHelpProcessCompletion(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -57,20 +68,26 @@ export class DocumentsService {
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(
+      caseId,
+      currentUser,
+      'intervention',
+    );
 
     if (
       !caseEntity.interventionPlans ||
       caseEntity.interventionPlans.length === 0
     ) {
       throw new UnprocessableEntityException(
-        'El caso no tiene plan de intervención registrado.',
+        caseEntity.status === CaseStatus.CLOSED
+          ? 'No se puede descargar el plan de intervención: no se registró antes de cerrar el expediente. Contacte al administrador.'
+          : 'Aún no puede descargar el plan de intervención. Registre y guarde un plan de intervención en el caso y vuelva a intentarlo.',
       );
     }
 
     const buffer = await this.pdfService.generateInterventionPlan(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -83,7 +100,11 @@ export class DocumentsService {
     progressNoteId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(
+      caseId,
+      currentUser,
+      'progress',
+    );
 
     const note: ProgressNote | undefined = (
       caseEntity.progressNotes ?? []
@@ -91,14 +112,14 @@ export class DocumentsService {
 
     if (!note) {
       throw new NotFoundException(
-        `Nota de progreso con ID ${progressNoteId} no encontrada para el caso ${caseId}.`,
+        'No se encontró la nota de progreso solicitada en este caso. Actualice la página y seleccione una nota de progreso guardada.',
       );
     }
 
     const buffer = await this.pdfService.generateProgressNote(
       caseEntity,
       note,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -110,17 +131,19 @@ export class DocumentsService {
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(caseId, currentUser, 'closing');
 
     if (!caseEntity.closingNote) {
       throw new NotFoundException(
-        'El caso no tiene una nota de cierre registrada.',
+        caseEntity.status === CaseStatus.CLOSED
+          ? 'No se puede descargar la nota de cierre: no se registró antes de cerrar el expediente. Contacte al administrador.'
+          : 'Aún no puede descargar la nota de cierre. Registre y guarde la nota en la sección «Nota de cierre» del caso y vuelva a intentarlo.',
       );
     }
 
     const buffer = await this.pdfService.generateClosingNote(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,
@@ -132,11 +155,11 @@ export class DocumentsService {
     caseId: number,
     currentUser: User,
   ): Promise<{ buffer: Buffer; filename: string }> {
-    const caseEntity = await this.getCaseOrFail(caseId);
+    const caseEntity = await this.getCaseOrFail(caseId, currentUser, 'full');
 
     const buffer = await this.pdfService.generateFullCase(
       caseEntity,
-      currentUser,
+      caseEntity.createdBy ?? new User(),
     );
     return {
       buffer,

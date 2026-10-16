@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Like } from 'typeorm';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
+import { ParticipantAuditLog } from './entities/participant-audit-log.entity';
 
 interface CreateAuditLogDto {
   userId?: number;
@@ -45,6 +46,8 @@ export class AuditService {
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(ParticipantAuditLog)
+    private readonly participantAuditLogRepository: Repository<ParticipantAuditLog>,
   ) {}
 
   async log(data: CreateAuditLogDto): Promise<void> {
@@ -88,6 +91,29 @@ export class AuditService {
       skip: (page - 1) * limit,
       take: limit,
     });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findParticipantHistory(
+    participantId: number,
+    page: number,
+    limit: number,
+  ) {
+    const [data, total] = await this.participantAuditLogRepository.findAndCount(
+      {
+        where: { participantId },
+        order: { createdAt: 'DESC', id: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+      },
+    );
 
     return {
       data,
