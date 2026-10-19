@@ -11,6 +11,7 @@ import { Participant } from '../participants/entities/participant.entity';
 import { FamilyMember } from '../participants/entities/family-member.entity';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../common/enums';
+import { assertCountryAccess } from '../common/utils/country-access';
 import { CreateCaseDiscussionDto } from './dto/create-case-discussion.dto';
 import { UpdateCaseDiscussionDto } from './dto/update-case-discussion.dto';
 import { FinalizeCaseDiscussionDto } from './dto/finalize-case-discussion.dto';
@@ -57,6 +58,7 @@ export class CaseDiscussionsService {
     currentUser: User,
   ): Promise<CaseDiscussion> {
     const caseEntity = await this.findCaseOrFail(caseId);
+    assertCountryAccess(currentUser, caseEntity.participant?.countryId);
     this.assertParticipantMatchesCase(caseEntity, dto.participantId);
     this.assertCanCreateDiscussion(caseEntity, dto.supervisorId, currentUser);
 
@@ -122,6 +124,7 @@ export class CaseDiscussionsService {
     totalPages: number;
   }> {
     const caseEntity = await this.findCaseOrFail(caseId);
+    assertCountryAccess(currentUser, caseEntity.participant?.countryId);
     const isAdmin = this.isAdmin(currentUser);
     const isCaseWorker = this.isCaseWorker(caseEntity, currentUser);
 
@@ -459,6 +462,7 @@ export class CaseDiscussionsService {
     discussion: CaseDiscussion,
     currentUser: User,
   ): void {
+    assertCountryAccess(currentUser, discussion.case?.participant?.countryId);
     if (this.isAdmin(currentUser)) {
       return;
     }
@@ -478,6 +482,7 @@ export class CaseDiscussionsService {
     discussion: CaseDiscussion,
     currentUser: User,
   ): 'admin' | 'worker' | 'supervisor' {
+    assertCountryAccess(currentUser, discussion.case?.participant?.countryId);
     if (this.isAdmin(currentUser)) {
       return 'admin';
     }

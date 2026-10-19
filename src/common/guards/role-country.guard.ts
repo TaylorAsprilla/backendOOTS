@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '../enums/role.enum';
+import { getAdminCountryId } from '../utils/country-access';
 
 export const SKIP_ROLE_COUNTRY_GUARD = 'skipRoleCountryGuard';
 
@@ -71,9 +72,13 @@ export class RoleCountryGuard implements CanActivate {
 
     // ADMIN_COUNTRY solo accede a datos de su país
     if (user.role?.name === Role.ADMIN_COUNTRY) {
+      const assignedCountryId = getAdminCountryId(user);
       // Si hay parámetro countryId, debe coincidir
       const countryId = this.extractCountryId(request);
-      if (countryId && Number(user.countryId) !== Number(countryId)) {
+      if (
+        countryId !== undefined &&
+        assignedCountryId !== Number(countryId)
+      ) {
         this.logger.warn(
           `[role-country-guard] denied for admin country mismatch ${this.buildAccessLog(request, user)}`,
         );

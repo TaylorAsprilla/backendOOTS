@@ -124,4 +124,24 @@ describe('CaseDocumentHistoryService', () => {
     );
     expect(loadCase).not.toHaveBeenCalled();
   });
+
+  it('denies the PDF after a participant moves to another country, before reading snapshots', async () => {
+    const findOneBy = jest.fn();
+    const count = jest.fn().mockResolvedValue(0);
+    const manager = {
+      findOne: jest.fn()
+        .mockResolvedValueOnce({ ...entity, participantId: 12 })
+        .mockResolvedValueOnce({ countryId: 1 }),
+      count, findOneBy,
+    } as unknown as EntityManager;
+    const source = {
+      transaction: (_level: string, callback: (manager: EntityManager) => Promise<unknown>) => callback(manager),
+    } as DataSource;
+    await expect(new CaseDocumentHistoryService(source).getDocumentCase(1, user(Role.ADMIN_COUNTRY)))
+      .rejects.toBeInstanceOf(ForbiddenException);
+    expect(count).toHaveBeenCalledWith(expect.anything(), {
+      where: { id: 12, countryId: 1 }, withDeleted: true,
+    });
+    expect(findOneBy).not.toHaveBeenCalled();
+  });
 });

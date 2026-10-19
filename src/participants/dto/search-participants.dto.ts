@@ -5,10 +5,18 @@ import {
   Min,
   Max,
   IsEnum,
+  IsInt,
+  IsPositive,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SearchParticipantsDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  countryId?: number;
+
   @IsOptional()
   @IsString()
   search?: string;

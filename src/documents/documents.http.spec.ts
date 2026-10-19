@@ -84,6 +84,7 @@ describe('All PDF HTTP routes: JWT and case authorization', () => {
     const secret = randomUUID();
     jwt = new JwtService({ secret });
     const manager = {
+      count: jest.fn().mockResolvedValue(1),
       findOne: jest.fn(
         (
           target: unknown,
@@ -94,6 +95,7 @@ describe('All PDF HTTP routes: JWT and case authorization', () => {
             target === Case
               ? {
                   id,
+                  participantId: id,
                   status: CaseStatus.CLOSED,
                   createdById: id === 21 ? 7 : 8,
                 }

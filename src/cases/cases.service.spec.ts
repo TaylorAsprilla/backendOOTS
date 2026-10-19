@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { DataSource, EntityManager, Repository } from 'typeorm';
-import { CaseStatus } from '../common/enums';
+import { CaseStatus, Role } from '../common/enums';
 import { Participant } from '../participants/entities/participant.entity';
 import { Case } from '../participants/entities/case.entity';
 import { User } from '../users/entities/user.entity';
@@ -8,6 +8,61 @@ import { CasesService } from './cases.service';
 import { CaseDocumentHistoryService } from './case-document-history.service';
 
 describe('CasesService edit access control and closing', () => {
+  const countryAdmin = Object.assign(new User(), {
+    id: 99, countryId: 3, role: { name: Role.ADMIN_COUNTRY },
+  });
+
+  it('lists cases for the country across professionals and scopes user and global lists', async () => {
+    const query = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      loadRelationCountAndMap: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(), andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(), skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([
+        { id: 41, createdById: 7, participant: { id: 12, countryId: 3 } },
+        { id: 42, createdById: 8, participant: { id: 13, countryId: 3 } },
+      ]),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    };
+    const service = new CasesService(
+      { createQueryBuilder: jest.fn().mockReturnValue(query) } as unknown as Repository<Case>,
+      {} as Repository<Participant>, {} as DataSource, {} as CaseDocumentHistoryService,
+    );
+    const result = await service.findCasesByCountry(3, countryAdmin);
+    expect(result.cases.map((c) => c.createdById)).toEqual([7, 8]);
+    expect(query.where).not.toHaveBeenCalled();
+    await service.findCasesByUser(7, countryAdmin);
+    expect(query.where).toHaveBeenCalledWith('case.createdById = :userId', { userId: 7 });
+    await service.findAll(1, 50, countryAdmin);
+    await service.findAllNoPagination(countryAdmin);
+    expect(query.andWhere).toHaveBeenCalledTimes(4);
+    expect(query.andWhere).toHaveBeenCalledWith('participant.countryId = :countryId', { countryId: 3 });
+    await expect(service.findCasesByCountry(1, countryAdmin)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('denies foreign case details even when requested directly by ID', async () => {
+    const entity = Object.assign(new Case(), { id: 41, participant: { countryId: 1 } });
+    const service = new CasesService(
+      { findOne: jest.fn().mockResolvedValue(entity) } as unknown as Repository<Case>,
+      {} as Repository<Participant>, {} as DataSource, {} as CaseDocumentHistoryService,
+    );
+    await expect(service.findOne(41, countryAdmin)).rejects.toBeInstanceOf(ForbiddenException);
+    entity.participant.countryId = 3;
+    await expect(service.findOne(41, countryAdmin)).resolves.toBe(entity);
+  });
+
+  it('checks the participant country before listing their cases', async () => {
+    const count = jest.fn().mockResolvedValue(1);
+    const service = new CasesService(
+      { find: jest.fn().mockResolvedValue([]) } as unknown as Repository<Case>,
+      { count } as unknown as Repository<Participant>,
+      {} as DataSource, {} as CaseDocumentHistoryService,
+    );
+    await service.findAllByParticipant(12, countryAdmin);
+    expect(count).toHaveBeenCalledWith({ where: { id: 12, countryId: 3 } });
+  });
+
   it('keeps the user scope and supplies safe professional, participant and expandable details', async () => {
     const query = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),

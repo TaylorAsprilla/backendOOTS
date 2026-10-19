@@ -325,8 +325,8 @@ export class ParticipantsController {
       },
     },
   })
-  findAll(@Query() searchDto: SearchParticipantsDto) {
-    return this.participantsService.findAll(searchDto);
+  findAll(@Query() searchDto: SearchParticipantsDto, @CurrentUser() user: User) {
+    return this.participantsService.findAll(searchDto, user);
   }
 
   @Get('all')
@@ -351,8 +351,8 @@ export class ParticipantsController {
       },
     },
   })
-  findAllNoPagination() {
-    return this.participantsService.findAllNoPagination();
+  findAllNoPagination(@CurrentUser() user: User) {
+    return this.participantsService.findAllNoPagination(user);
   }
 
   @Get(':id')
@@ -426,8 +426,8 @@ export class ParticipantsController {
       },
     },
   })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.participantsService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
+    return this.participantsService.findOne(id, user);
   }
 
   @Get('by-country/:countryId')
@@ -448,8 +448,11 @@ export class ParticipantsController {
     description:
       'El usuario no es ADMIN_COUNTRY o el país no está asignado a él.',
   })
-  findByCountry(@Param('countryId', ParseIntPipe) countryId: number) {
-    return this.participantsService.findByCountry(countryId);
+  findByCountry(
+    @Param('countryId', ParseIntPipe) countryId: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.participantsService.findByCountry(countryId, user);
   }
 
   @Patch(':id')
@@ -744,8 +747,11 @@ export class ParticipantsController {
       },
     },
   })
-  checkDocumentExists(@Param('documentNumber') documentNumber: string) {
-    return this.participantsService.checkDocumentExists(documentNumber);
+  checkDocumentExists(
+    @Param('documentNumber') documentNumber: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.participantsService.checkDocumentExists(documentNumber, user);
   }
 
   @Get('by-user/:userId')
@@ -825,8 +831,8 @@ export class ParticipantsController {
       },
     },
   })
-  findByUser(@Param('userId') userId: string) {
-    return this.participantsService.findByUser(+userId);
+  findByUser(@Param('userId') userId: string, @CurrentUser() user: User) {
+    return this.participantsService.findByUser(+userId, user);
   }
 
   @Get('stats/demographic')
@@ -903,8 +909,8 @@ export class ParticipantsController {
       },
     },
   })
-  getStats() {
-    return this.participantsService.getDemographicStats();
+  getStats(@CurrentUser() user: User) {
+    return this.participantsService.getDemographicStats(user);
   }
 
   @Get('check-email/:email')
@@ -975,7 +981,7 @@ export class ParticipantsController {
       },
     },
   })
-  async checkEmail(@Param('email') email: string) {
-    return this.participantsService.checkEmailExists(email);
+  async checkEmail(@Param('email') email: string, @CurrentUser() user: User) {
+    return this.participantsService.checkEmailExists(email, user);
   }
 }
