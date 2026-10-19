@@ -151,6 +151,23 @@ describe('ParticipantsService access control and auditing', () => {
     ]);
   });
 
+  it('clears optional names when the update explicitly sends null', async () => {
+    const { service, save } = makeService();
+
+    await service.update(
+      12,
+      { secondName: null, secondLastName: null },
+      makeUser(99, Role.ADMIN),
+    );
+
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secondName: null,
+        secondLastName: null,
+      }),
+    );
+  });
+
   it('allows ADMIN_COUNTRY to edit participants in their assigned country', async () => {
     const { service } = makeService();
 

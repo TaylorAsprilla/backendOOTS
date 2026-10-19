@@ -36,7 +36,7 @@ export class Participant {
     length: 50,
     nullable: true,
   })
-  secondName?: string;
+  secondName?: string | null;
 
   @Column({ name: 'first_last_name', type: 'varchar', length: 50 })
   firstLastName!: string;
@@ -47,7 +47,7 @@ export class Participant {
     length: 50,
     nullable: true,
   })
-  secondLastName?: string;
+  secondLastName?: string | null;
 
   @Column({ name: 'phone_number', type: 'varchar', length: 20 })
   phoneNumber!: string;
