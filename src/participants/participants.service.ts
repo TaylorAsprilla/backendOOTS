@@ -16,6 +16,11 @@ import { ParticipantEmergencyContact } from './entities/participant-emergency-co
 import { User } from '../users/entities/user.entity';
 import { Role } from '../common/enums/role.enum';
 import {
+  assertCountryAccess,
+  countryScope,
+  getAdminCountryId,
+} from '../common/utils/country-access';
+import {
   ParticipantAuditAction,
   ParticipantAuditLog,
 } from '../audit/entities/participant-audit-log.entity';
@@ -31,6 +36,7 @@ export class ParticipantsService {
     createParticipantDto: CreateParticipantDto,
     currentUser: User,
   ): Promise<Participant> {
+    assertCountryAccess(currentUser, createParticipantDto.countryId);
     return await this.participantRepository.manager.transaction(
       async (transactionalEntityManager) => {
         // Extraer las relaciones anidadas del DTO principal
@@ -168,8 +174,12 @@ export class ParticipantsService {
     );
   }
 
-  async findAll(searchDto?: SearchParticipantsDto) {
+  async findAll(searchDto?: SearchParticipantsDto, currentUser?: User) {
     const query = this.participantRepository.createQueryBuilder('participant');
+    const countryId = getAdminCountryId(currentUser);
+    if (countryId !== undefined) {
+      query.andWhere('participant.countryId = :countryId', { countryId });
+    }
 
     // Aplicar filtros básicos
     if (searchDto?.search) {
@@ -198,13 +208,16 @@ export class ParticipantsService {
     };
   }
 
-  async findAllNoPagination(): Promise<{
+  async findAllNoPagination(currentUser?: User): Promise<{
     data: Participant[];
     total: number;
   }> {
     const participants = await this.participantRepository
       .createQueryBuilder('participant')
-      .setFindOptions({ order: { createdAt: 'DESC' } })
+      .setFindOptions({
+        where: countryScope(currentUser),
+        order: { createdAt: 'DESC' },
+      })
       .loadRelationCountAndMap('participant.casesCount', 'participant.cases')
       .getMany();
 
@@ -214,7 +227,8 @@ export class ParticipantsService {
     };
   }
 
-  async findOne(id: number): Promise<Participant> {
+  async findOne(id: number, currentUser?: User): Promise<Participant> {
+    getAdminCountryId(currentUser);
     const participant = await this.participantRepository.findOne({
       where: { id },
       relations: [
@@ -234,6 +248,7 @@ export class ParticipantsService {
       throw new NotFoundException(`Participant with ID ${id} not found`);
     }
 
+    assertCountryAccess(currentUser, participant.countryId);
     return participant;
   }
 
@@ -244,8 +259,11 @@ export class ParticipantsService {
   ): Promise<Participant> {
     return await this.participantRepository.manager.transaction(
       async (transactionalEntityManager) => {
-        const participant = await this.findOne(id);
+        const participant = await this.findOne(id, currentUser);
         this.assertCanEditParticipant(participant, currentUser);
+        if (updateParticipantDto.countryId !== undefined) {
+          assertCountryAccess(currentUser, updateParticipantDto.countryId);
+        }
 
         // Extraer emergency contacts si vienen en el DTO
         const { emergencyContacts, ...participantData } = updateParticipantDto;
@@ -422,6 +440,7 @@ export class ParticipantsService {
       if (!participant) {
         throw new NotFoundException(`Participant with ID ${id} not found`);
       }
+      assertCountryAccess(currentUser, participant.countryId);
       await manager.softDelete(Participant, id);
       await this.recordAudit(
         manager,
@@ -456,15 +475,21 @@ export class ParticipantsService {
     await manager.save(entry);
   }
 
-  async getDemographicStats() {
+  async getDemographicStats(currentUser?: User) {
+    const scope = countryScope(currentUser);
     const totalParticipants = await this.participantRepository.count({
-      where: { deletedAt: undefined as any },
+      where: scope,
     });
 
-    const base = () =>
-      this.participantRepository
+    const base = () => {
+      const query = this.participantRepository
         .createQueryBuilder('p')
         .where('p.deletedAt IS NULL');
+      if (scope.countryId !== undefined) {
+        query.andWhere('p.countryId = :countryId', scope);
+      }
+      return query;
+    };
 
     // Por género — 1 query
     const genderRaw: { gender: string; count: string }[] = await base()
@@ -562,9 +587,10 @@ export class ParticipantsService {
 
   async checkDocumentExists(
     documentNumber: string,
+    currentUser?: User,
   ): Promise<{ exists: boolean; participant?: any }> {
     const participant = await this.participantRepository.findOne({
-      where: { documentNumber },
+      where: { documentNumber, ...countryScope(currentUser) },
       select: [
         'id',
         'firstName',
@@ -598,11 +624,11 @@ export class ParticipantsService {
     };
   }
 
-  async findByUser(userId: number) {
+  async findByUser(userId: number, currentUser?: User) {
     const participants = await this.participantRepository
       .createQueryBuilder('participant')
       .setFindOptions({
-        where: { registeredById: userId },
+        where: { registeredById: userId, ...countryScope(currentUser) },
         order: { createdAt: 'DESC' },
         select: [
           'id',
@@ -628,7 +654,8 @@ export class ParticipantsService {
     };
   }
 
-  async findByCountry(countryId: number) {
+  async findByCountry(countryId: number, currentUser?: User) {
+    assertCountryAccess(currentUser, countryId);
     const participants = await this.participantRepository
       .createQueryBuilder('participant')
       .setFindOptions({
@@ -690,9 +717,10 @@ export class ParticipantsService {
 
   async checkEmailExists(
     email: string,
+    currentUser?: User,
   ): Promise<{ exists: boolean; participantId?: number }> {
     const participant = await this.participantRepository.findOne({
-      where: { email },
+      where: { email, ...countryScope(currentUser) },
       select: ['id', 'email'],
     });
 

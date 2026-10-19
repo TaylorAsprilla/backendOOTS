@@ -31,6 +31,11 @@ import {
 } from './dto/case.dto';
 import { CaseStatus, CaseType, Role } from '../common/enums';
 import { CaseDocumentHistoryService } from './case-document-history.service';
+import {
+  assertCountryAccess,
+  countryScope,
+  getAdminCountryId,
+} from '../common/utils/country-access';
 
 @Injectable()
 export class CasesService {
@@ -55,6 +60,7 @@ export class CasesService {
   async createCase(
     createCaseDto: CreateCaseDto,
     createdById?: number,
+    currentUser?: User,
   ): Promise<Case> {
     this.logger.log(
       `Iniciando creación de caso para participante ID: ${createCaseDto.participantId}`,
@@ -73,6 +79,7 @@ export class CasesService {
         `Participante con ID ${createCaseDto.participantId} no encontrado`,
       );
     }
+    assertCountryAccess(currentUser, participant.countryId);
 
     // Usar transacción para garantizar atomicidad
     return await this.dataSource.transaction(async (manager) => {
@@ -435,10 +442,13 @@ export class CasesService {
     return completeCase;
   }
 
-  async findAllByParticipant(participantId: number): Promise<Case[]> {
+  async findAllByParticipant(
+    participantId: number,
+    currentUser?: User,
+  ): Promise<Case[]> {
     // Verificar que el participante existe (solo necesitamos confirmar existencia, no cargar la entidad completa)
     const exists = await this.participantRepository.count({
-      where: { id: participantId },
+      where: { id: participantId, ...countryScope(currentUser) },
     });
 
     if (!exists) {
@@ -453,7 +463,8 @@ export class CasesService {
     });
   }
 
-  async findOne(caseId: number): Promise<Case> {
+  async findOne(caseId: number, currentUser?: User): Promise<Case> {
+    getAdminCountryId(currentUser);
     const caseEntity = await this.caseRepository.findOne({
       where: { id: caseId },
       relations: [
@@ -490,6 +501,7 @@ export class CasesService {
       throw new NotFoundException(`Caso con ID ${caseId} no encontrado`);
     }
 
+    assertCountryAccess(currentUser, caseEntity.participant?.countryId);
     return caseEntity;
   }
 
@@ -497,7 +509,11 @@ export class CasesService {
     caseId: number,
     updateCaseDto: UpdateCaseDto,
     currentUserId: number,
+    currentUser?: User,
   ): Promise<Case> {
+    if (getAdminCountryId(currentUser) !== undefined) {
+      await this.findOne(caseId, currentUser);
+    }
     return this.dataSource.transaction(async (manager) => {
       const existingCase = await this.documentHistory.lockCase(manager, caseId);
       this.assertCaseCreator(existingCase, currentUserId);
@@ -738,7 +754,11 @@ export class CasesService {
     caseId: number,
     updateCaseStatusDto: UpdateCaseStatusDto,
     currentUserId: number,
+    currentUser?: User,
   ): Promise<Case> {
+    if (getAdminCountryId(currentUser) !== undefined) {
+      await this.findOne(caseId, currentUser);
+    }
     return this.dataSource.transaction(async (manager) => {
       const caseEntity = await this.documentHistory.lockCase(manager, caseId);
       this.assertCaseCreator(caseEntity, currentUserId);
@@ -814,6 +834,7 @@ export class CasesService {
   async findAll(
     page = 1,
     limit = 50,
+    currentUser?: User,
   ): Promise<{
     data: Case[];
     total: number;
@@ -821,29 +842,37 @@ export class CasesService {
     limit: number;
     totalPages: number;
   }> {
-    const [data, total] = await this.caseRepository
+    const countryId = getAdminCountryId(currentUser);
+    const query = this.caseRepository
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
       .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
       .orderBy('case.createdAt', 'DESC')
       .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
+      .take(limit);
+    if (countryId !== undefined) {
+      query.andWhere('participant.countryId = :countryId', { countryId });
+    }
+    const [data, total] = await query.getManyAndCount();
 
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findAllNoPagination(): Promise<{
+  async findAllNoPagination(currentUser?: User): Promise<{
     data: Case[];
     total: number;
   }> {
-    const data = await this.caseRepository
+    const countryId = getAdminCountryId(currentUser);
+    const query = this.caseRepository
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
       .leftJoinAndSelect('case.createdBy', 'createdBy')
       .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
-      .orderBy('case.createdAt', 'DESC')
-      .getMany();
+      .orderBy('case.createdAt', 'DESC');
+    if (countryId !== undefined) {
+      query.andWhere('participant.countryId = :countryId', { countryId });
+    }
+    const data = await query.getMany();
 
     return { data, total: data.length };
   }
@@ -968,8 +997,22 @@ export class CasesService {
     };
   }
 
-  async findCasesByUser(userId: number) {
-    const cases = await this.caseRepository
+  async findCasesByUser(userId: number, currentUser?: User) {
+    const result = await this.findCaseSummaries({
+      userId,
+      ...countryScope(currentUser),
+    });
+    return { userId, ...result };
+  }
+
+  async findCasesByCountry(countryId: number, currentUser: User) {
+    assertCountryAccess(currentUser, countryId);
+    const result = await this.findCaseSummaries({ countryId });
+    return { countryId, ...result };
+  }
+
+  private async findCaseSummaries(scope: { userId?: number; countryId?: number }) {
+    const query = this.caseRepository
       .createQueryBuilder('case')
       .leftJoinAndSelect('case.participant', 'participant')
       .leftJoinAndSelect('participant.country', 'country')
@@ -977,9 +1020,16 @@ export class CasesService {
       .leftJoinAndSelect('case.closingNote', 'closingNote')
       .leftJoinAndSelect('case.followUpPlans', 'followUpPlans')
       .loadRelationCountAndMap('case.progressNotesCount', 'case.progressNotes')
-      .where('case.createdById = :userId', { userId })
-      .orderBy('case.createdAt', 'DESC')
-      .getMany();
+      .orderBy('case.createdAt', 'DESC');
+    if (scope.userId !== undefined) {
+      query.where('case.createdById = :userId', { userId: scope.userId });
+    }
+    if (scope.countryId !== undefined) {
+      query.andWhere('participant.countryId = :countryId', {
+        countryId: scope.countryId,
+      });
+    }
+    const cases = await query.getMany();
 
     const mappedCases = cases
       .filter((caseEntity) => caseEntity.participant != null)
@@ -1029,7 +1079,6 @@ export class CasesService {
       }));
 
     return {
-      userId,
       total: mappedCases.length,
       cases: mappedCases,
     };

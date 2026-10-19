@@ -13,6 +13,7 @@ import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
 import { CaseDiscussion } from '../case-discussions/entities/case-discussion.entity';
 import { CaseDocumentHistory } from './entities/case-document-history.entity';
+import { countryScope, getAdminCountryId } from '../common/utils/country-access';
 
 export type CaseDocumentKind =
   | 'full'
@@ -360,7 +361,7 @@ export class CaseDocumentHistoryService {
       const caseEntity = await manager.findOne(Case, {
         where: { id: caseId },
         loadEagerRelations: false,
-        select: { id: true, createdById: true, status: true },
+        select: { id: true, participantId: true, createdById: true, status: true },
       });
       if (!caseEntity) throw new NotFoundException('Caso no encontrado');
       const scope = await manager.findOne(CaseDocumentHistory, {
@@ -368,6 +369,18 @@ export class CaseDocumentHistoryService {
         select: { caseId: true, countryId: true },
       });
       this.assertCanDownload(caseEntity, scope?.countryId, user);
+      if (getAdminCountryId(user) !== undefined) {
+        if (!caseEntity.participantId) {
+          throw new ForbiddenException('El caso no tiene un participante autorizado');
+        }
+        const participantInCountry = await manager.count(Participant, {
+          where: { id: caseEntity.participantId, ...countryScope(user) },
+          withDeleted: true,
+        });
+        if (!participantInCountry) {
+          throw new ForbiddenException('Solo puede acceder a datos de su país');
+        }
+      }
       const history = await this.requireHistory(manager, caseId);
       if (caseEntity.status === CaseStatus.CLOSED) {
         if (!history.closedSnapshot)

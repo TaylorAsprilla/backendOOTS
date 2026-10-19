@@ -50,7 +50,7 @@ describe('ParticipantsService access control and auditing', () => {
       createQueryBuilder: jest.fn().mockReturnValue(query),
     } as unknown as Repository<Participant>;
     const result = await new ParticipantsService(repository).findAllNoPagination();
-    expect(query.setFindOptions).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+    expect(query.setFindOptions).toHaveBeenCalledWith({ where: {}, order: { createdAt: 'DESC' } });
     expect(query.loadRelationCountAndMap).toHaveBeenCalledWith('participant.casesCount', 'participant.cases');
     expect(result).toEqual({ data: participants, total: 1 });
   });
@@ -166,6 +166,87 @@ describe('ParticipantsService access control and auditing', () => {
         secondLastName: null,
       }),
     );
+  });
+
+  it('rejects moving a participant to another country', async () => {
+    const { service, save } = makeService();
+    await expect(service.update(
+      12, { countryId: 1 }, makeUser(99, Role.ADMIN_COUNTRY, 3),
+    )).rejects.toBeInstanceOf(ForbiddenException);
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('scopes every participant listing and lookup to the authenticated country', async () => {
+    const query = {
+      andWhere: jest.fn().mockReturnThis(),
+      setFindOptions: jest.fn().mockReturnThis(),
+      loadRelationCountAndMap: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    };
+    const findOne = jest.fn().mockResolvedValue(null);
+    const repository = {
+      createQueryBuilder: jest.fn().mockReturnValue(query), findOne,
+    } as unknown as Repository<Participant>;
+    const service = new ParticipantsService(repository);
+    const actor = makeUser(99, Role.ADMIN_COUNTRY, 3);
+
+    await service.findAll({}, actor);
+    expect(query.andWhere).toHaveBeenCalledWith('participant.countryId = :countryId', { countryId: 3 });
+    await service.findAllNoPagination(actor);
+    expect(query.setFindOptions).toHaveBeenCalledWith(expect.objectContaining({ where: { countryId: 3 } }));
+    await service.findByUser(7, actor);
+    expect(query.setFindOptions).toHaveBeenCalledWith(expect.objectContaining({
+      where: { registeredById: 7, countryId: 3 },
+    }));
+    await service.findByCountry(3, actor);
+    await expect(service.findByCountry(1, actor)).rejects.toBeInstanceOf(ForbiddenException);
+    await service.checkDocumentExists('12345', actor);
+    expect(findOne).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: { documentNumber: '12345', countryId: 3 },
+    }));
+    await service.checkEmailExists('ana@example.test', actor);
+    expect(findOne).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: { email: 'ana@example.test', countryId: 3 },
+    }));
+  });
+
+  it('denies foreign participant details and deletion, including records without a country', async () => {
+    for (const countryId of [1, undefined]) {
+      const { service, findOne, softDelete } = makeService();
+      const foreign = Object.assign(new Participant(), { id: 12, countryId });
+      findOne.mockResolvedValue(foreign);
+      const actor = makeUser(99, Role.ADMIN_COUNTRY, 3);
+      await expect(service.remove(12, actor)).rejects.toBeInstanceOf(ForbiddenException);
+      expect(softDelete).not.toHaveBeenCalled();
+      const repository = { findOne: jest.fn().mockResolvedValue(foreign) } as unknown as Repository<Participant>;
+      await expect(new ParticipantsService(repository).findOne(12, actor))
+        .rejects.toBeInstanceOf(ForbiddenException);
+      await expect(new ParticipantsService(repository).findOne(12, makeUser(99, Role.ADMIN)))
+        .resolves.toBe(foreign);
+    }
+  });
+
+  it('scopes the demographic total and all breakdowns to the same country', async () => {
+    const query = {
+      where: jest.fn().mockReturnThis(), andWhere: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(), select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(), groupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(), limit: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+    };
+    const count = jest.fn().mockResolvedValue(0);
+    const service = new ParticipantsService({
+      count, createQueryBuilder: jest.fn().mockReturnValue(query),
+    } as unknown as Repository<Participant>);
+    const result = await service.getDemographicStats(makeUser(99, Role.ADMIN_COUNTRY, 3));
+    expect(count).toHaveBeenCalledWith({ where: { countryId: 3 } });
+    expect(query.andWhere).toHaveBeenCalledTimes(4);
+    expect(query.andWhere).toHaveBeenCalledWith('p.countryId = :countryId', { countryId: 3 });
+    expect(result.totalParticipants).toBe(0);
   });
 
   it('allows ADMIN_COUNTRY to edit participants in their assigned country', async () => {

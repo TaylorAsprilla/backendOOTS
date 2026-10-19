@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,6 +11,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { UserStatus } from '../common/enums';
 import { MailService } from '../mail/mail.service';
+import {
+  assertCountryAccess,
+  countryScope,
+  getAdminCountryId,
+} from '../common/utils/country-access';
 
 @Injectable()
 export class UsersService {
@@ -115,6 +121,7 @@ export class UsersService {
 
   async checkDocumentNumber(
     documentNumber: string,
+    currentUser?: User,
   ): Promise<{ exists: boolean; message: string }> {
     if (!documentNumber || documentNumber.trim() === '') {
       return {
@@ -124,7 +131,11 @@ export class UsersService {
     }
 
     const existingUser = await this.userRepository.findOne({
-      where: { documentNumber, status: UserStatus.ACTIVE },
+      where: {
+        documentNumber,
+        status: UserStatus.ACTIVE,
+        ...countryScope(currentUser),
+      },
     });
 
     if (existingUser) {
@@ -142,6 +153,7 @@ export class UsersService {
 
   async checkMitaNumber(
     mitaNumber: number,
+    currentUser?: User,
   ): Promise<{ exists: boolean; message: string }> {
     if (!mitaNumber) {
       return {
@@ -151,7 +163,11 @@ export class UsersService {
     }
 
     const existingUser = await this.userRepository.findOne({
-      where: { mitaNumber, status: UserStatus.ACTIVE },
+      where: {
+        mitaNumber,
+        status: UserStatus.ACTIVE,
+        ...countryScope(currentUser),
+      },
     });
 
     if (existingUser) {
@@ -173,31 +189,45 @@ export class UsersService {
     return result as User;
   }
 
-  async findAll(): Promise<any[]> {
-    const { entities, raw } = await this.userRepository
+  async findAll(currentUser?: User): Promise<any[]> {
+    const countryId = getAdminCountryId(currentUser);
+    const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.country', 'country')
       .leftJoinAndSelect('user.role', 'role')
       .addSelect(
-        (sub) =>
-          sub
+        (sub) => {
+          const count = sub
             .select('COUNT(p.id)', 'cnt')
             .from('participants', 'p')
-            .where('p.registered_by_id = user.id'),
+            .where('p.registered_by_id = user.id');
+          if (countryId !== undefined) {
+            count.andWhere('p.country_id = :countryId', { countryId });
+          }
+          return count;
+        },
         'participantCount',
       )
       .addSelect(
-        (sub) =>
-          sub
+        (sub) => {
+          const count = sub
             .select('COUNT(c.id)', 'cnt')
             .from('cases', 'c')
             .innerJoin('participants', 'p', 'p.id = c.participant_id')
-            .where('p.registered_by_id = user.id'),
+            .where('p.registered_by_id = user.id');
+          if (countryId !== undefined) {
+            count.andWhere('p.country_id = :countryId', { countryId });
+          }
+          return count;
+        },
         'caseCount',
       )
       .where('user.status = :status', { status: UserStatus.ACTIVE })
-      .orderBy('user.createdAt', 'DESC')
-      .getRawAndEntities();
+      .orderBy('user.createdAt', 'DESC');
+    if (countryId !== undefined) {
+      query.andWhere('user.countryId = :countryId', { countryId });
+    }
+    const { entities, raw } = await query.getRawAndEntities();
 
     return entities.map((user, i) => ({
       ...this.excludePassword(user),
@@ -206,7 +236,8 @@ export class UsersService {
     }));
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: number, currentUser?: User): Promise<User> {
+    getAdminCountryId(currentUser);
     const user = await this.userRepository.findOne({
       where: { id, status: UserStatus.ACTIVE },
     });
@@ -215,10 +246,16 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
+    assertCountryAccess(currentUser, user.countryId);
     return this.excludePassword(user);
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+    currentUser?: User,
+  ): Promise<User> {
+    this.assertCanManageUsers(currentUser);
     // Verificar que el usuario existe y está activo
     const existingUser = await this.userRepository.findOne({
       where: { id, status: UserStatus.ACTIVE },
@@ -276,7 +313,8 @@ export class UsersService {
     return this.excludePassword(updatedUser!);
   }
 
-  async remove(id: number): Promise<{ message: string }> {
+  async remove(id: number, currentUser?: User): Promise<{ message: string }> {
+    this.assertCanManageUsers(currentUser);
     // Verificar que el usuario existe y está activo
     const existingUser = await this.userRepository.findOne({
       where: { id, status: UserStatus.ACTIVE },
@@ -292,15 +330,17 @@ export class UsersService {
     return { message: `User with ID ${id} has been successfully deleted` };
   }
 
-  async findAllWithDeleted(): Promise<User[]> {
+  async findAllWithDeleted(currentUser?: User): Promise<User[]> {
     const users = await this.userRepository.find({
+      where: countryScope(currentUser),
       order: { createdAt: 'DESC' },
     });
 
     return users.map((user) => this.excludePassword(user));
   }
 
-  async restore(id: number): Promise<User> {
+  async restore(id: number, currentUser?: User): Promise<User> {
+    this.assertCanManageUsers(currentUser);
     // Verificar que el usuario existe y está eliminado
     const existingUser = await this.userRepository.findOne({
       where: { id, status: UserStatus.DELETED },
@@ -319,6 +359,14 @@ export class UsersService {
     });
 
     return this.excludePassword(restoredUser!);
+  }
+
+  private assertCanManageUsers(currentUser?: User): void {
+    if (getAdminCountryId(currentUser) !== undefined) {
+      throw new ForbiddenException(
+        'El administrador de país solo puede consultar usuarios',
+      );
+    }
   }
 
   async adminResetPassword(

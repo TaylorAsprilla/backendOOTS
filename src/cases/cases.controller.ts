@@ -263,7 +263,7 @@ export class CasesController {
     @Body() createCaseDto: CreateCaseDto,
     @CurrentUser() user: User,
   ) {
-    return await this.casesService.createCase(createCaseDto, user?.id);
+    return await this.casesService.createCase(createCaseDto, user.id, user);
   }
 
   @Get('participants/:participantId/cases')
@@ -379,8 +379,9 @@ export class CasesController {
   })
   async findAllByParticipant(
     @Param('participantId', ParseIntPipe) participantId: number,
+    @CurrentUser() user: User,
   ) {
-    return await this.casesService.findAllByParticipant(participantId);
+    return await this.casesService.findAllByParticipant(participantId, user);
   }
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -505,8 +506,8 @@ export class CasesController {
       },
     },
   })
-  async findAllNoPagination() {
-    return await this.casesService.findAllNoPagination();
+  async findAllNoPagination(@CurrentUser() user: User) {
+    return await this.casesService.findAllNoPagination(user);
   }
 
   @Get(':id')
@@ -750,8 +751,8 @@ export class CasesController {
       },
     },
   })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return await this.casesService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: User) {
+    return await this.casesService.findOne(id, user);
   }
 
   @Get(':id/pdf')
@@ -826,6 +827,7 @@ export class CasesController {
       id,
       updateCaseDto,
       currentUser.id,
+      currentUser,
     );
   }
 
@@ -1011,6 +1013,7 @@ export class CasesController {
       id,
       updateCaseStatusDto,
       currentUser.id,
+      currentUser,
     );
   }
 
@@ -1145,8 +1148,22 @@ export class CasesController {
       },
     },
   })
-  findCasesByUser(@Param('userId', ParseIntPipe) userId: number) {
-    return this.casesService.findCasesByUser(userId);
+  findCasesByUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.casesService.findCasesByUser(userId, user);
+  }
+
+  @Get('by-country/:countryId')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY)
+  @ApiOperation({ summary: 'Listar casos del país, independientemente del profesional' })
+  findCasesByCountry(
+    @Param('countryId', ParseIntPipe) countryId: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.casesService.findCasesByCountry(countryId, user);
   }
 
   @Get()
@@ -1300,7 +1317,8 @@ export class CasesController {
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+    @CurrentUser() user: User,
   ) {
-    return await this.casesService.findAll(page, Math.min(limit, 100));
+    return await this.casesService.findAll(page, Math.min(limit, 100), user);
   }
 }

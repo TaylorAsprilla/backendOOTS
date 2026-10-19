@@ -12,14 +12,34 @@
 ## 2. Admin País (Colombia, countryId=1)
 
 - **Token:** Usuario con `role: ADMIN_COUNTRY`, `countryId: 1`
+- El alcance se obtiene del usuario autenticado en el servidor, no de filtros enviados por el navegador. Por ejemplo, un administrador asignado a EEUU solo consulta participantes y usuarios de EEUU y los casos de esos participantes, independientemente del profesional que los haya registrado.
+- Sin país asignado se responde **403**; los registros sin país no forman parte de su alcance.
 - **Prueba:**
+  - GET `/users`, `/users/all/with-deleted`, `/participants`, `/participants/all`, `/cases`, `/cases/all` sin filtro de país → Solo registros del país asignado
   - GET `/users?countryId=1` → Debe ver solo usuarios de Colombia
   - GET `/participants/by-country/1` → Solo participantes de Colombia
   - GET `/participants/by-country/2` → **Debe fallar** (403)
   - GET `/cases?countryId=1` → Solo casos de Colombia
   - GET `/users?countryId=2` → **Debe fallar** (403)
+  - GET `/participants/:id`, `/cases/:id`, `/users/:id` de otro país o sin país → **Debe fallar** (403), incluso por URL directa
+  - GET `/cases/participants/:participantId/cases` de otro país → **Debe fallar** (404)
+  - GET `/participants/by-user/:userId` y `/cases/by-user/:userId` → Solo registros que también pertenezcan al país del administrador
+  - GET `/cases/by-country/1` → Todos los casos de participantes de Colombia, sin filtrar por profesional; respuesta `{ countryId, total, cases }` dentro del envoltorio habitual de la API
+  - GET `/cases/by-country/2` → **Debe fallar** (403)
+  - GET `/participants/stats/demographic` → Totales y desgloses del mismo país
+  - Las consultas de documento/email de participantes y documento/MITA de usuarios no devuelven registros de otros países. La validación de unicidad al guardar conserva su comportamiento.
+  - GET de listado/detalle y operaciones de discusiones de un caso de otro país → **Debe fallar** (403)
   - PATCH `/participants/:id` de un participante con `countryId=1` → Permitido
   - PATCH `/participants/:id` de un participante con otro país o sin país → **Debe fallar** (403)
+  - No puede cambiar el país de un participante a otro país. La gestión de usuarios es de solo consulta para `ADMIN_COUNTRY`: no puede editar, eliminar, restaurar ni cambiar roles o contraseñas a través de `/users`; conserva sus opciones personales de perfil y contraseña.
+  - El listado de participantes, el listado de casos y el dashboard de Angular consultan el consolidado del país. Los demás roles conservan sus consultas existentes.
+  - No se agregan permisos de auditoría, administración global, supervisión o transferencia a `ADMIN_COUNTRY`.
+
+Pruebas de regresión (HTTP con repositorios en memoria y servicios reales; unitarias de filtros y autorización):
+
+```powershell
+npm test -- --runInBand --runTestsByPath src/common/country-access.http.spec.ts src/common/utils/country-access.spec.ts src/participants/participants.service.spec.ts src/cases/cases.service.spec.ts src/users/users.service.spec.ts src/case-discussions/case-discussions.service.spec.ts src/cases/case-document-history.service.spec.ts src/documents/documents.http.spec.ts
+```
 
 ## 3. Trabajo Social (id=10)
 
@@ -60,7 +80,7 @@ Todos los PDF se generan en memoria al solicitarlos; no hay almacenamiento de PD
 - Al cerrar, en la misma transacción se congelan todos los datos del expediente, etiquetas de catálogos, discusiones y nombres/cargos/correos de los responsables, así como la identidad del usuario que cierra. No se almacenan contraseñas ni tokens.
 - Los PDF cerrados se generan exclusivamente desde ese cierre persistido. No recargan el participante, notas ni usuarios actuales. Las fechas de contenido se formatean en UTC y la fecha de referencia de los documentos queda fija al cierre.
 - Los expedientes cerrados no admiten edición, transferencias, cambios de discusión ni reapertura. Para continuar la atención se crea otro caso.
-- ADMIN descarga cualquier caso; ADMIN_COUNTRY solo casos del país histórico de apertura; TRABAJO_SOCIAL solo casos cuyo `createdById` corresponde a su usuario. El servidor verifica JWT y permisos en cada descarga, antes de cargar datos clínicos; otros roles reciben 403.
+- ADMIN descarga cualquier caso; ADMIN_COUNTRY solo casos del país histórico de apertura cuyo participante siga perteneciendo a su país asignado; TRABAJO_SOCIAL solo casos cuyo `createdById` corresponde a su usuario. El servidor verifica JWT y permisos en cada descarga, antes de cargar datos clínicos; otros roles reciben 403.
 - La descarga no depende de quién la realiza para mostrar el profesional histórico.
 - Para casos anteriores se conserva una referencia con los datos disponibles al migrar (`source=legacy`); no se presenta como una reconstrucción exacta de la apertura o del cierre original. Si se desconoce el autor de un cierre anterior, no se inventa.
 

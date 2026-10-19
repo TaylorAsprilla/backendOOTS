@@ -24,6 +24,8 @@ import { RoleCountryGuard } from '../common/guards/role-country.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from './entities/user.entity';
 
 @ApiTags('Usuarios')
 @Controller('users')
@@ -38,8 +40,8 @@ export class UsersController {
     status: 200,
     description: 'Lista de usuarios activos',
   })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@CurrentUser() user: User) {
+    return this.usersService.findAll(user);
   }
 
   @Get('check-document')
@@ -56,8 +58,11 @@ export class UsersController {
       example: { exists: true, message: 'Document number already exists' },
     },
   })
-  async checkDocument(@Query('documentNumber') documentNumber: string) {
-    return await this.usersService.checkDocumentNumber(documentNumber);
+  async checkDocument(
+    @Query('documentNumber') documentNumber: string,
+    @CurrentUser() user: User,
+  ) {
+    return await this.usersService.checkDocumentNumber(documentNumber, user);
   }
 
   @Get('check-mita')
@@ -74,8 +79,11 @@ export class UsersController {
       example: { exists: true, message: 'Mita number already exists' },
     },
   })
-  async checkMita(@Query('mitaNumber') mitaNumber: string) {
-    return await this.usersService.checkMitaNumber(Number(mitaNumber));
+  async checkMita(
+    @Query('mitaNumber') mitaNumber: string,
+    @CurrentUser() user: User,
+  ) {
+    return await this.usersService.checkMitaNumber(Number(mitaNumber), user);
   }
 
   @Get(':id')
@@ -88,8 +96,8 @@ export class UsersController {
     status: 404,
     description: 'Usuario no encontrado',
   })
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  findOne(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.usersService.findOne(+id, user);
   }
 
   @Patch(':id')
@@ -102,8 +110,12 @@ export class UsersController {
     status: 404,
     description: 'Usuario no encontrado',
   })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.usersService.update(+id, updateUserDto, user);
   }
 
   @Delete(':id')
@@ -116,8 +128,8 @@ export class UsersController {
     status: 404,
     description: 'Usuario no encontrado',
   })
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  remove(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.usersService.remove(+id, user);
   }
 
   @Get('all/with-deleted')
@@ -126,8 +138,8 @@ export class UsersController {
     status: 200,
     description: 'Lista completa de usuarios',
   })
-  findAllWithDeleted() {
-    return this.usersService.findAllWithDeleted();
+  findAllWithDeleted(@CurrentUser() user: User) {
+    return this.usersService.findAllWithDeleted(user);
   }
 
   @Patch(':id/restore')
@@ -140,8 +152,8 @@ export class UsersController {
     status: 404,
     description: 'Usuario eliminado no encontrado',
   })
-  restore(@Param('id') id: string) {
-    return this.usersService.restore(+id);
+  restore(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.usersService.restore(+id, user);
   }
 
   @Post(':id/reset-password')
