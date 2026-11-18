@@ -13,6 +13,7 @@ import {
   Res,
   UseGuards,
   SetMetadata,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -34,8 +35,12 @@ import {
   UpdateCaseDto,
   UpdateCaseStatusDto,
   TransferCaseDto,
+  ApproveTransferDto,
+  RejectTransferDto,
   CaseResponseDto,
 } from './dto/case.dto';
+import { renderPdfToBuffer } from '../documents/pdf/pdf-shared';
+import { buildTransferReportDoc } from '../documents/pdf/templates/transfer-report.template';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -1017,16 +1022,117 @@ export class CasesController {
     );
   }
 
+  @Get('transfers/pending')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPERVISOR, Role.ADMIN, Role.ADMIN_COUNTRY)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Informes de transferencia pendientes de aprobación',
+    description:
+      'SUPERVISOR y ADMIN ven todos; ADMIN_COUNTRY solo los de casos de su país.',
+  })
+  async getPendingTransfers(@CurrentUser() currentUser: User) {
+    return await this.casesService.getPendingTransfers(currentUser);
+  }
+
+  @Patch(':id/transfers/:transferId/approve')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPERVISOR, Role.ADMIN, Role.ADMIN_COUNTRY)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Aprobar un informe de transferencia',
+    description:
+      'Al aprobar, el caso se reasigna al profesional destino. No puede aprobar quien elaboró el informe (salvo ADMIN).',
+  })
+  @ApiBody({ type: ApproveTransferDto })
+  async approveTransfer(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('transferId', ParseIntPipe) transferId: number,
+    @Body() dto: ApproveTransferDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    return await this.casesService.approveTransfer(
+      id,
+      transferId,
+      currentUser,
+      dto.reviewNote,
+    );
+  }
+
+  @Patch(':id/transfers/:transferId/reject')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPERVISOR, Role.ADMIN, Role.ADMIN_COUNTRY)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Rechazar un informe de transferencia',
+    description: 'El caso se conserva con el profesional actual.',
+  })
+  @ApiBody({ type: RejectTransferDto })
+  async rejectTransfer(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('transferId', ParseIntPipe) transferId: number,
+    @Body() dto: RejectTransferDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    return await this.casesService.rejectTransfer(
+      id,
+      transferId,
+      currentUser,
+      dto.reviewNote,
+    );
+  }
+
+  @Get(':id/transfers/:transferId/pdf')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN, Role.ADMIN_COUNTRY)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Descargar el informe de transferencia en PDF' })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF generado exitosamente',
+    content: { 'application/pdf': {} },
+  })
+  async downloadTransferPdf(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('transferId', ParseIntPipe) transferId: number,
+    @Res() res: Response,
+    @CurrentUser() currentUser: User,
+  ) {
+    const { caseEntity, transfer } =
+      await this.casesService.getTransferForReport(id, transferId, currentUser);
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await renderPdfToBuffer(
+        buildTransferReportDoc(caseEntity, transfer),
+      );
+    } catch {
+      throw new InternalServerErrorException('No fue posible generar el PDF.');
+    }
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="informe-transferencia-${transfer.id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    res.end(pdfBuffer);
+  }
+
   @Patch(':id/transfer')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
   @UseGuards(RolesGuard)
   @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN, Role.ADMIN_COUNTRY)
   @ApiBearerAuth('access-token')
   @ApiOperation({
-    summary: 'Transferir un caso a otro profesional',
+    summary: 'Crear el informe de transferencia de un caso',
     description:
-      'Reasigna el profesional responsable del caso. Restringido a roles SUPERVISOR, COORDINADOR, ADMIN y ADMIN_COUNTRY ' +
-      '(este último solo para casos de su país, pero puede elegir un profesional de cualquier país). ' +
-      'Conserva el historial de todas las transferencias del caso (de quién a quién y quién la realizó).',
+      'Registra el Informe de transferencia (resumen, ponderación, logros, motivo y recomendaciones) en estado PENDIENTE. ' +
+      'El caso solo cambia de profesional cuando un supervisor aprueba el informe. ' +
+      'ADMIN_COUNTRY solo para casos de su país, pero puede elegir un profesional de cualquier país.',
   })
   @ApiParam({
     name: 'id',
@@ -1052,6 +1158,7 @@ export class CasesController {
   }
 
   @Get(':id/transfers')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
   @UseGuards(RolesGuard)
   @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN, Role.ADMIN_COUNTRY)
   @ApiBearerAuth('access-token')
