@@ -10,6 +10,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { UserStatus } from '../common/enums';
+import { Role } from '../common/enums/role.enum';
+import { RoleEntity } from '../roles/entities/role.entity';
 import { MailService } from '../mail/mail.service';
 import {
   assertCountryAccess,
@@ -45,7 +47,15 @@ export class UsersService {
       .join('');
   }
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(
+    createUserDto: CreateUserDto,
+    currentUser?: User,
+  ): Promise<User> {
+    createUserDto = await this.applyCountryAdminRules(
+      createUserDto,
+      currentUser,
+    );
+
     // Verificar si ya existe un usuario con el mismo email
     const existingUserByEmail = await this.userRepository.findOne({
       where: { email: createUserDto.email },
@@ -255,7 +265,6 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     currentUser?: User,
   ): Promise<User> {
-    this.assertCanManageUsers(currentUser);
     // Verificar que el usuario existe y está activo
     const existingUser = await this.userRepository.findOne({
       where: { id, status: UserStatus.ACTIVE },
@@ -264,6 +273,20 @@ export class UsersService {
     if (!existingUser) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+
+    assertCountryAccess(currentUser, existingUser.countryId);
+    if (
+      getAdminCountryId(currentUser) !== undefined &&
+      updateUserDto.password !== undefined
+    ) {
+      throw new ForbiddenException(
+        'El administrador de país no puede cambiar contraseñas desde la edición',
+      );
+    }
+    updateUserDto = await this.applyCountryAdminRules(
+      updateUserDto,
+      currentUser,
+    );
 
     // Verificar unicidad de email si se está actualizando
     if (updateUserDto.email && updateUserDto.email !== existingUser.email) {
@@ -314,7 +337,6 @@ export class UsersService {
   }
 
   async remove(id: number, currentUser?: User): Promise<{ message: string }> {
-    this.assertCanManageUsers(currentUser);
     // Verificar que el usuario existe y está activo
     const existingUser = await this.userRepository.findOne({
       where: { id, status: UserStatus.ACTIVE },
@@ -322,6 +344,11 @@ export class UsersService {
 
     if (!existingUser) {
       throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    assertCountryAccess(currentUser, existingUser.countryId);
+    if (currentUser && Number(currentUser.id) === Number(id)) {
+      throw new ForbiddenException('No puede eliminar su propio usuario');
     }
 
     // Soft delete: cambiar el estado a 'deleted'
@@ -340,7 +367,6 @@ export class UsersService {
   }
 
   async restore(id: number, currentUser?: User): Promise<User> {
-    this.assertCanManageUsers(currentUser);
     // Verificar que el usuario existe y está eliminado
     const existingUser = await this.userRepository.findOne({
       where: { id, status: UserStatus.DELETED },
@@ -349,6 +375,8 @@ export class UsersService {
     if (!existingUser) {
       throw new NotFoundException(`Deleted user with ID ${id} not found`);
     }
+
+    assertCountryAccess(currentUser, existingUser.countryId);
 
     // Restaurar el usuario
     await this.userRepository.update(id, { status: UserStatus.ACTIVE });
@@ -361,12 +389,37 @@ export class UsersService {
     return this.excludePassword(restoredUser!);
   }
 
-  private assertCanManageUsers(currentUser?: User): void {
-    if (getAdminCountryId(currentUser) !== undefined) {
-      throw new ForbiddenException(
-        'El administrador de país solo puede consultar usuarios',
-      );
+  /**
+   * Reglas para ADMIN_COUNTRY al crear/editar usuarios (ADMIN no se ve afectado):
+   * - el usuario queda siempre en su propio país
+   * - no puede asignar los roles ADMIN ni ADMIN_COUNTRY (evita escalar privilegios)
+   */
+  async applyCountryAdminRules<T extends Partial<CreateUserDto>>(
+    dto: T,
+    currentUser?: User,
+  ): Promise<T> {
+    const adminCountryId = getAdminCountryId(currentUser);
+    if (adminCountryId === undefined) return dto;
+
+    if (dto.countryId !== undefined) {
+      assertCountryAccess(currentUser, dto.countryId);
     }
+
+    if (dto.roleId !== undefined) {
+      const role = await this.userRepository.manager.findOne(RoleEntity, {
+        where: { id: dto.roleId },
+      });
+      if (!role) {
+        throw new NotFoundException(`Role with ID ${dto.roleId} not found`);
+      }
+      if (role.name === Role.ADMIN || role.name === Role.ADMIN_COUNTRY) {
+        throw new ForbiddenException(
+          'No puede asignar roles de administrador',
+        );
+      }
+    }
+
+    return { ...dto, countryId: adminCountryId };
   }
 
   async adminResetPassword(

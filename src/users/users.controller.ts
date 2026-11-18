@@ -17,6 +17,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,6 +34,20 @@ import { User } from './entities/user.entity';
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY)
+  @ApiOperation({
+    summary: 'Crear usuario',
+    description:
+      'ADMIN crea en cualquier país. ADMIN_COUNTRY solo en su país y sin asignar roles de administrador.',
+  })
+  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
+  @ApiResponse({ status: 403, description: 'Fuera del país asignado' })
+  create(@Body() createUserDto: CreateUserDto, @CurrentUser() user: User) {
+    return this.usersService.create(createUserDto, user);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Obtener todos los usuarios activos' })

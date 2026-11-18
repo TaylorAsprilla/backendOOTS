@@ -25,6 +25,9 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import {
@@ -86,9 +89,15 @@ export class AuthController {
     return await this.authService.checkPhoneNumberAvailability(phoneNumber);
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY)
+  @ApiBearerAuth()
   @Post('register')
-  @ApiOperation({ summary: 'Registrar nuevo usuario' })
+  @ApiOperation({
+    summary: 'Registrar nuevo usuario (solo ADMIN y ADMIN_COUNTRY)',
+    description:
+      'ADMIN registra en cualquier país. ADMIN_COUNTRY solo en su país y sin roles de administrador.',
+  })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
     status: 201,
@@ -105,8 +114,9 @@ export class AuthController {
   })
   async register(
     @Body() registerDto: RegisterDto,
+    @CurrentUser() currentUser: User,
   ): Promise<RegisterResponseDto> {
-    return await this.authService.register(registerDto);
+    return await this.authService.register(registerDto, currentUser);
   }
 
   @Public()

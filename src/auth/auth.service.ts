@@ -134,8 +134,17 @@ export class AuthService {
     };
   }
 
-  async register(registerDto: RegisterDto): Promise<RegisterResponse> {
+  async register(
+    registerDto: RegisterDto,
+    currentUser?: User,
+  ): Promise<RegisterResponse> {
     try {
+      // ADMIN_COUNTRY: fuerza su país y bloquea roles de administrador
+      registerDto = await this.usersService.applyCountryAdminRules(
+        registerDto,
+        currentUser,
+      );
+
       // Verificar si ya existe un usuario con el mismo email
       const existingUserByEmail = await this.userRepository.findOne({
         where: { email: registerDto.email },

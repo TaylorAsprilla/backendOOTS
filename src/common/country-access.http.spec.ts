@@ -63,6 +63,7 @@ describe('ADMIN_COUNTRY HTTP country isolation', () => {
         ([key, value]) => Reflect.get(row, key) === value,
       );
     return {
+      update: jest.fn(),
       findOne: jest.fn(({ where }: { where: Record<string, unknown> }) =>
         Promise.resolve(
           rows.find((row) =>
@@ -291,20 +292,40 @@ describe('ADMIN_COUNTRY HTTP country isolation', () => {
     await request(app.getHttpServer()).get('/participants').expect(401);
   });
 
-  it('keeps user management read-only even for same-country users', async () => {
+  it('lets country administrators manage same-country users', async () => {
     await request(app.getHttpServer())
       .patch('/users/7')
       .set('Authorization', 'us')
       .send({})
-      .expect(403);
+      .expect(200);
     await request(app.getHttpServer())
       .delete('/users/7')
       .set('Authorization', 'us')
-      .expect(403);
+      .expect(200);
     await request(app.getHttpServer())
       .patch('/users/7/restore')
       .set('Authorization', 'us')
       .send({})
-      .expect(403);
+      .expect(200);
   });
+
+  it.each([9, 10])(
+    'rejects mutations on foreign or unassigned user %s',
+    async (id) => {
+      await request(app.getHttpServer())
+        .patch(`/users/${id}`)
+        .set('Authorization', 'us')
+        .send({})
+        .expect(403);
+      await request(app.getHttpServer())
+        .delete(`/users/${id}`)
+        .set('Authorization', 'us')
+        .expect(403);
+      await request(app.getHttpServer())
+        .patch(`/users/${id}/restore`)
+        .set('Authorization', 'us')
+        .send({})
+        .expect(403);
+    },
+  );
 });

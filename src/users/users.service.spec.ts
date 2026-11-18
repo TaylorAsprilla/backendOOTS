@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Repository } from 'typeorm';
+import { UserStatus } from '../common/enums';
 import { Role } from '../common/enums/role.enum';
 import { MailService } from '../mail/mail.service';
 import { User } from './entities/user.entity';
@@ -33,6 +34,7 @@ describe('UsersService country access', () => {
       findOne: jest.fn().mockResolvedValue(user),
       find: jest.fn().mockResolvedValue([user]),
       update: jest.fn(),
+      manager: { findOne: jest.fn() },
       createQueryBuilder: jest.fn().mockReturnValue(query),
     };
     const service = new UsersService(
@@ -89,8 +91,10 @@ describe('UsersService country access', () => {
     ).resolves.toMatchObject({ countryId: 1 });
   });
 
-  it('keeps user management read-only for country administrators', async () => {
+  it('lets country administrators manage users of their own country only within limits', async () => {
     const { service, repository } = makeService(3);
+    repository.manager.findOne.mockResolvedValue({ name: Role.ADMIN });
+    // no puede mover usuarios a otro país, asignar rol admin ni cambiar contraseña
     await expect(
       service.update(7, { countryId: 1 }, actor),
     ).rejects.toBeInstanceOf(ForbiddenException);
@@ -100,10 +104,29 @@ describe('UsersService country access', () => {
     await expect(
       service.update(7, { password: 'not-applied' }, actor),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(service.remove(7, actor)).rejects.toBeInstanceOf(
-      ForbiddenException,
+    expect(repository.update).not.toHaveBeenCalled();
+
+    // sí puede editar, desactivar (soft) y restaurar usuarios de su país
+    repository.manager.findOne.mockResolvedValue({ name: Role.ORIENTADOR });
+    await service.update(7, { position: 'Nuevo cargo', roleId: 5 }, actor);
+    expect(repository.update).toHaveBeenLastCalledWith(
+      7,
+      expect.objectContaining({ position: 'Nuevo cargo', countryId: 3 }),
     );
-    await expect(service.restore(7, actor)).rejects.toBeInstanceOf(
+    await service.remove(7, actor);
+    expect(repository.update).toHaveBeenLastCalledWith(7, {
+      status: UserStatus.DELETED,
+    });
+    await service.restore(7, actor);
+    expect(repository.update).toHaveBeenLastCalledWith(7, {
+      status: UserStatus.ACTIVE,
+    });
+  });
+
+  it('does not let a country administrator deactivate themselves', async () => {
+    const { service, repository } = makeService(3);
+    const self = Object.assign(new User(), actor, { id: 7 });
+    await expect(service.remove(7, self)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
     expect(repository.update).not.toHaveBeenCalled();
