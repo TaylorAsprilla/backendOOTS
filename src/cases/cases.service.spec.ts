@@ -1,4 +1,8 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CaseStatus, Role } from '../common/enums';
 import { Participant } from '../participants/entities/participant.entity';
@@ -164,5 +168,106 @@ describe('CasesService edit access control and closing', () => {
       service.updateStatus(4, { status: CaseStatus.OPEN }, 7),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it('lets a country admin edit and change the status of cases created by others', async () => {
+    const entity = { id: 4, createdById: 7, status: CaseStatus.OPEN } as Case;
+    const { service, update } = makeService(entity);
+    jest.spyOn(service, 'findOne').mockResolvedValue(entity);
+    await expect(service.updateCase(4, {}, 99, countryAdmin)).resolves.toBe(
+      entity,
+    );
+    await service.updateStatus(
+      4,
+      { status: CaseStatus.IN_PROGRESS },
+      99,
+      countryAdmin,
+    );
+    expect(update).toHaveBeenCalledTimes(1);
+    // un usuario común que no creó el caso sigue sin poder editarlo
+    await expect(service.updateCase(4, {}, 99)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  describe('case transfer by a country admin', () => {
+    const makeTransfer = (caseCountryId: number, roleName: Role) => {
+      const entity = Object.assign(new Case(), {
+        id: 4,
+        createdById: 7,
+        assignedToId: 7,
+        status: CaseStatus.OPEN,
+        participant: { countryId: caseCountryId },
+      });
+      const toUser = { id: 50, countryId: 1, role: { name: roleName } };
+      const save = jest.fn();
+      const update = jest.fn();
+      const manager = {
+        create: jest.fn((_target: unknown, values: unknown) => values),
+        save,
+        update,
+      } as unknown as EntityManager;
+      const dataSource = {
+        getRepository: jest
+          .fn()
+          .mockReturnValue({ findOne: jest.fn().mockResolvedValue(toUser) }),
+        transaction: jest.fn(
+          (callback: (manager: EntityManager) => Promise<unknown>) =>
+            callback(manager),
+        ),
+      } as unknown as DataSource;
+      const history = new CaseDocumentHistoryService(dataSource);
+      jest.spyOn(history, 'lockCase').mockResolvedValue(entity);
+      jest.spyOn(history, 'assertOpen').mockImplementation(() => undefined);
+      const service = new CasesService(
+        {
+          findOne: jest.fn().mockResolvedValue(entity),
+        } as unknown as Repository<Case>,
+        {} as Repository<Participant>,
+        dataSource,
+        history,
+      );
+      return { service, save, update };
+    };
+
+    it('transfers a case of its country to a professional of another country', async () => {
+      const { service, save, update } = makeTransfer(3, Role.PSICOLOGO);
+      await service.transferCase(
+        4,
+        { toProfessionalId: 50, reason: 'Traslado' },
+        99,
+        countryAdmin,
+      );
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({ fromUserId: 7, toUserId: 50, transferredById: 99 }),
+      );
+      expect(update).toHaveBeenCalledWith(Case, 4, { assignedToId: 50 });
+    });
+
+    it('denies transferring a case of another country', async () => {
+      const { service, save } = makeTransfer(1, Role.PSICOLOGO);
+      await expect(
+        service.transferCase(
+          4,
+          { toProfessionalId: 50, reason: 'Traslado' },
+          99,
+          countryAdmin,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('rejects destinations whose role cannot receive cases', async () => {
+      const { service, save } = makeTransfer(3, Role.ADMIN);
+      await expect(
+        service.transferCase(
+          4,
+          { toProfessionalId: 50, reason: 'Traslado' },
+          99,
+          countryAdmin,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(save).not.toHaveBeenCalled();
+    });
   });
 });
