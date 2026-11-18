@@ -146,6 +146,25 @@ export async function runMigrations() {
       } else {
         console.log('[migrate] · case_transfers report columns already exist, skipping');
       }
+
+      // Quién elaboró el informe (el profesional que tiene el caso) y cuándo
+      const [reportedRows] = await connection.query<ColumnRow[]>(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'case_transfers' AND COLUMN_NAME = 'reported_by_id'`,
+        [process.env.DB_DATABASE],
+      );
+      if (reportedRows.length === 0) {
+        await connection.query(
+          `ALTER TABLE case_transfers
+             ADD COLUMN reported_by_id INT UNSIGNED NULL,
+             ADD COLUMN reported_at DATETIME NULL,
+             ADD CONSTRAINT fk_case_transfers_reported_by_id
+               FOREIGN KEY (reported_by_id) REFERENCES users (id)`,
+        );
+        console.log('[migrate] ✓ Added case_transfers reported_by columns');
+      } else {
+        console.log('[migrate] · case_transfers reported_by columns already exist, skipping');
+      }
     }
 
     // ── 7. case_attachments / case_attachment_events ─────────────────────

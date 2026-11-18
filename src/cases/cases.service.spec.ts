@@ -195,11 +195,25 @@ describe('CasesService edit access control and closing', () => {
     const report = {
       toProfessionalId: 50,
       reason: 'Traslado',
+    };
+    const reportBody = {
       workSummary: 'Resumen',
       assessment: 'Ponderación',
       achievements: 'Logros',
       recommendations: 'Recomendaciones',
     };
+    const assignee = Object.assign(new User(), {
+      id: 7,
+      role: { name: Role.TRABAJO_SOCIAL },
+    });
+    const awaitingRow = () => ({
+      id: 9,
+      caseId: 4,
+      fromUserId: 7,
+      toUserId: 50,
+      transferredById: 99,
+      status: TransferStatus.AWAITING_REPORT,
+    });
 
     const makeTransfer = (
       caseCountryId: number,
@@ -261,7 +275,7 @@ describe('CasesService edit access control and closing', () => {
       role: { name: Role.SUPERVISOR },
     });
 
-    it('stores the report as PENDING without reassigning the case', async () => {
+    it('requests the transfer as AWAITING_REPORT without reassigning the case', async () => {
       const { service, save, update } = makeTransfer(3, Role.PSICOLOGO);
       await service.transferCase(4, report, 99, countryAdmin);
       expect(save).toHaveBeenCalledWith(
@@ -269,14 +283,73 @@ describe('CasesService edit access control and closing', () => {
           fromUserId: 7,
           toUserId: 50,
           transferredById: 99,
+          reason: 'Traslado',
+          status: TransferStatus.AWAITING_REPORT,
+        }),
+      );
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('lets only the current assignee write the report', async () => {
+      const { service, save, update } = makeTransfer(
+        3,
+        Role.PSICOLOGO,
+        awaitingRow(),
+      );
+      await service.submitTransferReport(4, 9, reportBody, assignee);
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({
           workSummary: 'Resumen',
+          reportedById: 7,
           status: TransferStatus.PENDING,
         }),
       );
       expect(update).not.toHaveBeenCalled();
     });
 
-    it('rejects a second report while one is pending', async () => {
+    it('denies the report to someone who does not hold the case', async () => {
+      const { service, save } = makeTransfer(
+        3,
+        Role.PSICOLOGO,
+        awaitingRow(),
+      );
+      await expect(
+        service.submitTransferReport(4, 9, reportBody, supervisor),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it('does not accept the report twice', async () => {
+      const { service } = makeTransfer(3, Role.PSICOLOGO, pendingRow());
+      await expect(
+        service.submitTransferReport(4, 9, reportBody, assignee),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('cannot approve a transfer whose report is not written yet', async () => {
+      const { service, update } = makeTransfer(
+        3,
+        Role.PSICOLOGO,
+        awaitingRow(),
+      );
+      await expect(
+        service.approveTransfer(4, 9, supervisor),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('does not let the assignee who wrote the report approve it', async () => {
+      const { service, update } = makeTransfer(3, Role.PSICOLOGO, {
+        ...pendingRow(),
+        reportedById: 20,
+      });
+      await expect(
+        service.approveTransfer(4, 9, supervisor),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a second request while one is open', async () => {
       const { service, save } = makeTransfer(3, Role.PSICOLOGO, undefined, 1);
       await expect(
         service.transferCase(4, report, 99, countryAdmin),

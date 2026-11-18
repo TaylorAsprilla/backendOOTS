@@ -11,6 +11,9 @@ import { Case } from '../../participants/entities/case.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum TransferStatus {
+  /** Transferencia solicitada; falta el informe del profesional que tiene el caso. */
+  AWAITING_REPORT = 'AWAITING_REPORT',
+  /** Informe elaborado; falta la aprobación de supervisión. */
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
@@ -67,7 +70,24 @@ export class CaseTransfer {
   @Column({ name: 'recommendations', type: 'text', nullable: true })
   recommendations?: string;
 
+  /** Profesional (o ADMIN) que elaboró el informe y cuándo. */
+  @Column({
+    name: 'reported_by_id',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
+  reportedById?: number | null;
+
+  @ManyToOne(() => User, { nullable: true, eager: true })
+  @JoinColumn({ name: 'reported_by_id' })
+  reportedBy?: User | null;
+
+  @Column({ name: 'reported_at', type: 'datetime', nullable: true })
+  reportedAt?: Date | null;
+
   /**
+   * AWAITING_REPORT: transferencia solicitada, el informe lo elabora quien tiene el caso.
    * PENDING: informe enviado, el caso sigue con el profesional actual.
    * APPROVED: aprobado, el caso fue reasignado. REJECTED: no se movió el caso.
    * Los registros anteriores al informe quedan APPROVED (ya estaban ejecutados).

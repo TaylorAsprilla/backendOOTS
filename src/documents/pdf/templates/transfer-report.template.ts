@@ -15,6 +15,7 @@ import {
 } from '../pdf-shared';
 
 const STATUS_LABEL: Record<TransferStatus, string> = {
+  [TransferStatus.AWAITING_REPORT]: 'Informe por elaborar',
   [TransferStatus.PENDING]: 'Pendiente de aprobación',
   [TransferStatus.APPROVED]: 'Aprobado',
   [TransferStatus.REJECTED]: 'Rechazado',
@@ -35,7 +36,12 @@ export function buildTransferReportDoc(
   caseEntity: Case,
   transfer: CaseTransfer,
 ): TDocumentDefinitions {
-  const reviewed = transfer.status !== TransferStatus.PENDING;
+  const reviewed =
+    transfer.status === TransferStatus.APPROVED ||
+    transfer.status === TransferStatus.REJECTED;
+  // Registros anteriores al flujo en 4 pasos no tienen autor del informe
+  const author = transfer.reportedBy ?? transfer.transferredBy;
+  const authoredAt = transfer.reportedAt ?? transfer.createdAt;
 
   return baseDocDefinition(
     [
@@ -65,11 +71,10 @@ export function buildTransferReportDoc(
 
       sectionTitle('APROBACIÓN'),
       dataTable([
-        [
-          'Elaborado por (Trabajo Social)',
-          fullUserName(transfer.transferredBy),
-        ],
-        ['Fecha de elaboración', formatDate(transfer.createdAt)],
+        ['Solicitado por', fullUserName(transfer.transferredBy)],
+        ['Fecha de la solicitud', formatDate(transfer.createdAt)],
+        ['Elaborado por (Trabajo Social)', fullUserName(author)],
+        ['Fecha de elaboración', formatDate(authoredAt)],
         ['Estado', STATUS_LABEL[transfer.status] ?? transfer.status],
         ...(reviewed
           ? ([

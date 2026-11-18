@@ -925,7 +925,10 @@ export class TransferCaseDto {
   @IsString()
   @IsNotEmpty()
   reason!: string;
+}
 
+/** Informe que elabora el profesional que tiene el caso actualmente. */
+export class SubmitTransferReportDto {
   @ApiProperty({ description: 'Resumen de la labor realizada' })
   @IsString()
   @IsNotEmpty()
