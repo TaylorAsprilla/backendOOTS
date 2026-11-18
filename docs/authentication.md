@@ -25,13 +25,15 @@ auth/
 
 | Método | Endpoint                | Descripción                            | Autenticación |
 | ------ | ----------------------- | -------------------------------------- | ------------- |
-| `POST` | `/api/v1/auth/register` | Registro de nuevos usuarios            | ❌            |
+| `POST` | `/api/v1/auth/register` | Registro de nuevos usuarios            | ✅ (ADMIN, ADMIN_COUNTRY) |
 | `POST` | `/api/v1/auth/login`    | Login de usuarios existentes           | ❌            |
 | `GET`  | `/api/v1/auth/profile`  | Obtener perfil del usuario autenticado | ✅            |
 
 ---
 
 ## 📝 POST /api/v1/auth/register
+
+> **Requiere autenticación.** El registro público está cerrado: solo `ADMIN` (cualquier país) y `ADMIN_COUNTRY` (solo su país y sin roles de administrador) pueden crear usuarios. Envíe `Authorization: Bearer <token>`.
 
 Registra un nuevo usuario en el sistema con validaciones completas.
 
@@ -280,6 +282,7 @@ Content-Type: application/json
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "firstName": "María",
@@ -332,7 +335,7 @@ sequenceDiagram
     participant S as Auth Service
     participant DB as Base de Datos
 
-    C->>A: POST /auth/register
+    C->>A: POST /auth/register (Bearer ADMIN o ADMIN_COUNTRY)
     A->>S: Validar y crear usuario
     S->>DB: Guardar usuario
     DB-->>S: Usuario creado

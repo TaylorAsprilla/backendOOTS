@@ -3,6 +3,17 @@
 
 $BASE_URL = "http://localhost:3000/api/v1"
 
+# El registro requiere un ADMIN o ADMIN_COUNTRY autenticado.
+# Uso: $env:ADMIN_EMAIL='admin@ejemplo.com'; $env:ADMIN_PASSWORD='...'; ./test-auth-register.ps1
+if (-not $env:ADMIN_EMAIL -or -not $env:ADMIN_PASSWORD) {
+    Write-Host "Defina ADMIN_EMAIL y ADMIN_PASSWORD (usuario ADMIN o ADMIN_COUNTRY)." -ForegroundColor Red
+    exit 1
+}
+$loginBody = @{ email = $env:ADMIN_EMAIL; password = $env:ADMIN_PASSWORD } | ConvertTo-Json
+$login = Invoke-RestMethod -Uri "$BASE_URL/auth/login" -Method POST -Body $loginBody -ContentType "application/json"
+$ADMIN_TOKEN = if ($login.data) { $login.data.access_token } else { $login.access_token }
+$AUTH_HEADERS = @{ Authorization = "Bearer $ADMIN_TOKEN" }
+
 Write-Host "🧪 Probando endpoint de registro de autenticación..." -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
@@ -32,7 +43,7 @@ Write-Host "🚀 Enviando petición de registro..." -ForegroundColor Yellow
 
 try {
     # Hacer la petición POST al endpoint de registro
-    $response = Invoke-RestMethod -Uri "$BASE_URL/auth/register" -Method POST -Body $TEST_USER -ContentType "application/json"
+    $response = Invoke-RestMethod -Uri "$BASE_URL/auth/register" -Method POST -Body $TEST_USER -ContentType "application/json" -Headers $AUTH_HEADERS
     
     Write-Host "✅ Registro exitoso!" -ForegroundColor Green
     Write-Host "📋 Respuesta:" -ForegroundColor Yellow

@@ -17,6 +17,7 @@ import {
 } from './case-attachment.enums';
 import { CaseAttachmentsService } from './case-attachments.service';
 import { S3StorageService } from './s3-storage.service';
+import { VirusScannerService } from './virus-scanner.service';
 
 const PDF = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF\n');
 const upload = {
@@ -75,14 +76,16 @@ describe('CaseAttachmentsService', () => {
       downloadTtlSeconds: 60,
     };
     const config = { get: jest.fn() };
+    const scanner = { assertClean: jest.fn().mockResolvedValue(undefined) };
     const service = new CaseAttachmentsService(
       attachments as unknown as Repository<CaseAttachment>,
       events as unknown as Repository<CaseAttachmentEvent>,
       cases as unknown as Repository<Case>,
       storage as unknown as S3StorageService,
       config as unknown as ConfigService,
+      scanner as unknown as VirusScannerService,
     );
-    return { service, attachments, events, storage, stored };
+    return { service, attachments, events, storage, stored, scanner };
   };
 
   it('stores the file privately under a case prefix with a random key', async () => {
@@ -127,6 +130,17 @@ describe('CaseAttachmentsService', () => {
         upload,
         ts,
       ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(storage.put).not.toHaveBeenCalled();
+  });
+
+  it('rejects a file flagged by the antivirus before touching S3', async () => {
+    const { service, storage, scanner } = make();
+    scanner.assertClean.mockRejectedValueOnce(
+      new BadRequestException('infectado'),
+    );
+    await expect(
+      service.upload(input, upload, user(7, Role.TRABAJO_SOCIAL)),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(storage.put).not.toHaveBeenCalled();
   });

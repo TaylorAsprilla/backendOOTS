@@ -75,6 +75,24 @@ export class S3StorageService {
     );
   }
 
+  /** Lee un objeto completo (se usa para fotos de perfil, que son pequeñas). */
+  async get(key: string): Promise<{ body: Buffer; contentType?: string }> {
+    try {
+      const result = await this.s3().send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      const bytes = await result.Body!.transformToByteArray();
+      return { body: Buffer.from(bytes), contentType: result.ContentType };
+    } catch (error) {
+      this.logger.error(
+        `No se pudo leer el objeto ${key}: ${error instanceof Error ? error.name : 'error'}`,
+      );
+      throw new ServiceUnavailableException(
+        'No fue posible leer el archivo. Intente nuevamente',
+      );
+    }
+  }
+
   /** URL GET prefirmada de corta duración; no se persiste. */
   async presignedDownloadUrl(key: string, fileName: string): Promise<string> {
     const safeName = encodeURIComponent(fileName);

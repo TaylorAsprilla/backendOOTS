@@ -225,7 +225,7 @@ npm run test:cov
 
 | Método   | Endpoint                       | Descripción               | Autenticación |
 | -------- | ------------------------------ | ------------------------- | ------------- |
-| `POST`   | `/api/v1/auth/register`        | Registro de usuarios      | ❌            |
+| `POST`   | `/api/v1/auth/register`        | Registro de usuarios      | ✅ (ADMIN, ADMIN_COUNTRY) |
 | `POST`   | `/api/v1/auth/login`           | Login de usuarios         | ❌            |
 | `GET`    | `/api/v1/auth/profile`         | Perfil del usuario        | ✅            |
 | `PATCH`  | `/api/v1/auth/profile`         | Actualizar perfil         | ✅            |
@@ -248,7 +248,7 @@ npm run test:cov
 
 El módulo de usuarios maneja el ciclo completo de vida de los profesionales que utilizan el sistema:
 
-**📝 Nota Importante**: La **creación de usuarios** se realiza exclusivamente a través del endpoint `/api/v1/auth/register` (proceso de registro). El módulo de usuarios se enfoca en operaciones administrativas posteriores al registro.
+**📝 Nota Importante**: La **creación de usuarios** se realiza exclusivamente a través del endpoint `/api/v1/auth/register`, que solo pueden usar `ADMIN` y `ADMIN_COUNTRY` (el registro público está cerrado). El módulo de usuarios se enfoca en operaciones administrativas posteriores al registro.
 
 #### Características del Usuario
 
@@ -262,7 +262,7 @@ El módulo de usuarios maneja el ciclo completo de vida de los profesionales que
 
 #### Proceso Separado de Usuario
 
-1. **Registro** → `/api/v1/auth/register` (Solo crea usuario, sin autenticación automática)
+1. **Registro** → `/api/v1/auth/register` (lo ejecuta un ADMIN o ADMIN_COUNTRY autenticado; solo crea el usuario, sin autenticación automática)
 2. **Autenticación** → `/api/v1/auth/login` (Login posterior al registro)
 3. **Gestión** → `/users/*` endpoints (Operaciones administrativas)
 

@@ -140,6 +140,14 @@ export class User {
   })
   status!: UserStatus;
 
+  /** Clave del objeto en S3 de la foto de perfil. Nunca se expone en las respuestas. */
+  @Exclude()
+  @Column({ name: 'avatar_key', type: 'varchar', length: 255, nullable: true })
+  avatarKey?: string | null;
+
+  @Column({ name: 'avatar_updated_at', type: 'datetime', nullable: true })
+  avatarUpdatedAt?: Date | null;
+
   @Column({ name: 'role_id', type: 'int', unsigned: true, nullable: true })
   roleId?: number;
 
@@ -214,7 +222,7 @@ export class User {
 
   toResponseObject() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...result } = this;
-    return result;
+    const { password, avatarKey, ...result } = this;
+    return { ...result, hasAvatar: !!avatarKey };
   }
 }

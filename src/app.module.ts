@@ -13,6 +13,8 @@ import { ParticipantsModule } from './participants/participants.module';
 import { CasesModule } from './cases/cases.module';
 import { DocumentsModule } from './documents/documents.module';
 import { CaseAttachmentsModule } from './case-attachments/case-attachments.module';
+import { SupervisionModule } from './supervision/supervision.module';
+import { ProfileAvatarModule } from './profile-avatar/profile-avatar.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { MailModule } from './mail/mail.module';
 import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
@@ -86,6 +88,8 @@ import configuration from './config/configuration';
     CasesModule,
     DocumentsModule,
     CaseAttachmentsModule,
+    SupervisionModule,
+    ProfileAvatarModule,
     CatalogsModule,
     MailModule,
     AcademicLevelsModule,
