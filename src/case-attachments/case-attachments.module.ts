@@ -13,5 +13,6 @@ import { VirusScannerService } from './virus-scanner.service';
   ],
   controllers: [CaseAttachmentsController],
   providers: [CaseAttachmentsService, S3StorageService, VirusScannerService],
+  exports: [S3StorageService, VirusScannerService],
 })
 export class CaseAttachmentsModule {}

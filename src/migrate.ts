@@ -235,6 +235,23 @@ export async function runMigrations() {
     );
     console.log('[migrate] ✓ supervision_reviews table ensured');
 
+    // ── 9. users: foto de perfil ──────────────────────────────────────────
+    const [avatarCols] = await connection.query<ColumnRow[]>(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users' AND COLUMN_NAME = 'avatar_key'`,
+      [process.env.DB_DATABASE],
+    );
+    if (avatarCols.length === 0) {
+      await connection.query(
+        `ALTER TABLE users
+           ADD COLUMN avatar_key VARCHAR(255) NULL,
+           ADD COLUMN avatar_updated_at DATETIME NULL`,
+      );
+      console.log('[migrate] ✓ Added users.avatar_key / avatar_updated_at');
+    } else {
+      console.log('[migrate] · users avatar columns already exist, skipping');
+    }
+
     console.log('[migrate] All migrations completed successfully');
   } finally {
     await connection.end();
