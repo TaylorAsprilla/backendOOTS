@@ -7,7 +7,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityManager } from 'typeorm';
+import { Repository, DataSource, EntityManager, In } from 'typeorm';
 import { Case } from '../participants/entities/case.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
@@ -31,6 +31,7 @@ import {
   CreateCaseDto,
   UpdateCaseDto,
   UpdateCaseStatusDto,
+  SubmitTransferReportDto,
   TransferCaseDto,
 } from './dto/case.dto';
 import {
@@ -724,18 +725,22 @@ export class CasesService {
       );
     }
 
-    // El informe se guarda PENDIENTE: el caso NO cambia de profesional hasta
-    // que un supervisor (o administrador) lo apruebe.
+    // Paso 1: se solicita la transferencia. El informe lo elabora quien tiene
+    // el caso (paso 2) y el caso NO cambia de profesional hasta que
+    // supervisión lo apruebe (pasos 3 y 4).
     return await this.dataSource.transaction(async (manager) => {
       const lockedCase = await this.documentHistory.lockCase(manager, caseId);
       this.documentHistory.assertOpen(lockedCase);
 
-      const pending = await manager.count(CaseTransfer, {
-        where: { caseId, status: TransferStatus.PENDING },
+      const open = await manager.count(CaseTransfer, {
+        where: {
+          caseId,
+          status: In([TransferStatus.AWAITING_REPORT, TransferStatus.PENDING]),
+        },
       });
-      if (pending > 0) {
+      if (open > 0) {
         throw new ConflictException(
-          'El caso ya tiene un informe de transferencia pendiente de aprobación',
+          'El caso ya tiene una transferencia en curso (informe por elaborar o pendiente de aprobación)',
         );
       }
 
@@ -745,13 +750,57 @@ export class CasesService {
         toUserId: transferCaseDto.toProfessionalId,
         transferredById,
         reason: transferCaseDto.reason.trim(),
-        workSummary: transferCaseDto.workSummary.trim(),
-        assessment: transferCaseDto.assessment.trim(),
-        achievements: transferCaseDto.achievements.trim(),
-        recommendations: transferCaseDto.recommendations.trim(),
-        status: TransferStatus.PENDING,
+        status: TransferStatus.AWAITING_REPORT,
       });
       return await manager.save(transfer);
+    });
+  }
+
+  /**
+   * Paso 2: el profesional que tiene el caso actualmente elabora el informe
+   * (el ADMIN global puede hacerlo en su nombre). Queda pendiente de aprobación.
+   */
+  async submitTransferReport(
+    caseId: number,
+    transferId: number,
+    dto: SubmitTransferReportDto,
+    author: User,
+  ): Promise<CaseTransfer> {
+    await this.findOne(caseId, author);
+
+    return await this.dataSource.transaction(async (manager) => {
+      const lockedCase = await this.documentHistory.lockCase(manager, caseId);
+      this.documentHistory.assertOpen(lockedCase);
+      const transfer = await this.loadTransfer(manager, caseId, transferId, [
+        TransferStatus.AWAITING_REPORT,
+      ]);
+
+      const currentAssignee = lockedCase.assignedToId ?? lockedCase.createdById;
+      if (transfer.fromUserId && currentAssignee !== transfer.fromUserId) {
+        throw new ConflictException(
+          'El caso cambió de profesional después de solicitar la transferencia; solicite una nueva',
+        );
+      }
+      if (
+        author.role?.name !== Role.ADMIN &&
+        author.id !== currentAssignee
+      ) {
+        throw new ForbiddenException(
+          'El informe de transferencia lo debe elaborar el profesional que tiene el caso actualmente',
+        );
+      }
+
+      transfer.workSummary = dto.workSummary.trim();
+      transfer.assessment = dto.assessment.trim();
+      transfer.achievements = dto.achievements.trim();
+      transfer.recommendations = dto.recommendations.trim();
+      transfer.reportedById = author.id;
+      transfer.reportedAt = new Date();
+      transfer.status = TransferStatus.PENDING;
+      await manager.save(transfer);
+      return await manager.findOneOrFail(CaseTransfer, {
+        where: { id: transfer.id },
+      });
     });
   }
 
@@ -802,12 +851,15 @@ export class CasesService {
     await this.findOne(caseId, reviewer);
 
     return await this.dataSource.transaction(async (manager) => {
-      const transfer = await this.loadPendingTransfer(
-        manager,
-        caseId,
-        transferId,
-        reviewer,
-      );
+      // También permite cancelar una transferencia cuyo informe aún no se elabora
+      const existing = await this.loadTransfer(manager, caseId, transferId, [
+        TransferStatus.AWAITING_REPORT,
+        TransferStatus.PENDING,
+      ]);
+      const transfer =
+        existing.status === TransferStatus.PENDING
+          ? await this.loadPendingTransfer(manager, caseId, transferId, reviewer)
+          : existing;
       return await this.markReviewed(
         manager,
         transfer,
@@ -818,11 +870,11 @@ export class CasesService {
     });
   }
 
-  private async loadPendingTransfer(
+  private async loadTransfer(
     manager: EntityManager,
     caseId: number,
     transferId: number,
-    reviewer: User,
+    allowed: TransferStatus[],
   ): Promise<CaseTransfer> {
     const transfer = await manager.findOne(CaseTransfer, {
       where: { id: transferId, caseId },
@@ -832,14 +884,30 @@ export class CasesService {
         `Transferencia ${transferId} no encontrada en el caso ${caseId}`,
       );
     }
-    if (transfer.status !== TransferStatus.PENDING) {
-      throw new ConflictException('El informe ya fue revisado');
+    if (!allowed.includes(transfer.status)) {
+      throw new ConflictException(
+        transfer.status === TransferStatus.AWAITING_REPORT
+          ? 'El informe de transferencia aún no ha sido elaborado'
+          : transfer.status === TransferStatus.PENDING
+            ? 'El informe ya fue elaborado y está pendiente de aprobación'
+            : 'La transferencia ya fue revisada',
+      );
     }
-    // Quien elabora el informe no puede aprobarlo (salvo el ADMIN global)
-    if (
-      transfer.transferredById === reviewer.id &&
-      reviewer.role?.name !== Role.ADMIN
-    ) {
+    return transfer;
+  }
+
+  /** Informe pendiente de aprobación; quien lo elaboró no puede aprobarlo (salvo ADMIN). */
+  private async loadPendingTransfer(
+    manager: EntityManager,
+    caseId: number,
+    transferId: number,
+    reviewer: User,
+  ): Promise<CaseTransfer> {
+    const transfer = await this.loadTransfer(manager, caseId, transferId, [
+      TransferStatus.PENDING,
+    ]);
+    const authorId = transfer.reportedById ?? transfer.transferredById;
+    if (authorId === reviewer.id && reviewer.role?.name !== Role.ADMIN) {
       throw new ForbiddenException(
         'El informe debe ser aprobado por una persona distinta a quien lo elaboró',
       );
@@ -874,6 +942,25 @@ export class CasesService {
       where: { caseId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /** Transferencias cuyo informe debe elaborar el usuario (ADMIN: todas). */
+  async getAwaitingReportTransfers(currentUser: User): Promise<CaseTransfer[]> {
+    const query = this.dataSource
+      .getRepository(CaseTransfer)
+      .createQueryBuilder('transfer')
+      .innerJoinAndSelect('transfer.case', 'case')
+      .innerJoinAndSelect('case.participant', 'participant')
+      .where('transfer.status = :status', {
+        status: TransferStatus.AWAITING_REPORT,
+      })
+      .orderBy('transfer.createdAt', 'ASC');
+    if (currentUser.role?.name !== Role.ADMIN) {
+      query.andWhere('transfer.fromUserId = :userId', {
+        userId: currentUser.id,
+      });
+    }
+    return await query.getMany();
   }
 
   /** Informes pendientes de aprobación (ADMIN_COUNTRY: solo casos de su país). */

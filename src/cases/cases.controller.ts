@@ -34,6 +34,7 @@ import {
   CreateCaseDto,
   UpdateCaseDto,
   UpdateCaseStatusDto,
+  SubmitTransferReportDto,
   TransferCaseDto,
   ApproveTransferDto,
   RejectTransferDto,
@@ -1022,6 +1023,59 @@ export class CasesController {
     );
   }
 
+  @Get('transfers/awaiting-report')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @UseGuards(RolesGuard)
+  @Roles(
+    Role.PSICOLOGO,
+    Role.ORIENTADOR,
+    Role.TRABAJO_SOCIAL,
+    Role.COORDINADOR,
+    Role.SUPERVISOR,
+    Role.ADMIN,
+  )
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Transferencias cuyo informe debe elaborar el usuario',
+    description:
+      'Paso 2 de la transferencia: el profesional que tiene el caso elabora el informe. ADMIN ve todas.',
+  })
+  async getAwaitingReportTransfers(@CurrentUser() currentUser: User) {
+    return await this.casesService.getAwaitingReportTransfers(currentUser);
+  }
+
+  @Patch(':id/transfers/:transferId/report')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @UseGuards(RolesGuard)
+  @Roles(
+    Role.PSICOLOGO,
+    Role.ORIENTADOR,
+    Role.TRABAJO_SOCIAL,
+    Role.COORDINADOR,
+    Role.SUPERVISOR,
+    Role.ADMIN,
+  )
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Elaborar el informe de transferencia',
+    description:
+      'Solo el profesional que tiene el caso actualmente (o ADMIN). El informe queda pendiente de aprobación por supervisión.',
+  })
+  @ApiBody({ type: SubmitTransferReportDto })
+  async submitTransferReport(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('transferId', ParseIntPipe) transferId: number,
+    @Body() dto: SubmitTransferReportDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    return await this.casesService.submitTransferReport(
+      id,
+      transferId,
+      dto,
+      currentUser,
+    );
+  }
+
   @Get('transfers/pending')
   @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
   @UseGuards(RolesGuard)
@@ -1128,10 +1182,11 @@ export class CasesController {
   @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN, Role.ADMIN_COUNTRY)
   @ApiBearerAuth('access-token')
   @ApiOperation({
-    summary: 'Crear el informe de transferencia de un caso',
+    summary: 'Solicitar la transferencia de un caso',
     description:
-      'Registra el Informe de transferencia (resumen, ponderación, logros, motivo y recomendaciones) en estado PENDIENTE. ' +
-      'El caso solo cambia de profesional cuando un supervisor aprueba el informe. ' +
+      'Paso 1: registra la transferencia (destino y motivo) en estado AWAITING_REPORT. ' +
+      'Paso 2: el profesional que tiene el caso elabora el informe (PATCH :id/transfers/:transferId/report). ' +
+      'Paso 3-4: el caso solo cambia de profesional cuando un supervisor aprueba el informe. ' +
       'ADMIN_COUNTRY solo para casos de su país, pero puede elegir un profesional de cualquier país.',
   })
   @ApiParam({
