@@ -516,7 +516,7 @@ export class CasesService {
     }
     return this.dataSource.transaction(async (manager) => {
       const existingCase = await this.documentHistory.lockCase(manager, caseId);
-      this.assertCaseCreator(existingCase, currentUserId);
+      this.assertCaseCreator(existingCase, currentUserId, currentUser);
       this.documentHistory.assertOpen(existingCase);
 
       // Las pestañas clínicas (familia, biopsicosocial, salud, etc.) no aplican
@@ -761,7 +761,7 @@ export class CasesService {
     }
     return this.dataSource.transaction(async (manager) => {
       const caseEntity = await this.documentHistory.lockCase(manager, caseId);
-      this.assertCaseCreator(caseEntity, currentUserId);
+      this.assertCaseCreator(caseEntity, currentUserId, currentUser);
       this.documentHistory.assertOpen(caseEntity);
 
       // Validar transiciones de estado válidas
@@ -784,7 +784,14 @@ export class CasesService {
     });
   }
 
-  private assertCaseCreator(caseEntity: Case, currentUserId: number): void {
+  private assertCaseCreator(
+    caseEntity: Case,
+    currentUserId: number,
+    currentUser?: User,
+  ): void {
+    // ADMIN_COUNTRY puede editar cualquier caso de su país; la pertenencia al
+    // país ya se verificó con findOne() antes de abrir la transacción.
+    if (getAdminCountryId(currentUser) !== undefined) return;
     if (Number(caseEntity.createdById) !== Number(currentUserId)) {
       throw new ForbiddenException(
         'Solo el usuario que creó el caso puede editarlo',
