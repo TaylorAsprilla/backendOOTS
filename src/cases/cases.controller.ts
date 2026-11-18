@@ -1019,12 +1019,13 @@ export class CasesController {
 
   @Patch(':id/transfer')
   @UseGuards(RolesGuard)
-  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN)
+  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN, Role.ADMIN_COUNTRY)
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Transferir un caso a otro profesional',
     description:
-      'Reasigna el profesional responsable del caso. Restringido a roles SUPERVISOR, COORDINADOR y ADMIN. ' +
+      'Reasigna el profesional responsable del caso. Restringido a roles SUPERVISOR, COORDINADOR, ADMIN y ADMIN_COUNTRY ' +
+      '(este último solo para casos de su país, pero puede elegir un profesional de cualquier país). ' +
       'Conserva el historial de todas las transferencias del caso (de quién a quién y quién la realizó).',
   })
   @ApiParam({
@@ -1046,12 +1047,13 @@ export class CasesController {
       id,
       transferCaseDto,
       currentUser.id,
+      currentUser,
     );
   }
 
   @Get(':id/transfers')
   @UseGuards(RolesGuard)
-  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN)
+  @Roles(Role.SUPERVISOR, Role.COORDINADOR, Role.ADMIN, Role.ADMIN_COUNTRY)
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Historial de transferencias de un caso',
@@ -1068,8 +1070,11 @@ export class CasesController {
     status: 200,
     description: 'Historial de transferencias del caso',
   })
-  async getTransferHistory(@Param('id', ParseIntPipe) id: number) {
-    return await this.casesService.getTransferHistory(id);
+  async getTransferHistory(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() currentUser: User,
+  ) {
+    return await this.casesService.getTransferHistory(id, currentUser);
   }
 
   @Get('by-user/:userId')

@@ -10,7 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { UserStatus } from '../common/enums';
-import { Role } from '../common/enums/role.enum';
+import { CASE_ASSIGNABLE_ROLES, Role } from '../common/enums/role.enum';
 import { RoleEntity } from '../roles/entities/role.entity';
 import { MailService } from '../mail/mail.service';
 import {
@@ -243,6 +243,33 @@ export class UsersService {
       ...this.excludePassword(user),
       participantCount: parseInt(raw[i]?.participantCount ?? '0', 10),
       caseCount: parseInt(raw[i]?.caseCount ?? '0', 10),
+    }));
+  }
+
+  /**
+   * Profesionales activos de cualquier país que pueden recibir un caso.
+   * Devuelve solo datos mínimos: no se exponen documento, correo ni teléfono.
+   */
+  async findTransferCandidates() {
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.country', 'country')
+      .where('user.status = :status', { status: UserStatus.ACTIVE })
+      .andWhere('role.name IN (:...roles)', { roles: CASE_ASSIGNABLE_ROLES })
+      .orderBy('user.firstName', 'ASC')
+      .addOrderBy('user.firstLastName', 'ASC')
+      .getMany();
+
+    return users.map((user) => ({
+      id: user.id,
+      firstName: user.firstName,
+      secondName: user.secondName ?? null,
+      firstLastName: user.firstLastName,
+      secondLastName: user.secondLastName ?? null,
+      roleName: user.role?.name ?? null,
+      countryId: user.countryId ?? null,
+      countryName: user.country?.name ?? null,
     }));
   }
 

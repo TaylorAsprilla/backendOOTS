@@ -29,7 +29,12 @@ import {
   UpdateCaseStatusDto,
   TransferCaseDto,
 } from './dto/case.dto';
-import { CaseStatus, CaseType, Role } from '../common/enums';
+import {
+  CASE_ASSIGNABLE_ROLES,
+  CaseStatus,
+  CaseType,
+  Role,
+} from '../common/enums';
 import { CaseDocumentHistoryService } from './case-document-history.service';
 import {
   assertCountryAccess,
@@ -683,8 +688,10 @@ export class CasesService {
     caseId: number,
     transferCaseDto: TransferCaseDto,
     transferredById: number,
+    currentUser?: User,
   ): Promise<Case> {
-    const caseEntity = await this.findOne(caseId);
+    // ADMIN_COUNTRY solo transfiere casos de su país; el destino puede ser de cualquier país
+    const caseEntity = await this.findOne(caseId, currentUser);
 
     const toUser = await this.dataSource.getRepository(User).findOne({
       where: { id: transferCaseDto.toProfessionalId },
@@ -696,16 +703,9 @@ export class CasesService {
       );
     }
 
-    const allowedRoles = [
-      Role.PSICOLOGO,
-      Role.ORIENTADOR,
-      Role.TRABAJO_SOCIAL,
-      Role.COORDINADOR,
-      Role.SUPERVISOR,
-    ];
     if (
       !toUser.role?.name ||
-      !allowedRoles.includes(toUser.role.name as Role)
+      !CASE_ASSIGNABLE_ROLES.includes(toUser.role.name as Role)
     ) {
       throw new BadRequestException(
         'El profesional destino no tiene un rol válido para recibir casos',
@@ -741,8 +741,11 @@ export class CasesService {
     return await this.findOne(caseId);
   }
 
-  async getTransferHistory(caseId: number): Promise<CaseTransfer[]> {
-    await this.findOne(caseId);
+  async getTransferHistory(
+    caseId: number,
+    currentUser?: User,
+  ): Promise<CaseTransfer[]> {
+    await this.findOne(caseId, currentUser);
 
     return await this.dataSource.getRepository(CaseTransfer).find({
       where: { caseId },

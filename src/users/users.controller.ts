@@ -8,6 +8,7 @@ import {
   UseGuards,
   Query,
   Post,
+  SetMetadata,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,7 +22,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RoleCountryGuard } from '../common/guards/role-country.guard';
+import {
+  RoleCountryGuard,
+  SKIP_ROLE_COUNTRY_GUARD,
+} from '../common/guards/role-country.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
@@ -99,6 +103,21 @@ export class UsersController {
     @CurrentUser() user: User,
   ) {
     return await this.usersService.checkMitaNumber(Number(mitaNumber), user);
+  }
+
+  @Get('transfer-candidates')
+  @SetMetadata(SKIP_ROLE_COUNTRY_GUARD, true)
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY, Role.COORDINADOR, Role.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Profesionales que pueden recibir un caso transferido',
+    description:
+      'Lista activa, de todos los países y con datos mínimos (sin documento ni contacto), ' +
+      'para elegir el destino de una transferencia de caso.',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de profesionales destino' })
+  findTransferCandidates() {
+    return this.usersService.findTransferCandidates();
   }
 
   @Get(':id')

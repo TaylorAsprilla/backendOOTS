@@ -39,7 +39,7 @@ export class RolesController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.COORDINADOR, Role.SUPERVISOR)
+  @Roles(Role.ADMIN, Role.ADMIN_COUNTRY, Role.COORDINADOR, Role.SUPERVISOR)
   @ApiOperation({ summary: 'Obtener todos los roles' })
   @ApiResponse({ status: 200, description: 'Lista de roles' })
   findAll() {

@@ -25,6 +25,8 @@ describe('UsersService country access', () => {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn(),
       getRawAndEntities: jest.fn().mockResolvedValue({
         entities: [user],
         raw: [{ participantCount: '2', caseCount: '3' }],
@@ -121,6 +123,40 @@ describe('UsersService country access', () => {
     expect(repository.update).toHaveBeenLastCalledWith(7, {
       status: UserStatus.ACTIVE,
     });
+  });
+
+  it('lists transfer candidates from every country with minimal data only', async () => {
+    const { service, query } = makeService(3);
+    query.getMany.mockResolvedValue([
+      Object.assign(new User(), {
+        id: 50,
+        firstName: 'Ana',
+        firstLastName: 'Perez',
+        email: 'ana@example.test',
+        documentNumber: '123456',
+        countryId: 1,
+        role: { name: Role.PSICOLOGO },
+        country: { name: 'Colombia' },
+      }),
+    ]);
+    const result = await service.findTransferCandidates();
+    expect(query.andWhere).toHaveBeenCalledWith('role.name IN (:...roles)', {
+      roles: expect.arrayContaining([Role.PSICOLOGO]),
+    });
+    // sin filtro de país: el destino puede ser de cualquier país
+    expect(query.andWhere).not.toHaveBeenCalledWith(
+      expect.stringContaining('countryId'),
+      expect.anything(),
+    );
+    expect(result).toEqual([
+      expect.objectContaining({
+        id: 50,
+        roleName: Role.PSICOLOGO,
+        countryName: 'Colombia',
+      }),
+    ]);
+    expect(result[0]).not.toHaveProperty('email');
+    expect(result[0]).not.toHaveProperty('documentNumber');
   });
 
   it('does not let a country administrator deactivate themselves', async () => {
