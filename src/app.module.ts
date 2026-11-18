@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ParticipantsModule } from './participants/participants.module';
 import { CasesModule } from './cases/cases.module';
 import { DocumentsModule } from './documents/documents.module';
+import { CaseAttachmentsModule } from './case-attachments/case-attachments.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { MailModule } from './mail/mail.module';
 import { AcademicLevelsModule } from './academic-levels/academic-levels.module';
@@ -84,6 +85,7 @@ import configuration from './config/configuration';
     ParticipantsModule,
     CasesModule,
     DocumentsModule,
+    CaseAttachmentsModule,
     CatalogsModule,
     MailModule,
     AcademicLevelsModule,
