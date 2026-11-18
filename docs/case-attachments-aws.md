@@ -64,12 +64,30 @@ son bajas lógicas y el archivo se conserva. Si no se desea, se puede retirar es
   la descarga. Nunca se persiste la URL ni se expone la clave.
 - **Expediente cerrado:** no se permite cargar ni eliminar (ningún rol); sí consultar y descargar.
 
-## Antivirus
+## Antivirus (ClamAV)
 
-No está incluido. Opciones que requieren infraestructura adicional y costo: *GuardDuty Malware Protection
-for S3* (por GB analizado) o ClamAV en un contenedor. Mientras tanto se mitiga aceptando solo PDF/Word,
-validando firma real, guardando con `Content-Disposition: attachment` y sin servir los archivos desde un
-dominio propio.
+El backend analiza cada archivo con un demonio **ClamAV** (`clamd`) *antes* de guardarlo en S3
+(`src/case-attachments/virus-scanner.service.ts`, protocolo INSTREAM por TCP). Es opcional y se activa
+con variables de entorno:
+
+| Variable | Valor por defecto | Descripción |
+| --- | --- | --- |
+| `CLAMAV_HOST` | *(vacío = desactivado)* | Host del demonio `clamd` |
+| `CLAMAV_PORT` | `3310` | Puerto |
+| `CLAMAV_TIMEOUT_MS` | `15000` | Tiempo máximo de análisis |
+| `CLAMAV_FAIL_OPEN` | `false` | Si es `true` y `clamd` no responde, se acepta el archivo; por defecto la carga se rechaza (503) |
+
+- Un archivo infectado se rechaza siempre (400) y queda registrado en el log.
+- Sin `CLAMAV_HOST` el análisis queda desactivado y se registra una advertencia.
+- Debe alcanzarse `clamd` desde la instancia de Elastic Beanstalk (mismo VPC, grupo de seguridad que solo
+  permita el puerto 3310 desde la instancia). Una opción simple es un contenedor `clamav/clamav` en
+  ECS/Fargate o en una instancia pequeña; las firmas se actualizan solas con `freshclam`.
+- El tamaño máximo (15 MB) ya está por debajo del límite de `clamd` (`StreamMaxLength`, 25 MB por defecto).
+- Alternativa gestionada: *GuardDuty Malware Protection for S3* (por GB analizado), que analiza *después*
+  de guardar el objeto.
+
+Se mantienen además las mitigaciones previas: solo PDF/Word, validación de la firma real del archivo,
+descarga con `Content-Disposition: attachment` y URLs prefirmadas de corta duración.
 
 ## Costo estimado (S3 Standard, us-east-1; precios de referencia, verificar en la calculadora de AWS)
 

@@ -140,6 +140,15 @@ export class SupervisionController {
     }));
   }
 
+  @Get('cases/search')
+  @Roles(Role.SUPERVISOR, Role.ADMIN)
+  @ApiOperation({
+    summary: 'Buscar casos por número de expediente, nombre o documento',
+  })
+  async searchCases(@Query('q') q: string, @CurrentUser() user: User) {
+    return await this.service.searchCases(user, q ?? '');
+  }
+
   @Get('suggestions/:caseId')
   @Roles(Role.SUPERVISOR, Role.ADMIN)
   @ApiOperation({

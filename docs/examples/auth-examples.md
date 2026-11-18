@@ -1,5 +1,8 @@
 # 🔐 Ejemplos de Autenticación
 
+> **Requiere autenticación.** El registro público está cerrado: solo `ADMIN` (cualquier país) y `ADMIN_COUNTRY` (solo su país y sin roles de administrador) pueden crear usuarios. Envíe `Authorization: Bearer <token>`.
+> Los ejemplos de registro de este archivo omiten ese encabezado por brevedad: agréguelo en cada llamada a `/auth/register` (las rutas reales llevan el prefijo `/api/v1`).
+
 ## Registro de Usuario
 
 ### Caso 1: Registro Exitoso

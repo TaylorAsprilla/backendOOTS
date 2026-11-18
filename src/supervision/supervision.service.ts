@@ -79,6 +79,50 @@ export class SupervisionService {
     private readonly attachments: Repository<CaseAttachment>,
   ) {}
 
+  /** Búsqueda de casos por número de expediente, nombre o documento del participante. */
+  async searchCases(
+    user: User,
+    term: string,
+  ): Promise<
+    Array<{
+      id: number;
+      caseNumber?: string;
+      status?: string;
+      participantName: string;
+    }>
+  > {
+    const text = term.trim();
+    if (text.length < 2) return [];
+    const like = `%${text.replace(/[%_]/g, '')}%`;
+    const query = this.cases
+      .createQueryBuilder('c')
+      .innerJoinAndSelect('c.participant', 'p')
+      .where(
+        `(c.caseNumber LIKE :like OR p.firstName LIKE :like OR p.firstLastName LIKE :like
+          OR p.documentNumber LIKE :like
+          OR CONCAT_WS(' ', p.firstName, p.firstLastName) LIKE :like)`,
+        { like },
+      )
+      .orderBy('c.createdAt', 'DESC')
+      .take(20);
+    const countryId = getAdminCountryId(user);
+    if (countryId !== undefined) {
+      query.andWhere('p.countryId = :countryId', { countryId });
+    }
+    const rows = await query.getMany();
+    return rows.map((row) => ({
+      id: row.id,
+      caseNumber: row.caseNumber,
+      status: row.status,
+      participantName: [
+        row.participant?.firstName,
+        row.participant?.firstLastName,
+      ]
+        .filter(Boolean)
+        .join(' '),
+    }));
+  }
+
   /** Profesionales que pueden ser supervisados (de su país si es ADMIN_COUNTRY). */
   async listSupervisees(user: User): Promise<User[]> {
     const countryId = getAdminCountryId(user);

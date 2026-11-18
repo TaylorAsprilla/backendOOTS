@@ -39,13 +39,11 @@ const makeService = (
       .mockResolvedValue({ id: 4, participant: { countryId: 1 } }),
   };
   const users = {
-    findOne: jest
-      .fn()
-      .mockResolvedValue({
-        id: 30,
-        countryId: 1,
-        role: { name: Role.PSICOLOGO },
-      }),
+    findOne: jest.fn().mockResolvedValue({
+      id: 30,
+      countryId: 1,
+      role: { name: Role.PSICOLOGO },
+    }),
     ...other,
   };
   const none = { count: jest.fn().mockResolvedValue(0) };
@@ -186,5 +184,10 @@ describe('SupervisionService', () => {
     await expect(service.findOne(5, countryAdmin)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+
+  it('does not search with fewer than two characters', async () => {
+    const { service } = makeService(review());
+    await expect(service.searchCases(supervisor, 'a')).resolves.toEqual([]);
   });
 });

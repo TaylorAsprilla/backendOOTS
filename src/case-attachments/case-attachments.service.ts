@@ -24,6 +24,7 @@ import {
 } from './case-attachment.enums';
 import { sanitizeFileName, validateUploadedFile } from './file-validation';
 import { S3StorageService } from './s3-storage.service';
+import { VirusScannerService } from './virus-scanner.service';
 
 export interface UploadInput {
   caseId: number;
@@ -59,6 +60,7 @@ export class CaseAttachmentsService {
     private readonly cases: Repository<Case>,
     private readonly storage: S3StorageService,
     private readonly config: ConfigService,
+    private readonly scanner: VirusScannerService,
   ) {}
 
   get maxFileBytes(): number {
@@ -164,6 +166,7 @@ export class CaseAttachmentsService {
 
     const caseEntity = await this.loadAccessibleCase(input.caseId, user, true);
     const detected = await validateUploadedFile(file, this.maxFileBytes);
+    await this.scanner.assertClean(file.buffer);
 
     // Los documentos de consultas breves y de casos viven en prefijos distintos
     const root =
