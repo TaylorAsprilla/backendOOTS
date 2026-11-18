@@ -920,12 +920,45 @@ export class TransferCaseDto {
 
   @ApiProperty({
     description: 'Motivo de la transferencia',
-    required: false,
     example: 'Reasignación por carga de trabajo del profesional anterior',
   })
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
+
+  @ApiProperty({ description: 'Resumen de la labor realizada' })
+  @IsString()
+  @IsNotEmpty()
+  workSummary!: string;
+
+  @ApiProperty({ description: 'Ponderación' })
+  @IsString()
+  @IsNotEmpty()
+  assessment!: string;
+
+  @ApiProperty({ description: 'Logros' })
+  @IsString()
+  @IsNotEmpty()
+  achievements!: string;
+
+  @ApiProperty({ description: 'Recomendaciones' })
+  @IsString()
+  @IsNotEmpty()
+  recommendations!: string;
+}
+
+export class RejectTransferDto {
+  @ApiProperty({ description: 'Motivo del rechazo del informe' })
+  @IsString()
+  @IsNotEmpty()
+  reviewNote!: string;
+}
+
+export class ApproveTransferDto {
+  @ApiProperty({ description: 'Observación de la aprobación', required: false })
   @IsOptional()
   @IsString()
-  reason?: string;
+  reviewNote?: string;
 }
 
 export class CaseResponseDto {

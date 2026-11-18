@@ -9,6 +9,7 @@ import { Participant } from '../participants/entities/participant.entity';
 import { Case } from '../participants/entities/case.entity';
 import { User } from '../users/entities/user.entity';
 import { CasesService } from './cases.service';
+import { TransferStatus } from './entities/case-transfer.entity';
 import { CaseDocumentHistoryService } from './case-document-history.service';
 
 describe('CasesService edit access control and closing', () => {
@@ -190,8 +191,22 @@ describe('CasesService edit access control and closing', () => {
     );
   });
 
-  describe('case transfer by a country admin', () => {
-    const makeTransfer = (caseCountryId: number, roleName: Role) => {
+  describe('transfer report with approval', () => {
+    const report = {
+      toProfessionalId: 50,
+      reason: 'Traslado',
+      workSummary: 'Resumen',
+      assessment: 'Ponderación',
+      achievements: 'Logros',
+      recommendations: 'Recomendaciones',
+    };
+
+    const makeTransfer = (
+      caseCountryId: number,
+      roleName: Role,
+      transferRow?: Record<string, unknown>,
+      pendingCount = 0,
+    ) => {
       const entity = Object.assign(new Case(), {
         id: 4,
         createdById: 7,
@@ -200,10 +215,13 @@ describe('CasesService edit access control and closing', () => {
         participant: { countryId: caseCountryId },
       });
       const toUser = { id: 50, countryId: 1, role: { name: roleName } };
-      const save = jest.fn();
+      const save = jest.fn((value: unknown) => Promise.resolve(value));
       const update = jest.fn();
       const manager = {
         create: jest.fn((_target: unknown, values: unknown) => values),
+        count: jest.fn().mockResolvedValue(pendingCount),
+        findOne: jest.fn().mockResolvedValue(transferRow),
+        findOneOrFail: jest.fn().mockResolvedValue({ ok: true }),
         save,
         update,
       } as unknown as EntityManager;
@@ -230,29 +248,46 @@ describe('CasesService edit access control and closing', () => {
       return { service, save, update };
     };
 
-    it('transfers a case of its country to a professional of another country', async () => {
+    const pendingRow = () => ({
+      id: 9,
+      caseId: 4,
+      fromUserId: 7,
+      toUserId: 50,
+      transferredById: 99,
+      status: TransferStatus.PENDING,
+    });
+    const supervisor = Object.assign(new User(), {
+      id: 20,
+      role: { name: Role.SUPERVISOR },
+    });
+
+    it('stores the report as PENDING without reassigning the case', async () => {
       const { service, save, update } = makeTransfer(3, Role.PSICOLOGO);
-      await service.transferCase(
-        4,
-        { toProfessionalId: 50, reason: 'Traslado' },
-        99,
-        countryAdmin,
-      );
+      await service.transferCase(4, report, 99, countryAdmin);
       expect(save).toHaveBeenCalledWith(
-        expect.objectContaining({ fromUserId: 7, toUserId: 50, transferredById: 99 }),
+        expect.objectContaining({
+          fromUserId: 7,
+          toUserId: 50,
+          transferredById: 99,
+          workSummary: 'Resumen',
+          status: TransferStatus.PENDING,
+        }),
       );
-      expect(update).toHaveBeenCalledWith(Case, 4, { assignedToId: 50 });
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a second report while one is pending', async () => {
+      const { service, save } = makeTransfer(3, Role.PSICOLOGO, undefined, 1);
+      await expect(
+        service.transferCase(4, report, 99, countryAdmin),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(save).not.toHaveBeenCalled();
     });
 
     it('denies transferring a case of another country', async () => {
       const { service, save } = makeTransfer(1, Role.PSICOLOGO);
       await expect(
-        service.transferCase(
-          4,
-          { toProfessionalId: 50, reason: 'Traslado' },
-          99,
-          countryAdmin,
-        ),
+        service.transferCase(4, report, 99, countryAdmin),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(save).not.toHaveBeenCalled();
     });
@@ -260,14 +295,63 @@ describe('CasesService edit access control and closing', () => {
     it('rejects destinations whose role cannot receive cases', async () => {
       const { service, save } = makeTransfer(3, Role.ADMIN);
       await expect(
-        service.transferCase(
-          4,
-          { toProfessionalId: 50, reason: 'Traslado' },
-          99,
-          countryAdmin,
-        ),
+        service.transferCase(4, report, 99, countryAdmin),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(save).not.toHaveBeenCalled();
+    });
+
+    it('reassigns the case only when a supervisor approves', async () => {
+      const { service, save, update } = makeTransfer(
+        3,
+        Role.PSICOLOGO,
+        pendingRow(),
+      );
+      await service.approveTransfer(4, 9, supervisor, 'Ok');
+      expect(update).toHaveBeenCalledWith(Case, 4, { assignedToId: 50 });
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: TransferStatus.APPROVED,
+          reviewedById: 20,
+        }),
+      );
+    });
+
+    it('does not let the author approve their own report', async () => {
+      const { service, update } = makeTransfer(
+        3,
+        Role.PSICOLOGO,
+        pendingRow(),
+      );
+      await expect(
+        service.approveTransfer(4, 9, countryAdmin),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('keeps the case with its professional when the report is rejected', async () => {
+      const { service, save, update } = makeTransfer(
+        3,
+        Role.PSICOLOGO,
+        pendingRow(),
+      );
+      await service.rejectTransfer(4, 9, supervisor, 'Falta información');
+      expect(update).not.toHaveBeenCalled();
+      expect(save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: TransferStatus.REJECTED,
+          reviewNote: 'Falta información',
+        }),
+      );
+    });
+
+    it('refuses to review a report that was already reviewed', async () => {
+      const { service } = makeTransfer(3, Role.PSICOLOGO, {
+        ...pendingRow(),
+        status: TransferStatus.APPROVED,
+      });
+      await expect(
+        service.approveTransfer(4, 9, supervisor),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
   });
 });

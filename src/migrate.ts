@@ -116,6 +116,38 @@ export async function runMigrations() {
       console.log('[migrate] · process_types "Inicial" already exists, skipping');
     }
 
+    // ── 6. case_transfers: informe de transferencia + aprobación ──────────
+    const [transferTable] = await connection.query<RowDataPacket[]>(
+      `SELECT TABLE_NAME FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'case_transfers'`,
+      [process.env.DB_DATABASE],
+    );
+    if (transferTable.length > 0) {
+      const [reportRows] = await connection.query<ColumnRow[]>(
+        `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'case_transfers' AND COLUMN_NAME = 'work_summary'`,
+        [process.env.DB_DATABASE],
+      );
+      if (reportRows.length === 0) {
+        await connection.query(
+          `ALTER TABLE case_transfers
+             ADD COLUMN work_summary TEXT NULL,
+             ADD COLUMN assessment TEXT NULL,
+             ADD COLUMN achievements TEXT NULL,
+             ADD COLUMN recommendations TEXT NULL,
+             ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'APPROVED',
+             ADD COLUMN reviewed_by_id INT UNSIGNED NULL,
+             ADD COLUMN reviewed_at DATETIME NULL,
+             ADD COLUMN review_note TEXT NULL,
+             ADD CONSTRAINT fk_case_transfers_reviewed_by_id
+               FOREIGN KEY (reviewed_by_id) REFERENCES users (id)`,
+        );
+        console.log('[migrate] ✓ Added case_transfers report and approval columns');
+      } else {
+        console.log('[migrate] · case_transfers report columns already exist, skipping');
+      }
+    }
+
     console.log('[migrate] All migrations completed successfully');
   } finally {
     await connection.end();

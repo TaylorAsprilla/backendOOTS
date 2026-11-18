@@ -4,9 +4,10 @@ import {
   BadRequestException,
   Logger,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Case } from '../participants/entities/case.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { PhysicalHealthHistory } from '../participants/entities/physical-health-history.entity';
@@ -21,7 +22,10 @@ import { FollowUpPlan } from '../participants/entities/follow-up-plan.entity';
 import { Weighing } from '../participants/entities/weighing.entity';
 import { FamilyMember } from '../participants/entities/family-member.entity';
 import { BioPsychosocialHistory } from '../participants/entities/bio-psychosocial-history.entity';
-import { CaseTransfer } from './entities/case-transfer.entity';
+import {
+  CaseTransfer,
+  TransferStatus,
+} from './entities/case-transfer.entity';
 import { User } from '../users/entities/user.entity';
 import {
   CreateCaseDto,
@@ -689,7 +693,7 @@ export class CasesService {
     transferCaseDto: TransferCaseDto,
     transferredById: number,
     currentUser?: User,
-  ): Promise<Case> {
+  ): Promise<CaseTransfer> {
     // ADMIN_COUNTRY solo transfiere casos de su país; el destino puede ser de cualquier país
     const caseEntity = await this.findOne(caseId, currentUser);
 
@@ -720,25 +724,144 @@ export class CasesService {
       );
     }
 
-    await this.dataSource.transaction(async (manager) => {
+    // El informe se guarda PENDIENTE: el caso NO cambia de profesional hasta
+    // que un supervisor (o administrador) lo apruebe.
+    return await this.dataSource.transaction(async (manager) => {
       const lockedCase = await this.documentHistory.lockCase(manager, caseId);
       this.documentHistory.assertOpen(lockedCase);
-      // Conserva el historial de a quién estuvo asignado el caso antes de la transferencia
+
+      const pending = await manager.count(CaseTransfer, {
+        where: { caseId, status: TransferStatus.PENDING },
+      });
+      if (pending > 0) {
+        throw new ConflictException(
+          'El caso ya tiene un informe de transferencia pendiente de aprobación',
+        );
+      }
+
       const transfer = manager.create(CaseTransfer, {
         caseId,
         fromUserId,
         toUserId: transferCaseDto.toProfessionalId,
         transferredById,
-        reason: transferCaseDto.reason,
+        reason: transferCaseDto.reason.trim(),
+        workSummary: transferCaseDto.workSummary.trim(),
+        assessment: transferCaseDto.assessment.trim(),
+        achievements: transferCaseDto.achievements.trim(),
+        recommendations: transferCaseDto.recommendations.trim(),
+        status: TransferStatus.PENDING,
       });
-      await manager.save(transfer);
-
-      await manager.update(Case, caseId, {
-        assignedToId: transferCaseDto.toProfessionalId,
-      });
+      return await manager.save(transfer);
     });
+  }
 
-    return await this.findOne(caseId);
+  /** Aprueba el informe y recién entonces reasigna el caso. */
+  async approveTransfer(
+    caseId: number,
+    transferId: number,
+    reviewer: User,
+    reviewNote?: string,
+  ): Promise<CaseTransfer> {
+    await this.findOne(caseId, reviewer);
+
+    return await this.dataSource.transaction(async (manager) => {
+      const lockedCase = await this.documentHistory.lockCase(manager, caseId);
+      this.documentHistory.assertOpen(lockedCase);
+      const transfer = await this.loadPendingTransfer(
+        manager,
+        caseId,
+        transferId,
+        reviewer,
+      );
+
+      const currentAssignee = lockedCase.assignedToId ?? lockedCase.createdById;
+      if (transfer.fromUserId && currentAssignee !== transfer.fromUserId) {
+        throw new ConflictException(
+          'El caso cambió de profesional después de crear este informe; cree uno nuevo',
+        );
+      }
+
+      await manager.update(Case, caseId, { assignedToId: transfer.toUserId });
+      return await this.markReviewed(
+        manager,
+        transfer,
+        TransferStatus.APPROVED,
+        reviewer,
+        reviewNote,
+      );
+    });
+  }
+
+  /** Rechaza el informe; el caso se queda con el profesional actual. */
+  async rejectTransfer(
+    caseId: number,
+    transferId: number,
+    reviewer: User,
+    reviewNote: string,
+  ): Promise<CaseTransfer> {
+    await this.findOne(caseId, reviewer);
+
+    return await this.dataSource.transaction(async (manager) => {
+      const transfer = await this.loadPendingTransfer(
+        manager,
+        caseId,
+        transferId,
+        reviewer,
+      );
+      return await this.markReviewed(
+        manager,
+        transfer,
+        TransferStatus.REJECTED,
+        reviewer,
+        reviewNote,
+      );
+    });
+  }
+
+  private async loadPendingTransfer(
+    manager: EntityManager,
+    caseId: number,
+    transferId: number,
+    reviewer: User,
+  ): Promise<CaseTransfer> {
+    const transfer = await manager.findOne(CaseTransfer, {
+      where: { id: transferId, caseId },
+    });
+    if (!transfer) {
+      throw new NotFoundException(
+        `Transferencia ${transferId} no encontrada en el caso ${caseId}`,
+      );
+    }
+    if (transfer.status !== TransferStatus.PENDING) {
+      throw new ConflictException('El informe ya fue revisado');
+    }
+    // Quien elabora el informe no puede aprobarlo (salvo el ADMIN global)
+    if (
+      transfer.transferredById === reviewer.id &&
+      reviewer.role?.name !== Role.ADMIN
+    ) {
+      throw new ForbiddenException(
+        'El informe debe ser aprobado por una persona distinta a quien lo elaboró',
+      );
+    }
+    return transfer;
+  }
+
+  private async markReviewed(
+    manager: EntityManager,
+    transfer: CaseTransfer,
+    status: TransferStatus,
+    reviewer: User,
+    reviewNote?: string,
+  ): Promise<CaseTransfer> {
+    transfer.status = status;
+    transfer.reviewedById = reviewer.id;
+    transfer.reviewedAt = new Date();
+    transfer.reviewNote = reviewNote?.trim() || null;
+    await manager.save(transfer);
+    return await manager.findOneOrFail(CaseTransfer, {
+      where: { id: transfer.id },
+    });
   }
 
   async getTransferHistory(
@@ -751,6 +874,40 @@ export class CasesService {
       where: { caseId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /** Informes pendientes de aprobación (ADMIN_COUNTRY: solo casos de su país). */
+  async getPendingTransfers(currentUser?: User): Promise<CaseTransfer[]> {
+    const countryId = getAdminCountryId(currentUser);
+    const query = this.dataSource
+      .getRepository(CaseTransfer)
+      .createQueryBuilder('transfer')
+      .innerJoinAndSelect('transfer.case', 'case')
+      .innerJoinAndSelect('case.participant', 'participant')
+      .where('transfer.status = :status', { status: TransferStatus.PENDING })
+      .orderBy('transfer.createdAt', 'ASC');
+    if (countryId !== undefined) {
+      query.andWhere('participant.countryId = :countryId', { countryId });
+    }
+    return await query.getMany();
+  }
+
+  /** Datos para el PDF del informe (valida el acceso al caso). */
+  async getTransferForReport(
+    caseId: number,
+    transferId: number,
+    currentUser?: User,
+  ): Promise<{ caseEntity: Case; transfer: CaseTransfer }> {
+    const caseEntity = await this.findOne(caseId, currentUser);
+    const transfer = await this.dataSource
+      .getRepository(CaseTransfer)
+      .findOne({ where: { id: transferId, caseId } });
+    if (!transfer) {
+      throw new NotFoundException(
+        `Transferencia ${transferId} no encontrada en el caso ${caseId}`,
+      );
+    }
+    return { caseEntity, transfer };
   }
 
   async updateStatus(
