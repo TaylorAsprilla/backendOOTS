@@ -68,6 +68,21 @@ export class ProfileAvatarController {
     res.end(body);
   }
 
+  @Get('status')
+  @ApiOperation({
+    summary: 'Saber si tengo foto y si ya vi la guía para ponerla',
+  })
+  async status(@CurrentUser() user: User) {
+    return await this.service.status(user.id);
+  }
+
+  @Put('tour-seen')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Marcar la guía de la foto de perfil como vista' })
+  async tourSeen(@CurrentUser() user: User) {
+    await this.service.markTourSeen(user.id);
+  }
+
   @Delete()
   @HttpCode(204)
   @ApiOperation({ summary: 'Quitar mi foto de perfil' })

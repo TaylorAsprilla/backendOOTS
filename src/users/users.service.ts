@@ -195,8 +195,9 @@ export class UsersService {
 
   private excludePassword(user: User): User {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...result } = user;
-    return result as User;
+    const { password, avatarKey, ...result } = user;
+    // La clave interna del archivo en S3 no se expone: solo si tiene foto
+    return { ...result, hasAvatar: !!avatarKey } as unknown as User;
   }
 
   async findAll(currentUser?: User): Promise<any[]> {

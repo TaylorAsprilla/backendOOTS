@@ -148,6 +148,10 @@ export class User {
   @Column({ name: 'avatar_updated_at', type: 'datetime', nullable: true })
   avatarUpdatedAt?: Date | null;
 
+  /** Cuándo vio la guía para poner la foto de perfil (null = aún no la ha visto) */
+  @Column({ name: 'avatar_tour_seen_at', type: 'datetime', nullable: true })
+  avatarTourSeenAt?: Date | null;
+
   @Column({ name: 'role_id', type: 'int', unsigned: true, nullable: true })
   roleId?: number;
 
