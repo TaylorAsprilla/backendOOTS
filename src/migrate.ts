@@ -252,6 +252,21 @@ export async function runMigrations() {
       console.log('[migrate] · users avatar columns already exist, skipping');
     }
 
+    // ── 10. users: guía de la foto de perfil ya vista ─────────────────────
+    const [tourCols] = await connection.query<ColumnRow[]>(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'users' AND COLUMN_NAME = 'avatar_tour_seen_at'`,
+      [process.env.DB_DATABASE],
+    );
+    if (tourCols.length === 0) {
+      await connection.query(
+        `ALTER TABLE users ADD COLUMN avatar_tour_seen_at DATETIME NULL`,
+      );
+      console.log('[migrate] ✓ Added users.avatar_tour_seen_at');
+    } else {
+      console.log('[migrate] · users.avatar_tour_seen_at already exists, skipping');
+    }
+
     console.log('[migrate] All migrations completed successfully');
   } finally {
     await connection.end();

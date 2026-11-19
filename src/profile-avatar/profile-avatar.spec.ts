@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ProfileAvatarService } from './profile-avatar.service';
 import { validateAvatarImage } from './image-validation';
 
@@ -139,5 +139,35 @@ describe('ProfileAvatarService', () => {
       avatarUpdatedAt: null,
     });
     expect(storage.remove).toHaveBeenCalledWith('avatars/7/a.png');
+  });
+
+  it('reports photo and tour status', async () => {
+    await expect(
+      make({
+        id: 7,
+        avatarKey: 'a',
+        avatarTourSeenAt: new Date(),
+      }).service.status(7),
+    ).resolves.toEqual({ hasAvatar: true, tourSeen: true });
+    await expect(make({ id: 7 }).service.status(7)).resolves.toEqual({
+      hasAvatar: false,
+      tourSeen: false,
+    });
+  });
+
+  it('lets a country admin see only photos from their own country', async () => {
+    const { service } = make({
+      id: 9,
+      countryId: 2,
+      avatarKey: 'avatars/9/a.png',
+    });
+    const viewer = (countryId: number) =>
+      ({ role: { name: 'ADMIN_COUNTRY' }, countryId }) as never;
+    await expect(service.getForViewer(viewer(2), 9)).resolves.not.toBeNull();
+    await expect(service.getForViewer(viewer(3), 9)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    const admin = { role: { name: 'ADMIN' } } as never;
+    await expect(service.getForViewer(admin, 9)).resolves.not.toBeNull();
   });
 });
